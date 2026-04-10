@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OW Role Roulette</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <style>
+    :root {
+      --bg:      #07090f;
+      --surf:    #0d1120;
+      --surf2:   #131827;
+      --border:  #1c2437;
+      --border2: #243049;
+      --orange:  #ff6b2b;
+      --cyan:    #00d8ff;
+      --text:    #d8e0f0;
+      --dim:     #4e5a78;
+      --tank:    #5b9eff;
+      --dps:     #ff4a4a;
+      --supp:    #3dff8a;
+      --any:     #ffd24a;
+    }
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Barlow Condensed', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 1rem;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(255,107,43,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,107,43,.025) 1px, transparent 1px);
+      background-size: 44px 44px;
+      pointer-events: none; z-index: 0;
+    }
+
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      background: repeating-linear-gradient(to bottom, transparent 0, transparent 1px, rgba(0,0,0,.05) 1px, rgba(0,0,0,.05) 2px);
+      pointer-events: none; z-index: 999;
+    }
+
+    /* LOADING */
+    #loading {
+      position: fixed; inset: 0; background: var(--bg);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 1rem; z-index: 200;
+    }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid var(--border); border-top-color: var(--orange);
+      border-radius: 50%; animation: rot .7s linear infinite;
+    }
+    .load-lbl { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 5px; color: var(--dim); }
+    @keyframes rot { to { transform: rotate(360deg); } }
+
+    /* LOBBY */
+    #lobby {
+      position: relative; z-index: 1;
+      display: none; flex-direction: column;
+      align-items: center; gap: 1.8rem;
+      width: 100%; max-width: 380px; padding-top: 2rem;
+    }
+    .logo-block { text-align: center; }
+    .logo-icon { display: block; margin: 0 auto .6rem; width: 64px; height: 64px; }
+    .logo-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 3.8rem; letter-spacing: 6px; line-height: 1;
+      background: linear-gradient(135deg, var(--orange) 0%, #ffaa66 45%, var(--cyan) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .logo-sub { font-size: .78rem; letter-spacing: 5px; text-transform: uppercase; color: var(--dim); margin-top: .4rem; }
+    .card { background: var(--surf); border: 1px solid var(--border); border-radius: 16px; padding: 1.8rem; width: 100%; }
+    .field { margin-bottom: 1.3rem; }
+    .field:last-of-type { margin-bottom: 0; }
+    .field label { display: block; font-size: .72rem; letter-spacing: 3px; text-transform: uppercase; color: var(--dim); margin-bottom: .45rem; }
+    .field input {
+      width: 100%; background: var(--bg); border: 1.5px solid var(--border);
+      border-radius: 10px; color: var(--text);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1.1rem; font-weight: 600; padding: .7rem 1rem;
+      outline: none; transition: border-color .2s, box-shadow .2s;
+    }
+    #code-input { text-align: center; font-size: 2rem !important; letter-spacing: 12px !important; }
+    .field input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(255,107,43,.13); }
+    .err { color: var(--dps); font-size: .85rem; text-align: center; margin-top: .8rem; display: none; }
+    .btn-join {
+      display: block; width: 100%; margin-top: 1.3rem; padding: .9rem;
+      background: var(--orange); border: none; border-radius: 10px;
+      color: #fff; font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.4rem; letter-spacing: 3px; cursor: pointer;
+      transition: box-shadow .2s, transform .1s;
+    }
+    .btn-join:hover { box-shadow: 0 4px 28px rgba(255,107,43,.5); transform: translateY(-1px); }
+    .btn-join:active { transform: none; }
+    .lobby-hint { font-size: .8rem; color: var(--dim); text-align: center; letter-spacing: 1px; }
+
+    /* SPIN ROOM */
+    #spin-room {
+      position: relative; z-index: 1;
+      display: none; flex-direction: column;
+      align-items: center; gap: 1.1rem;
+      width: 100%; max-width: 460px;
+      padding-top: 1rem; padding-bottom: 2rem;
+    }
+    .top-bar { width: 100%; display: flex; justify-content: space-between; align-items: center; }
+    .tag { background: var(--surf); border: 1px solid var(--border); border-radius: 8px; padding: .35rem .85rem; font-size: .78rem; letter-spacing: 1px; }
+    .tag.room { color: var(--dim); }
+    .tag.room strong { color: var(--cyan); font-family: 'Bebas Neue', sans-serif; font-size: .95rem; letter-spacing: 5px; margin-left: 4px; }
+    .tag.player { font-weight: 700; font-size: .9rem; color: var(--orange); }
+    .btn-back { background: none; border: none; color: var(--dim); font-family: 'Barlow Condensed', sans-serif; font-size: .85rem; letter-spacing: 1px; cursor: pointer; transition: color .2s; }
+    .btn-back:hover { color: var(--orange); }
+    .section-lbl { font-size: .7rem; letter-spacing: 4px; text-transform: uppercase; color: var(--dim); width: 100%; text-align: center; }
+
+    /* Role Buttons */
+    .roles { display: grid; grid-template-columns: repeat(4, 1fr); gap: .5rem; width: 100%; }
+    .role-btn {
+      background: var(--surf); border: 2px solid var(--border); border-radius: 10px;
+      color: var(--dim); font-family: 'Barlow Condensed', sans-serif;
+      font-size: .88rem; font-weight: 700; text-transform: uppercase;
+      padding: .6rem 0; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      transition: all .15s;
+    }
+    .role-btn .ri { font-size: 1.25rem; line-height: 1; }
+    .role-btn.active[data-role="any"]     { border-color: var(--any);  color: var(--any);  background: rgba(255,210,74,.08);  box-shadow: 0 0 18px rgba(255,210,74,.15); }
+    .role-btn.active[data-role="tank"]    { border-color: var(--tank); color: var(--tank); background: rgba(91,158,255,.08);  box-shadow: 0 0 18px rgba(91,158,255,.15); }
+    .role-btn.active[data-role="damage"]  { border-color: var(--dps);  color: var(--dps);  background: rgba(255,74,74,.08);   box-shadow: 0 0 18px rgba(255,74,74,.15); }
+    .role-btn.active[data-role="support"] { border-color: var(--supp); color: var(--supp); background: rgba(61,255,138,.08);  box-shadow: 0 0 18px rgba(61,255,138,.15); }
+
+    /* Slot Machine */
+    .slot-outer { width: 100%; display: flex; flex-direction: column; align-items: center; gap: .75rem; }
+    .slot-frame {
+      width: 230px; height: 230px;
+      border: 3px solid var(--border2); border-radius: 18px;
+      overflow: hidden; position: relative; background: var(--surf);
+      transition: border-color .3s, box-shadow .3s; flex-shrink: 0;
+    }
+    .slot-frame.spinning { border-color: var(--orange); box-shadow: 0 0 36px rgba(255,107,43,.45); }
+    @keyframes pulse-cyan {
+      0%,100% { box-shadow: 0 0 24px rgba(0,216,255,.4); }
+      50%      { box-shadow: 0 0 56px rgba(0,216,255,.75), 0 0 90px rgba(0,216,255,.15); }
+    }
+    .slot-frame.done { border-color: var(--cyan); animation: pulse-cyan 2s ease-in-out infinite; }
+    .slot-frame::before, .slot-frame::after {
+      content: ''; position: absolute; left: 0; right: 0; height: 55px; z-index: 2; pointer-events: none;
+    }
+    .slot-frame::before { top: 0;    background: linear-gradient(to bottom, var(--surf), transparent); }
+    .slot-frame::after  { bottom: 0; background: linear-gradient(to top,    var(--surf), transparent); }
+    .reel-window { position: absolute; inset: 0; overflow: hidden; }
+    .reel { position: absolute; top: 0; left: 0; width: 100%; }
+    .reel-tile { width: 230px; height: 230px; display: block; position: relative; overflow: hidden; }
+    .reel-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .tile-fallback {
+      width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+      font-family: 'Bebas Neue', sans-serif; font-size: 5rem; color: var(--dim); background: var(--surf2);
+    }
+    .result-box { height: 58px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
+    .result-name {
+      font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 3px; color: var(--cyan);
+      opacity: 0; transform: translateY(8px); transition: opacity .35s ease, transform .35s ease;
+    }
+    .result-name.show { opacity: 1; transform: none; }
+    .result-role-lbl { font-size: .72rem; letter-spacing: 3px; text-transform: uppercase; opacity: 0; transition: opacity .35s ease .1s; }
+    .result-role-lbl.show { opacity: 1; }
+
+    /* Spin Button */
+    .spin-btn {
+      width: 200px; padding: 1rem;
+      background: transparent; border: 2.5px solid var(--orange); border-radius: 12px;
+      color: var(--orange); font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.75rem; letter-spacing: 4px; cursor: pointer;
+      position: relative; overflow: hidden; transition: color .2s, transform .1s;
+    }
+    .spin-btn::before {
+      content: ''; position: absolute; inset: 0;
+      background: var(--orange); transform: scaleX(0); transform-origin: left;
+      transition: transform .2s ease; z-index: 0;
+    }
+    .spin-btn span { position: relative; z-index: 1; }
+    .spin-btn:hover { color: #fff; transform: translateY(-1px); }
+    .spin-btn:hover::before { transform: scaleX(1); }
+    .spin-btn:active { transform: none; }
+    .spin-btn:disabled { opacity: .35; cursor: default; transform: none; }
+    .spin-btn:disabled::before { display: none; }
+
+    /* PARTY PANEL */
+    .party-panel { width: 100%; background: var(--surf); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+    .party-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: .6rem 1rem; border-bottom: 1px solid var(--border);
+    }
+    .party-title { font-size: .7rem; letter-spacing: 4px; text-transform: uppercase; color: var(--dim); }
+    .party-count { font-family: 'Bebas Neue', sans-serif; font-size: .95rem; letter-spacing: 2px; color: var(--cyan); }
+    .party-list {
+      padding: .85rem; display: flex; flex-wrap: wrap;
+      gap: .75rem; justify-content: center;
+    }
+
+    /* Grid-style player cards */
+    .party-card { display: flex; flex-direction: column; align-items: center; gap: .4rem; width: 90px; }
+    .party-portrait {
+      width: 90px; height: 90px;
+      border: 2px solid var(--border2); border-radius: 12px;
+      overflow: hidden; background: var(--surf2);
+      position: relative; transition: border-color .3s, box-shadow .3s; flex-shrink: 0;
+    }
+    .party-portrait img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .party-card.is-you .party-portrait   { border-color: var(--orange); box-shadow: 0 0 12px rgba(255,107,43,.3); }
+    .party-card.duplicate .party-portrait { border-color: var(--dps);   box-shadow: 0 0 14px rgba(255,74,74,.35); }
+    .portrait-placeholder {
+      width: 100%; height: 100%;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+      background: var(--surf2);
+    }
+    .portrait-initial { font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; color: var(--border2); line-height: 1; }
+    .party-name { font-size: .82rem; font-weight: 700; letter-spacing: .5px; text-align: center; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
+    .party-name.you { color: var(--orange); }
+    .party-hero-lbl { font-size: .65rem; letter-spacing: 1px; text-align: center; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
+    .party-hero-lbl.resolved { color: var(--cyan); }
+    .party-hero-lbl.dup      { color: var(--dps); }
+    .party-role-badge { font-size: .6rem; letter-spacing: 2px; text-transform: uppercase; padding: .1rem .4rem; border-radius: 4px; border: 1px solid; }
+    .party-role-badge.tank    { color: var(--tank);  border-color: var(--tank);  background: rgba(91,158,255,.08); }
+    .party-role-badge.damage  { color: var(--dps);   border-color: var(--dps);   background: rgba(255,74,74,.08); }
+    .party-role-badge.support { color: var(--supp);  border-color: var(--supp);  background: rgba(61,255,138,.08); }
+    .party-role-badge.any     { color: var(--any);   border-color: var(--any);   background: rgba(255,210,74,.08); }
+    .spin-dots { display: flex; gap: 4px; align-items: center; }
+    .spin-dots span { display: block; width: 5px; height: 5px; background: var(--dim); border-radius: 50%; animation: blink 1.2s ease-in-out infinite; }
+    .spin-dots span:nth-child(2) { animation-delay: .2s; }
+    .spin-dots span:nth-child(3) { animation-delay: .4s; }
+    @keyframes blink { 0%,80%,100% { opacity: .15; } 40% { opacity: 1; } }
+    .party-empty { padding: 1.4rem; text-align: center; font-size: .8rem; letter-spacing: 2px; color: var(--dim); }
+    .dup-warning {
+      display: none; width: 100%;
+      background: rgba(255,74,74,.1); border: 1px solid rgba(255,74,74,.35);
+      border-radius: 10px; padding: .6rem 1rem;
+      font-size: .82rem; letter-spacing: 1px; color: var(--dps); text-align: center;
+    }
+    .dup-warning.show { display: block; }
+
+    #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 998; }
+  </style>
+</head>
+<body>
+
+<canvas id="confetti"></canvas>
+
+<div id="loading">
+  <div class="spinner"></div>
+  <p class="load-lbl">Loading Heroes</p>
+</div>
+
+<div id="lobby">
+  <div class="logo-block">
+    <svg class="logo-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="32" cy="32" r="29" stroke="#ff6b2b" stroke-width="3"/>
+      <circle cx="32" cy="36" r="12" stroke="#00d8ff" stroke-width="3"/>
+      <circle cx="32" cy="36" r="5" fill="#00d8ff"/>
+      <path d="M32 7 L32 24" stroke="#ff6b2b" stroke-width="3.5" stroke-linecap="round"/>
+      <path d="M32 7 L19 19" stroke="#ff6b2b" stroke-width="3.5" stroke-linecap="round"/>
+      <path d="M32 7 L45 19" stroke="#ff6b2b" stroke-width="3.5" stroke-linecap="round"/>
+    </svg>
+    <div class="logo-title">ROLE ROULETTE</div>
+    <div class="logo-sub">Overwatch 2 &nbsp;&bull;&nbsp; Hero Picker</div>
+  </div>
+  <div class="card">
+    <div class="field">
+      <label>Your Callsign</label>
+      <input type="text" id="name-input" placeholder="Enter name" maxlength="20" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="field">
+      <label>Room Code</label>
+      <input type="text" id="code-input" placeholder="0000" maxlength="4" inputmode="numeric" autocomplete="off">
+    </div>
+    <p class="err" id="join-err">Enter your name and a 4-digit room code.</p>
+    <button class="btn-join" id="join-btn">JOIN ROOM</button>
+  </div>
+  <p class="lobby-hint">Share the same 4-digit code with your squad.</p>
+</div>
+
+<div id="spin-room">
+  <div class="top-bar">
+    <button class="btn-back" id="back-btn">&#8592; Leave</button>
+    <div class="tag room">ROOM <strong id="room-tag"></strong></div>
+    <div class="tag player" id="player-tag"></div>
+  </div>
+  <p class="section-lbl">Choose Role</p>
+  <div class="roles">
+    <button class="role-btn active" data-role="any"><span class="ri">🎲</span>Any</button>
+    <button class="role-btn" data-role="tank"><span class="ri">🛡️</span>Tank</button>
+    <button class="role-btn" data-role="damage"><span class="ri">⚔️</span>DPS</button>
+    <button class="role-btn" data-role="support"><span class="ri">💉</span>Support</button>
+  </div>
+  <div class="slot-outer">
+    <p class="section-lbl">Your Hero</p>
+    <div class="slot-frame" id="slot-frame">
+      <div class="reel-window">
+        <div class="reel" id="reel"></div>
+      </div>
+    </div>
+    <div class="result-box">
+      <div class="result-name" id="result-name"></div>
+      <div class="result-role-lbl" id="result-role-lbl"></div>
+    </div>
+  </div>
+  <button class="spin-btn" id="spin-btn"><span>SPIN</span></button>
+  <div class="dup-warning" id="dup-warning">&#9888; Duplicate hero detected! Someone should re-spin.</div>
+  <div class="party-panel">
+    <div class="party-header">
+      <span class="party-title">In This Room</span>
+      <span class="party-count" id="party-count">0 players</span>
+    </div>
+    <div class="party-list" id="party-list">
+      <p class="party-empty">Waiting for players...</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// FIREBASE CONFIG
+// ═══════════════════════════════════════
+const firebaseConfig = {
+  apiKey:            "AIzaSyCFppLJ3ASNhwt4JyKQqs_SXyvgiy-p_sM",
+  authDomain:        "overwatch-roulette-a66f3.firebaseapp.com",
+  projectId:         "overwatch-roulette-a66f3",
+  storageBucket:     "overwatch-roulette-a66f3.firebasestorage.app",
+  messagingSenderId: "880009753118",
+  appId:             "1:880009753118:web:8953de66330f7044ab340f",
+  measurementId:     "G-QEJ5JJVJC2",
+  databaseURL:       "https://overwatch-roulette-a66f3-default-rtdb.firebaseio.com/",
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// ═══════════════════════════════════════
+// HERO DATA
+// ═══════════════════════════════════════
+const HEROES = {
+  tank: [
+    { name: "D.Va",          key: "d-va" },
+    { name: "Domina",        key: "domina" },
+    { name: "Doomfist",      key: "doomfist" },
+    { name: "Junker Queen",  key: "junker-queen" },
+    { name: "Mauga",         key: "mauga" },
+    { name: "Orisa",         key: "orisa" },
+    { name: "Ramattra",      key: "ramattra" },
+    { name: "Reinhardt",     key: "reinhardt" },
+    { name: "Roadhog",       key: "roadhog" },
+    { name: "Sigma",         key: "sigma" },
+    { name: "Winston",       key: "winston" },
+    { name: "Wrecking Ball", key: "wrecking-ball" },
+    { name: "Zarya",         key: "zarya" },
+  ],
+  damage: [
+    { name: "Ashe",        key: "ashe" },
+    { name: "Bastion",     key: "bastion" },
+    { name: "Cassidy",     key: "cassidy" },
+    { name: "Echo",        key: "echo" },
+    { name: "Genji",       key: "genji" },
+    { name: "Hanzo",       key: "hanzo" },
+    { name: "Junkrat",     key: "junkrat" },
+    { name: "Mei",         key: "mei" },
+    { name: "Pharah",      key: "pharah" },
+    { name: "Reaper",      key: "reaper" },
+    { name: "Soldier: 76", key: "soldier-76" },
+    { name: "Sojourn",     key: "sojourn" },
+    { name: "Sombra",      key: "sombra" },
+    { name: "Symmetra",    key: "symmetra" },
+    { name: "Torbjorn",    key: "torbjorn" },
+    { name: "Tracer",      key: "tracer" },
+    { name: "Venture",     key: "venture" },
+    { name: "Widowmaker",  key: "widowmaker" },
+  ],
+  support: [
+    { name: "Ana",        key: "ana" },
+    { name: "Baptiste",   key: "baptiste" },
+    { name: "Brigitte",   key: "brigitte" },
+    { name: "Illari",     key: "illari" },
+    { name: "Juno",       key: "juno" },
+    { name: "Kiriko",     key: "kiriko" },
+    { name: "Lifeweaver", key: "lifeweaver" },
+    { name: "Lucio",      key: "lucio" },
+    { name: "Mercy",      key: "mercy" },
+    { name: "Moira",      key: "moira" },
+    { name: "Zenyatta",   key: "zenyatta" },
+  ],
+};
+
+// Portrait URL lookup — populated on load from the OverFast API.
+// Newer heroes not yet in the API are pre-seeded here directly.
+const PORTRAITS = {
+  'domina': 'https://d15f34w2p8l1cc.cloudfront.net/overwatch/1161c112292c56c052c0ae711792fcde06e3251b98bc9709e582dd7585b5dcd6.png',
+};
+
+function portrait(key) {
+  return PORTRAITS[key] || null;
+}
+
+function heroKeyByName(name) {
+  for (const role of Object.values(HEROES)) {
+    const h = role.find(x => x.name === name);
+    if (h) return h.key;
+  }
+  return null;
+}
+
+function getPool(role) {
+  if (role === 'any') return [
+    ...HEROES.tank.map(h    => ({...h, role: 'tank'})),
+    ...HEROES.damage.map(h  => ({...h, role: 'damage'})),
+    ...HEROES.support.map(h => ({...h, role: 'support'})),
+  ];
+  return HEROES[role].map(h => ({...h, role}));
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ═══════════════════════════════════════
+// SESSION STATE
+// ═══════════════════════════════════════
+let playerId = sessionStorage.getItem('owrr_pid');
+if (!playerId) {
+  playerId = Math.random().toString(36).slice(2, 10);
+  sessionStorage.setItem('owrr_pid', playerId);
+}
+
+let roomCode     = null;
+let playerRef    = null;
+let roomListener = null;
+let currentRole  = 'any';
+let isSpinning   = false;
+const TILE_H     = 230;
+
+// ═══════════════════════════════════════
+// DOM REFS
+// ═══════════════════════════════════════
+const lobbyEl    = document.getElementById('lobby');
+const spinRoomEl = document.getElementById('spin-room');
+const loadingEl  = document.getElementById('loading');
+const loadLbl    = document.querySelector('.load-lbl');
+const reelEl     = document.getElementById('reel');
+const slotFrame  = document.getElementById('slot-frame');
+const resultName = document.getElementById('result-name');
+const resultLbl  = document.getElementById('result-role-lbl');
+const spinBtn    = document.getElementById('spin-btn');
+const partyList  = document.getElementById('party-list');
+const partyCount = document.getElementById('party-count');
+const dupWarning = document.getElementById('dup-warning');
+
+// ═══════════════════════════════════════
+// INIT — fetch portraits, then show lobby
+// ═══════════════════════════════════════
+document.fonts.ready.then(async () => {
+  loadLbl.textContent = 'Loading Heroes...';
+
+  try {
+    // Fetch the full hero list from OverFast API.
+    // Each hero object has: { key, name, portrait, role }
+    // portrait is the direct Blizzard CDN URL (d15f34w2p8l1cc.cloudfront.net/...)
+    const res  = await fetch('https://overfast-api.tekrop.fr/heroes');
+    const data = await res.json();
+    data.forEach(h => {
+      if (h.key && h.portrait) PORTRAITS[h.key] = h.portrait;
+    });
+  } catch (e) {
+    // If the API is unreachable, portraits fall back to initials — everything else works fine.
+    console.warn('Could not load hero portraits:', e);
+  }
+
+  loadingEl.style.display = 'none';
+  lobbyEl.style.display   = 'flex';
+
+  const p = new URLSearchParams(location.search);
+  const r = p.get('room');
+  if (r && /^\d{4}$/.test(r)) document.getElementById('code-input').value = r;
+});
+
+// ═══════════════════════════════════════
+// LOBBY
+// ═══════════════════════════════════════
+document.getElementById('join-btn').addEventListener('click', tryJoin);
+document.getElementById('name-input').addEventListener('keydown', e => e.key === 'Enter' && tryJoin());
+document.getElementById('code-input').addEventListener('keydown', e => e.key === 'Enter' && tryJoin());
+document.getElementById('code-input').addEventListener('input', function () {
+  this.value = this.value.replace(/\D/g, '').slice(0, 4);
+});
+
+function tryJoin() {
+  const name = document.getElementById('name-input').value.trim();
+  const code = document.getElementById('code-input').value.trim();
+  const err  = document.getElementById('join-err');
+  if (!name || !/^\d{4}$/.test(code)) { err.style.display = 'block'; return; }
+  err.style.display = 'none';
+  roomCode = code;
+
+  document.getElementById('room-tag').textContent   = code;
+  document.getElementById('player-tag').textContent = name;
+
+  const url = new URL(location);
+  url.searchParams.set('room', code);
+  history.pushState({}, '', url);
+
+  playerRef = db.ref(`rooms/${code}/players/${playerId}`);
+  playerRef.set({ name, role: 'any', hero: null, spinning: false });
+  playerRef.onDisconnect().remove();
+
+  startRoomListener(code);
+
+  lobbyEl.style.display    = 'none';
+  spinRoomEl.style.display = 'flex';
+  currentRole = 'any';
+  buildInitialReel('any');
+}
+
+// ═══════════════════════════════════════
+// BACK / LEAVE
+// ═══════════════════════════════════════
+document.getElementById('back-btn').addEventListener('click', leaveRoom);
+
+function leaveRoom() {
+  if (playerRef) { playerRef.remove(); playerRef = null; }
+  if (roomListener && roomCode) {
+    db.ref(`rooms/${roomCode}/players`).off('value', roomListener);
+    roomListener = null;
+  }
+  isSpinning = false;
+  spinBtn.disabled = false;
+  roomCode = null;
+  spinRoomEl.style.display = 'none';
+  lobbyEl.style.display    = 'flex';
+  history.pushState({}, '', location.pathname);
+}
+
+// ═══════════════════════════════════════
+// FIREBASE ROOM LISTENER
+// ═══════════════════════════════════════
+function startRoomListener(code) {
+  const ref = db.ref(`rooms/${code}/players`);
+  roomListener = ref.on('value', snapshot => {
+    renderParty(snapshot.val() || {});
+  });
+}
+
+function renderParty(players) {
+  const keys  = Object.keys(players);
+  const count = keys.length;
+  partyCount.textContent = count === 1 ? '1 player' : `${count} players`;
+
+  if (count === 0) {
+    partyList.innerHTML = '<p class="party-empty">Waiting for players...</p>';
+    dupWarning.classList.remove('show');
+    return;
+  }
+
+  const heroCounts = {};
+  keys.forEach(k => { const h = players[k].hero; if (h) heroCounts[h] = (heroCounts[h] || 0) + 1; });
+  dupWarning.classList.toggle('show', Object.values(heroCounts).some(c => c > 1));
+
+  partyList.innerHTML = '';
+  const sorted = [...keys].sort((a, b) => (a === playerId ? -1 : b === playerId ? 1 : 0));
+
+  sorted.forEach(k => {
+    const p     = players[k];
+    const isYou = k === playerId;
+    const isDup = p.hero && heroCounts[p.hero] > 1;
+
+    const card = document.createElement('div');
+    card.className = ['party-card', isYou && 'is-you', isDup && 'duplicate'].filter(Boolean).join(' ');
+
+    // Portrait box
+    const pbox = document.createElement('div');
+    pbox.className = 'party-portrait';
+
+    if (p.spinning) {
+      pbox.innerHTML = `<div class="portrait-placeholder">
+        <div class="portrait-initial">${p.name[0]}</div>
+        <div class="spin-dots"><span></span><span></span><span></span></div>
+      </div>`;
+    } else if (p.hero) {
+      const hKey = heroKeyByName(p.hero);
+      const url  = hKey ? portrait(hKey) : null;
+      if (url) {
+        const img = document.createElement('img');
+        img.src = url; img.alt = p.hero;
+        img.onerror = () => {
+          img.remove();
+          pbox.innerHTML = `<div class="portrait-placeholder"><div class="portrait-initial">${p.hero[0]}</div></div>`;
+        };
+        pbox.appendChild(img);
+      } else {
+        pbox.innerHTML = `<div class="portrait-placeholder"><div class="portrait-initial">${p.hero[0]}</div></div>`;
+      }
+    } else {
+      pbox.innerHTML = `<div class="portrait-placeholder"><div class="portrait-initial">${p.name[0]}</div></div>`;
+    }
+
+    // Name
+    const nameEl = document.createElement('div');
+    nameEl.className = 'party-name' + (isYou ? ' you' : '');
+    nameEl.textContent = isYou ? `${p.name} (you)` : p.name;
+
+    card.appendChild(pbox);
+    card.appendChild(nameEl);
+
+    // Sub-label (hero name, "Spinning...", or role badge)
+    if (p.spinning) {
+      const sub = document.createElement('div');
+      sub.className = 'party-hero-lbl';
+      sub.textContent = 'Spinning...';
+      card.appendChild(sub);
+    } else if (p.hero) {
+      const sub = document.createElement('div');
+      sub.className = 'party-hero-lbl resolved' + (isDup ? ' dup' : '');
+      sub.textContent = isDup ? `${p.hero} \u26A0` : p.hero;
+      card.appendChild(sub);
+    } else {
+      const roleName = p.role || 'any';
+      const badge = document.createElement('div');
+      badge.className = `party-role-badge ${roleName}`;
+      badge.textContent = roleName === 'damage' ? 'DPS' : roleName.charAt(0).toUpperCase() + roleName.slice(1);
+      card.appendChild(badge);
+    }
+
+    partyList.appendChild(card);
+  });
+}
+
+// ═══════════════════════════════════════
+// ROLE SELECTION
+// ═══════════════════════════════════════
+document.querySelectorAll('.role-btn').forEach(btn => {
+  btn.addEventListener('click', function () {
+    if (isSpinning) return;
+    document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    currentRole = this.dataset.role;
+    if (playerRef) playerRef.update({ role: currentRole, hero: null });
+    buildInitialReel(currentRole);
+    resetResult();
+  });
+});
+
+// ═══════════════════════════════════════
+// REEL BUILDER
+// ═══════════════════════════════════════
+function makeTile(hero) {
+  const div = document.createElement('div');
+  div.className = 'reel-tile';
+
+  const url = portrait(hero.key);
+  if (url) {
+    const img = document.createElement('img');
+    img.src = url; img.alt = hero.name;
+    img.onerror = function () {
+      this.remove();
+      const fb = document.createElement('div');
+      fb.className = 'tile-fallback'; fb.textContent = hero.name[0];
+      div.appendChild(fb);
+    };
+    div.appendChild(img);
+  } else {
+    // Portraits not loaded yet or missing — show initial
+    const fb = document.createElement('div');
+    fb.className = 'tile-fallback'; fb.textContent = hero.name[0];
+    div.appendChild(fb);
+  }
+
+  return div;
+}
+
+function buildInitialReel(role) {
+  reelEl.innerHTML = '';
+  shuffle(getPool(role)).forEach(h => reelEl.appendChild(makeTile(h)));
+  reelEl.style.transition = 'none';
+  reelEl.style.transform  = 'translateY(0)';
+}
+
+function resetResult() {
+  resultName.classList.remove('show');
+  resultLbl.classList.remove('show');
+  resultName.textContent = '';
+  slotFrame.classList.remove('spinning', 'done');
+  reelEl.style.transition = 'none';
+  reelEl.style.transform  = 'translateY(0)';
+}
+
+// ═══════════════════════════════════════
+// SPIN
+// ═══════════════════════════════════════
+spinBtn.addEventListener('click', () => { if (!isSpinning) doSpin(); });
+
+function doSpin() {
+  isSpinning = true;
+  spinBtn.disabled = true;
+
+  const pool   = getPool(currentRole);
+  const winner = pool[Math.floor(Math.random() * pool.length)];
+  const N      = pool.length;
+
+  if (playerRef) playerRef.update({ spinning: true, hero: null });
+
+  const winnerSlot = Math.max(1, Math.floor(N / 2));
+  const rep3 = shuffle(pool.filter(h => h.key !== winner.key));
+  rep3.splice(winnerSlot, 0, {...winner});
+
+  const allTiles = [...shuffle(pool), ...shuffle(pool), ...rep3, ...shuffle(pool)];
+
+  reelEl.innerHTML = '';
+  allTiles.forEach(h => reelEl.appendChild(makeTile(h)));
+  reelEl.style.transition = 'none';
+  reelEl.style.transform  = 'translateY(0)';
+
+  slotFrame.classList.remove('done');
+  slotFrame.classList.add('spinning');
+  resultName.classList.remove('show');
+  resultLbl.classList.remove('show');
+
+  const targetY  = -((N * 2 + winnerSlot) * TILE_H);
+  const fastEndY = -(N * 2 * TILE_H);
+  const DURATION = 3200;
+  const t0       = performance.now();
+
+  function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+
+  (function animate(now) {
+    const t = Math.min((now - t0) / DURATION, 1);
+    const y = t < 0.65
+      ? fastEndY * (t / 0.65)
+      : fastEndY + (targetY - fastEndY) * easeOut((t - 0.65) / 0.35);
+    reelEl.style.transform = `translateY(${y}px)`;
+    t < 1 ? requestAnimationFrame(animate) : finishSpin(winner);
+  })(t0);
+}
+
+function finishSpin(winner) {
+  isSpinning = false;
+  spinBtn.disabled = false;
+  slotFrame.classList.remove('spinning');
+  slotFrame.classList.add('done');
+
+  const roleColors = { tank: 'var(--tank)', damage: 'var(--dps)', support: 'var(--supp)' };
+  const roleNames  = { tank: 'Tank', damage: 'Damage', support: 'Support' };
+
+  resultName.textContent = winner.name;
+  resultName.classList.add('show');
+  resultLbl.textContent  = roleNames[winner.role] || 'Hero';
+  resultLbl.style.color  = roleColors[winner.role] || 'var(--any)';
+  resultLbl.classList.add('show');
+
+  if (playerRef) playerRef.update({ hero: winner.name, role: winner.role, spinning: false });
+
+  launchConfetti();
+}
+
+// ═══════════════════════════════════════
+// CONFETTI
+// ═══════════════════════════════════════
+function launchConfetti() {
+  const canvas = document.getElementById('confetti');
+  const ctx    = canvas.getContext('2d');
+  canvas.width = innerWidth; canvas.height = innerHeight;
+  const C = ['#ff6b2b','#00d8ff','#ffd24a','#ff4a4a','#3dff8a','#ffaa66'];
+  const bits = Array.from({length: 100}, () => ({
+    x: Math.random() * canvas.width, y: -10 - Math.random() * 80,
+    vx: (Math.random() - 0.5) * 4.5, vy: 3 + Math.random() * 4.5,
+    w: 5 + Math.random() * 9, h: 3 + Math.random() * 5,
+    rot: Math.random() * Math.PI * 2, rv: (Math.random() - 0.5) * 0.22,
+    col: C[Math.floor(Math.random() * C.length)], a: 1,
+  }));
+  let f = 0;
+  (function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    bits.forEach(b => {
+      b.x += b.vx; b.y += b.vy; b.rot += b.rv;
+      if (f > 55) b.a = Math.max(0, b.a - 0.013);
+      ctx.save(); ctx.globalAlpha = b.a;
+      ctx.translate(b.x, b.y); ctx.rotate(b.rot);
+      ctx.fillStyle = b.col; ctx.fillRect(-b.w/2, -b.h/2, b.w, b.h);
+      ctx.restore();
+    });
+    f++;
+    f < 140 ? requestAnimationFrame(draw) : ctx.clearRect(0, 0, canvas.width, canvas.height);
+  })();
+}
+</script>
+</body>
+</html>
