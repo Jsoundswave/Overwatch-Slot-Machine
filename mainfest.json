@@ -1,0 +1,15 @@
+{
+  "name": "OW Role Roulette",
+  "short_name": "OW Roulette",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#07090f",
+  "theme_color": "#ff6b2b",
+  "icons": [
+    {
+      "src": "OW_roulette_Logo.png",
+      "sizes": "256x256",
+      "type": "image/png"
+    }
+  ]
+}
