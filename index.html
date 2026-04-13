@@ -5,6 +5,9 @@
   <link rel="manifest" href="manifest.json">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#ff6b2b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="OW Roulette">
   <title>OW Role Roulette</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -78,6 +81,7 @@
       display: none; flex-direction: column;
       align-items: center; gap: 1.8rem;
       width: 100%; max-width: 380px; padding-top: 2rem;
+      padding-bottom: 5rem;
     }
     .logo-block { text-align: center; }
     .logo-icon { display: block; margin: 0 auto .6rem; width: 110px; height: 110px; object-fit: contain; }
@@ -119,7 +123,7 @@
       display: none; flex-direction: column;
       align-items: center; gap: 1.1rem;
       width: 100%; max-width: 460px;
-      padding-top: 1rem; padding-bottom: 2rem;
+      padding-top: 1rem; padding-bottom: 5rem;
     }
     .top-bar { width: 100%; display: flex; justify-content: space-between; align-items: center; }
     .tag { background: var(--surf); border: 1px solid var(--border); border-radius: 8px; padding: .35rem .85rem; font-size: .78rem; letter-spacing: 1px; }
@@ -210,12 +214,7 @@
     }
     .party-title { font-size: .7rem; letter-spacing: 4px; text-transform: uppercase; color: var(--dim); }
     .party-count { font-family: 'Bebas Neue', sans-serif; font-size: .95rem; letter-spacing: 2px; color: var(--cyan); }
-    .party-list {
-      padding: .85rem; display: flex; flex-wrap: wrap;
-      gap: .75rem; justify-content: center;
-    }
-
-    /* Grid-style player cards */
+    .party-list { padding: .85rem; display: flex; flex-wrap: wrap; gap: .75rem; justify-content: center; }
     .party-card { display: flex; flex-direction: column; align-items: center; gap: .4rem; width: 90px; }
     .party-portrait {
       width: 90px; height: 90px;
@@ -224,7 +223,7 @@
       position: relative; transition: border-color .3s, box-shadow .3s; flex-shrink: 0;
     }
     .party-portrait img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .party-card.is-you .party-portrait   { border-color: var(--orange); box-shadow: 0 0 12px rgba(255,107,43,.3); }
+    .party-card.is-you .party-portrait    { border-color: var(--orange); box-shadow: 0 0 12px rgba(255,107,43,.3); }
     .party-card.duplicate .party-portrait { border-color: var(--dps);   box-shadow: 0 0 14px rgba(255,74,74,.35); }
     .portrait-placeholder {
       width: 100%; height: 100%;
@@ -256,21 +255,39 @@
     }
     .dup-warning.show { display: block; }
 
+    /* INSTALL BANNER */
+    #install-banner {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 500;
+      background: var(--surf); border-top: 1px solid var(--border2);
+      padding: .85rem 1.1rem;
+      display: flex; align-items: center; justify-content: space-between; gap: .75rem;
+      box-shadow: 0 -4px 24px rgba(0,0,0,.4);
+    }
+    #install-banner.hidden { display: none; }
+    .install-text { font-size: .88rem; letter-spacing: .3px; color: var(--text); line-height: 1.3; }
+    .install-text strong { color: var(--orange); }
+    .install-actions { display: flex; gap: .5rem; flex-shrink: 0; }
+    .btn-install {
+      background: var(--orange); border: none; border-radius: 8px;
+      color: #fff; font-family: 'Bebas Neue', sans-serif;
+      font-size: 1rem; letter-spacing: 2px; padding: .5rem 1rem;
+      cursor: pointer; white-space: nowrap;
+      transition: box-shadow .2s;
+    }
+    .btn-install:hover { box-shadow: 0 0 16px rgba(255,107,43,.5); }
+    .btn-dismiss {
+      background: none; border: 1px solid var(--border); border-radius: 8px;
+      color: var(--dim); font-family: 'Barlow Condensed', sans-serif;
+      font-size: .9rem; letter-spacing: 1px; padding: .5rem .75rem;
+      cursor: pointer; white-space: nowrap;
+    }
+    .btn-dismiss:hover { border-color: var(--dim); }
+
     #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 998; }
-    #install-btn {
-      display: none; position: fixed; top: 1rem; right: 1rem; z-index: 500;
-      background: var(--surf); border: 1.5px solid var(--orange); border-radius: 10px;
-      color: var(--orange); font-family: 'Barlow Condensed', sans-serif;
-      font-size: .85rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
-      padding: .45rem .85rem; cursor: pointer; gap: .4rem; align-items: center;
-      transition: background .2s, color .2s, box-shadow .2s;
-      }
-    #install-btn.visible { display: flex; }
-    #install-btn:hover { background: var(--orange); color: #fff; box-shadow: 0 0 16px rgba(255,107,43,.4); }
   </style>
 </head>
 <body>
-<button id="install-btn">⬇ Install App</button>
+
 <canvas id="confetti"></canvas>
 
 <div id="loading">
@@ -280,7 +297,7 @@
 
 <div id="lobby">
   <div class="logo-block">
-  <img class="logo-icon" src="OW_roulette_Logo.png" alt="OW Role Roulette Logo">
+    <img class="logo-icon" src="OW_roulette_Logo.png" alt="OW Role Roulette Logo">
     <div class="logo-title">ROLE ROULETTE</div>
     <div class="logo-sub">Overwatch 2 &nbsp;&bull;&nbsp; Hero Picker</div>
   </div>
@@ -337,6 +354,15 @@
   </div>
 </div>
 
+<!-- Always-visible install banner -->
+<div id="install-banner">
+  <div class="install-text">Add <strong>OW Roulette</strong> to your home screen for quick access.</div>
+  <div class="install-actions">
+    <button class="btn-install" id="install-btn">Install</button>
+    <button class="btn-dismiss" id="dismiss-btn">Not Now</button>
+  </div>
+</div>
+
 <script>
 // ═══════════════════════════════════════
 // FIREBASE CONFIG
@@ -358,66 +384,28 @@ const db = firebase.database();
 // ═══════════════════════════════════════
 // HERO DATA
 // ═══════════════════════════════════════
-const HEROES = {
-  tank: [
-    { name: "D.Va",          key: "d-va" },
-    { name: "Domina",        key: "domina" },
-    { name: "Doomfist",      key: "doomfist" },
-    { name: "Junker Queen",  key: "junker-queen" },
-    { name: "Mauga",         key: "mauga" },
-    { name: "Orisa",         key: "orisa" },
-    { name: "Ramattra",      key: "ramattra" },
-    { name: "Reinhardt",     key: "reinhardt" },
-    { name: "Roadhog",       key: "roadhog" },
-    { name: "Sigma",         key: "sigma" },
-    { name: "Winston",       key: "winston" },
-    { name: "Wrecking Ball", key: "wrecking-ball" },
-    { name: "Zarya",         key: "zarya" },
-  ],
-  damage: [
-    { name: "Ashe",        key: "ashe" },
-    { name: "Bastion",     key: "bastion" },
-    { name: "Cassidy",     key: "cassidy" },
-    { name: "Echo",        key: "echo" },
-    { name: "Genji",       key: "genji" },
-    { name: "Hanzo",       key: "hanzo" },
-    { name: "Junkrat",     key: "junkrat" },
-    { name: "Mei",         key: "mei" },
-    { name: "Pharah",      key: "pharah" },
-    { name: "Reaper",      key: "reaper" },
-    { name: "Soldier: 76", key: "soldier-76" },
-    { name: "Sojourn",     key: "sojourn" },
-    { name: "Sombra",      key: "sombra" },
-    { name: "Symmetra",    key: "symmetra" },
-    { name: "Torbjorn",    key: "torbjorn" },
-    { name: "Tracer",      key: "tracer" },
-    { name: "Venture",     key: "venture" },
-    { name: "Widowmaker",  key: "widowmaker" },
-  ],
-  support: [
-    { name: "Ana",        key: "ana" },
-    { name: "Baptiste",   key: "baptiste" },
-    { name: "Brigitte",   key: "brigitte" },
-    { name: "Illari",     key: "illari" },
-    { name: "Juno",       key: "juno" },
-    { name: "Kiriko",     key: "kiriko" },
-    { name: "Lifeweaver", key: "lifeweaver" },
-    { name: "Lucio",      key: "lucio" },
-    { name: "Mercy",      key: "mercy" },
-    { name: "Moira",      key: "moira" },
-    { name: "Zenyatta",   key: "zenyatta" },
-  ],
+// The hero list and portraits are loaded dynamically from the OverFast API
+// on every page load, so new heroes appear automatically.
+//
+// MANUAL_HEROES: heroes too new for the API yet. Remove once API picks them up.
+const MANUAL_HEROES = [
+  { name: "Domina",      key: "domina",      role: "tank"    },
+  { name: "Jetpack Cat", key: "jetpack-cat", role: "support" },
+];
+
+// MANUAL_PORTRAITS: CDN URLs for heroes in MANUAL_HEROES.
+const MANUAL_PORTRAITS = {
+  'domina':      'https://d15f34w2p8l1cc.cloudfront.net/overwatch/1161c112292c56c052c0ae711792fcde06e3251b98bc9709e582dd7585b5dcd6.png',
+  'jetpack-cat': 'https://d15f34w2p8l1cc.cloudfront.net/overwatch/d15f34w2p8l1cc.cloudfront.net/overwatch/jetpack-cat-placeholder.png',
+  // D.Va corrected portrait hash
+  'd-va':        'https://d15f34w2p8l1cc.cloudfront.net/overwatch/df5a5532862d9292634fb3dc0e51a4705aa601de65e5e815513ccc663d84de56.png',
 };
 
-// Portrait URL lookup — populated on load from the OverFast API.
-// Newer heroes not yet in the API are pre-seeded here directly.
-const PORTRAITS = {
-  'domina': 'https://d15f34w2p8l1cc.cloudfront.net/overwatch/1161c112292c56c052c0ae711792fcde06e3251b98bc9709e582dd7585b5dcd6.png',
-};
+// Populated on load from the OverFast API + MANUAL entries.
+const HEROES    = { tank: [], damage: [], support: [] };
+const PORTRAITS = {...MANUAL_PORTRAITS};
 
-function portrait(key) {
-  return PORTRAITS[key] || null;
-}
+function portrait(key) { return PORTRAITS[key] || null; }
 
 function heroKeyByName(name) {
   for (const role of Object.values(HEROES)) {
@@ -447,18 +435,23 @@ function shuffle(arr) {
 
 // ═══════════════════════════════════════
 // SESSION STATE
+// Use localStorage so data survives phone lock / browser suspension.
 // ═══════════════════════════════════════
-let playerId = sessionStorage.getItem('owrr_pid');
+const IDLE_TIMEOUT_MS = 45 * 60 * 1000; // 45 minutes
+
+let playerId = localStorage.getItem('owrr_pid');
 if (!playerId) {
   playerId = Math.random().toString(36).slice(2, 10);
-  sessionStorage.setItem('owrr_pid', playerId);
+  localStorage.setItem('owrr_pid', playerId);
 }
 
 let roomCode     = null;
+let playerName   = null;
 let playerRef    = null;
 let roomListener = null;
 let currentRole  = 'any';
 let isSpinning   = false;
+let idleTimer    = null;
 const TILE_H     = 230;
 
 // ═══════════════════════════════════════
@@ -478,31 +471,133 @@ const partyCount = document.getElementById('party-count');
 const dupWarning = document.getElementById('dup-warning');
 
 // ═══════════════════════════════════════
-// INIT — fetch portraits, then show lobby
+// INIT
 // ═══════════════════════════════════════
 document.fonts.ready.then(async () => {
   loadLbl.textContent = 'Loading Heroes...';
 
   try {
-    // Fetch the full hero list from OverFast API.
-    // Each hero object has: { key, name, portrait, role }
-    // portrait is the direct Blizzard CDN URL (d15f34w2p8l1cc.cloudfront.net/...)
     const res  = await fetch('https://overfast-api.tekrop.fr/heroes');
     const data = await res.json();
     data.forEach(h => {
-      if (h.key && h.portrait) PORTRAITS[h.key] = h.portrait;
+      // Store portrait (don't overwrite MANUAL_PORTRAITS overrides)
+      if (h.key && h.portrait && !MANUAL_PORTRAITS[h.key]) {
+        PORTRAITS[h.key] = h.portrait;
+      }
+      // Add to hero pool by role
+      const role = h.role;
+      if (role && HEROES[role]) {
+        HEROES[role].push({ name: h.name, key: h.key });
+      }
     });
   } catch (e) {
-    // If the API is unreachable, portraits fall back to initials — everything else works fine.
-    console.warn('Could not load hero portraits:', e);
+    console.warn('Could not load heroes from API — using manual list only:', e);
   }
 
-  loadingEl.style.display = 'none';
-  lobbyEl.style.display   = 'flex';
+  // Merge MANUAL_HEROES, deduping by key
+  MANUAL_HEROES.forEach(h => {
+    if (HEROES[h.role] && !HEROES[h.role].find(x => x.key === h.key)) {
+      HEROES[h.role].push({ name: h.name, key: h.key });
+    }
+  });
 
-  const p = new URLSearchParams(location.search);
-  const r = p.get('room');
-  if (r && /^\d{4}$/.test(r)) document.getElementById('code-input').value = r;
+  loadingEl.style.display = 'none';
+
+  // Try to restore a previous session (survives phone lock)
+  const savedName = localStorage.getItem('owrr_name');
+  const savedRoom = localStorage.getItem('owrr_room');
+  const savedRole = localStorage.getItem('owrr_role') || 'any';
+  const savedHero = localStorage.getItem('owrr_hero');
+  const savedLastSeen = parseInt(localStorage.getItem('owrr_lastseen') || '0');
+
+  const sessionExpired = Date.now() - savedLastSeen > IDLE_TIMEOUT_MS;
+
+  if (savedName && savedRoom && !sessionExpired) {
+    // Rejoin the room automatically
+    rejoinRoom(savedName, savedRoom, savedRole, savedHero);
+  } else {
+    // Clear stale session data
+    clearLocalSession();
+    lobbyEl.style.display = 'flex';
+    const p = new URLSearchParams(location.search);
+    const r = p.get('room');
+    if (r && /^\d{4}$/.test(r)) document.getElementById('code-input').value = r;
+    if (savedName) document.getElementById('name-input').value = savedName;
+  }
+});
+
+// ═══════════════════════════════════════
+// SESSION PERSISTENCE HELPERS
+// ═══════════════════════════════════════
+function saveLocalSession(name, room, role, hero) {
+  localStorage.setItem('owrr_name', name);
+  localStorage.setItem('owrr_room', room);
+  localStorage.setItem('owrr_role', role || 'any');
+  if (hero) localStorage.setItem('owrr_hero', hero);
+  else localStorage.removeItem('owrr_hero');
+  localStorage.setItem('owrr_lastseen', Date.now().toString());
+}
+
+function clearLocalSession() {
+  localStorage.removeItem('owrr_name');
+  localStorage.removeItem('owrr_room');
+  localStorage.removeItem('owrr_role');
+  localStorage.removeItem('owrr_hero');
+  localStorage.removeItem('owrr_lastseen');
+}
+
+function touchSession() {
+  if (roomCode && playerName) {
+    localStorage.setItem('owrr_lastseen', Date.now().toString());
+    resetIdleTimer();
+  }
+}
+
+// ═══════════════════════════════════════
+// IDLE TIMER — clears room after 45 mins
+// ═══════════════════════════════════════
+function resetIdleTimer() {
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(() => {
+    console.log('Idle timeout — leaving room');
+    leaveRoom();
+    clearLocalSession();
+  }, IDLE_TIMEOUT_MS);
+}
+
+// Track any user interaction to reset idle clock
+['click', 'touchstart', 'keydown'].forEach(evt => {
+  document.addEventListener(evt, touchSession, { passive: true });
+});
+
+// ═══════════════════════════════════════
+// VISIBILITY CHANGE — reconnect after phone unlock
+// ═══════════════════════════════════════
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible') return;
+  if (!roomCode || !playerName) return;
+
+  // Check if we're still registered in Firebase; if not, re-register
+  db.ref(`rooms/${roomCode}/players/${playerId}`).once('value', snap => {
+    if (!snap.exists()) {
+      // Our entry was removed (onDisconnect fired while locked), rejoin silently
+      const savedRole = localStorage.getItem('owrr_role') || 'any';
+      const savedHero = localStorage.getItem('owrr_hero') || null;
+      playerRef = db.ref(`rooms/${roomCode}/players/${playerId}`);
+      playerRef.set({
+        name: playerName,
+        role: savedRole,
+        hero: savedHero,
+        spinning: false,
+        lastSeen: Date.now(),
+      });
+      playerRef.onDisconnect().remove();
+    } else {
+      // Still there, just update lastSeen
+      playerRef.update({ lastSeen: Date.now() });
+    }
+    touchSession();
+  });
 });
 
 // ═══════════════════════════════════════
@@ -521,25 +616,82 @@ function tryJoin() {
   const err  = document.getElementById('join-err');
   if (!name || !/^\d{4}$/.test(code)) { err.style.display = 'block'; return; }
   err.style.display = 'none';
-  roomCode = code;
+  enterRoom(name, code, 'any', null);
+}
 
+function rejoinRoom(name, code, role, hero) {
+  // Set up UI without animation
   document.getElementById('room-tag').textContent   = code;
   document.getElementById('player-tag').textContent = name;
+  enterRoom(name, code, role, hero, true);
+}
+
+function enterRoom(name, code, role, hero, silent = false) {
+  roomCode   = code;
+  playerName = name;
+  currentRole = role || 'any';
 
   const url = new URL(location);
   url.searchParams.set('room', code);
   history.pushState({}, '', url);
 
   playerRef = db.ref(`rooms/${code}/players/${playerId}`);
-  playerRef.set({ name, role: 'any', hero: null, spinning: false });
+  playerRef.set({
+    name,
+    role: currentRole,
+    hero: hero || null,
+    spinning: false,
+    lastSeen: Date.now(),
+  });
   playerRef.onDisconnect().remove();
 
+  // Clean up stale players (lastSeen older than 45 mins) from this room
+  cleanStalePlayersFromRoom(code);
+
   startRoomListener(code);
+  saveLocalSession(name, code, currentRole, hero);
+  resetIdleTimer();
+
+  document.getElementById('room-tag').textContent   = code;
+  document.getElementById('player-tag').textContent = name;
+
+  // Restore role button state
+  document.querySelectorAll('.role-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.role === currentRole);
+  });
 
   lobbyEl.style.display    = 'none';
   spinRoomEl.style.display = 'flex';
-  currentRole = 'any';
-  buildInitialReel('any');
+
+  // Restore result display if we had a hero
+  if (hero) {
+    const roleColors = { tank: 'var(--tank)', damage: 'var(--dps)', support: 'var(--supp)' };
+    const roleNames  = { tank: 'Tank', damage: 'Damage', support: 'Support' };
+    resultName.textContent = hero;
+    resultName.classList.add('show');
+    resultLbl.textContent  = roleNames[currentRole] || 'Hero';
+    resultLbl.style.color  = roleColors[currentRole] || 'var(--any)';
+    resultLbl.classList.add('show');
+    slotFrame.classList.add('done');
+  }
+
+  buildInitialReel(currentRole);
+}
+
+// ═══════════════════════════════════════
+// STALE PLAYER CLEANUP
+// ═══════════════════════════════════════
+function cleanStalePlayersFromRoom(code) {
+  db.ref(`rooms/${code}/players`).once('value', snap => {
+    const players = snap.val();
+    if (!players) return;
+    const cutoff = Date.now() - IDLE_TIMEOUT_MS;
+    Object.entries(players).forEach(([pid, data]) => {
+      if (pid !== playerId && data.lastSeen && data.lastSeen < cutoff) {
+        db.ref(`rooms/${code}/players/${pid}`).remove();
+      }
+    });
+  });
 }
 
 // ═══════════════════════════════════════
@@ -548,6 +700,7 @@ function tryJoin() {
 document.getElementById('back-btn').addEventListener('click', leaveRoom);
 
 function leaveRoom() {
+  clearTimeout(idleTimer);
   if (playerRef) { playerRef.remove(); playerRef = null; }
   if (roomListener && roomCode) {
     db.ref(`rooms/${roomCode}/players`).off('value', roomListener);
@@ -556,6 +709,9 @@ function leaveRoom() {
   isSpinning = false;
   spinBtn.disabled = false;
   roomCode = null;
+  playerName = null;
+  clearLocalSession();
+  resetResult();
   spinRoomEl.style.display = 'none';
   lobbyEl.style.display    = 'flex';
   history.pushState({}, '', location.pathname);
@@ -597,7 +753,6 @@ function renderParty(players) {
     const card = document.createElement('div');
     card.className = ['party-card', isYou && 'is-you', isDup && 'duplicate'].filter(Boolean).join(' ');
 
-    // Portrait box
     const pbox = document.createElement('div');
     pbox.className = 'party-portrait';
 
@@ -624,7 +779,6 @@ function renderParty(players) {
       pbox.innerHTML = `<div class="portrait-placeholder"><div class="portrait-initial">${p.name[0]}</div></div>`;
     }
 
-    // Name
     const nameEl = document.createElement('div');
     nameEl.className = 'party-name' + (isYou ? ' you' : '');
     nameEl.textContent = isYou ? `${p.name} (you)` : p.name;
@@ -632,7 +786,6 @@ function renderParty(players) {
     card.appendChild(pbox);
     card.appendChild(nameEl);
 
-    // Sub-label (hero name, "Spinning...", or role badge)
     if (p.spinning) {
       const sub = document.createElement('div');
       sub.className = 'party-hero-lbl';
@@ -664,7 +817,8 @@ document.querySelectorAll('.role-btn').forEach(btn => {
     document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
     this.classList.add('active');
     currentRole = this.dataset.role;
-    if (playerRef) playerRef.update({ role: currentRole, hero: null });
+    if (playerRef) playerRef.update({ role: currentRole, hero: null, lastSeen: Date.now() });
+    saveLocalSession(playerName, roomCode, currentRole, null);
     buildInitialReel(currentRole);
     resetResult();
   });
@@ -676,7 +830,6 @@ document.querySelectorAll('.role-btn').forEach(btn => {
 function makeTile(hero) {
   const div = document.createElement('div');
   div.className = 'reel-tile';
-
   const url = portrait(hero.key);
   if (url) {
     const img = document.createElement('img');
@@ -689,12 +842,10 @@ function makeTile(hero) {
     };
     div.appendChild(img);
   } else {
-    // Portraits not loaded yet or missing — show initial
     const fb = document.createElement('div');
     fb.className = 'tile-fallback'; fb.textContent = hero.name[0];
     div.appendChild(fb);
   }
-
   return div;
 }
 
@@ -727,7 +878,7 @@ function doSpin() {
   const winner = pool[Math.floor(Math.random() * pool.length)];
   const N      = pool.length;
 
-  if (playerRef) playerRef.update({ spinning: true, hero: null });
+  if (playerRef) playerRef.update({ spinning: true, hero: null, lastSeen: Date.now() });
 
   const winnerSlot = Math.max(1, Math.floor(N / 2));
   const rep3 = shuffle(pool.filter(h => h.key !== winner.key));
@@ -777,7 +928,8 @@ function finishSpin(winner) {
   resultLbl.style.color  = roleColors[winner.role] || 'var(--any)';
   resultLbl.classList.add('show');
 
-  if (playerRef) playerRef.update({ hero: winner.name, role: winner.role, spinning: false });
+  if (playerRef) playerRef.update({ hero: winner.name, role: winner.role, spinning: false, lastSeen: Date.now() });
+  saveLocalSession(playerName, roomCode, winner.role, winner.name);
 
   launchConfetti();
 }
@@ -812,22 +964,46 @@ function launchConfetti() {
     f < 140 ? requestAnimationFrame(draw) : ctx.clearRect(0, 0, canvas.width, canvas.height);
   })();
 }
-  let deferredPrompt = null;
-const installBtn = document.getElementById('install-btn');
+
+// ═══════════════════════════════════════
+// INSTALL BANNER
+// ═══════════════════════════════════════
+const installBanner = document.getElementById('install-banner');
+const installBtn    = document.getElementById('install-btn');
+const dismissBtn    = document.getElementById('dismiss-btn');
+let deferredPrompt  = null;
+
+// Hide if already dismissed this session
+if (sessionStorage.getItem('banner_dismissed')) {
+  installBanner.classList.add('hidden');
+}
+
+// Catch the native install prompt if available (Chrome/Android)
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   deferredPrompt = e;
-  installBtn.classList.add('visible');
 });
+
 installBtn.addEventListener('click', async () => {
-  if (!deferredPrompt) return;
-  deferredPrompt.prompt();
-  const { outcome } = await deferredPrompt.userChoice;
-  if (outcome === 'accepted') installBtn.classList.remove('visible');
-  deferredPrompt = null;
+  if (deferredPrompt) {
+    // Chrome: trigger native install dialog
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') installBanner.classList.add('hidden');
+    deferredPrompt = null;
+  } else {
+    // Safari / other: show manual instructions
+    alert('To install:\n\niOS Safari: tap the Share button, then "Add to Home Screen"\n\nAndroid Chrome: tap the menu (⋮), then "Add to Home Screen"');
+  }
 });
+
+dismissBtn.addEventListener('click', () => {
+  installBanner.classList.add('hidden');
+  sessionStorage.setItem('banner_dismissed', '1');
+});
+
 window.addEventListener('appinstalled', () => {
-  installBtn.classList.remove('visible');
+  installBanner.classList.add('hidden');
 });
 </script>
 </body>
