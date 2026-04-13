@@ -475,7 +475,7 @@ function heroKeyByName(name) {
 
 function getPool(roles) {
   // roles can be 'any', a single role string, or an array of role strings
-  if (roles === 'any' || (Array.isArray(roles) && roles.length === 0)) return [
+  if (!list.length || list.includes('any')) return [
     ...HEROES.tank.map(h    => ({...h, role: 'tank'})),
     ...HEROES.damage.map(h  => ({...h, role: 'damage'})),
     ...HEROES.support.map(h => ({...h, role: 'support'})),
