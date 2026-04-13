@@ -651,7 +651,7 @@ document.addEventListener('visibilitychange', () => {
         spinning: false,
         lastSeen: Date.now(),
       });
-      playerRef.onDisconnect().remove();
+      playerRef.onDisconnect().update({ lastSeen: Time.now() });
     } else {
       // Still there, just update lastSeen
       playerRef.update({ lastSeen: Date.now() });
@@ -745,7 +745,7 @@ function enterRoom(name, code, role, hero, silent = false) {
     spinning: false,
     lastSeen: Date.now(),
   });
-  playerRef.onDisconnect().remove();
+  playerRef.onDisconnect().update({ lastSeen: Time.now() });
 
   // Clean up stale players (lastSeen older than 45 mins) from this room
   cleanStalePlayersFromRoom(code);
