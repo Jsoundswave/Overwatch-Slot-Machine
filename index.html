@@ -106,6 +106,7 @@
     #code-input { text-align: center; font-size: 2rem !important; letter-spacing: 12px !important; }
     .field input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(255,107,43,.13); }
     .err { color: var(--dps); font-size: .85rem; text-align: center; margin-top: .8rem; display: none; }
+
     /* Lobby action buttons */
     .lobby-actions {
       display: grid; grid-template-columns: 1fr 1fr; gap: .75rem;
@@ -120,7 +121,6 @@
     }
     .btn-create:hover { box-shadow: 0 4px 28px rgba(255,107,43,.5); transform: translateY(-1px); }
     .btn-create:active { transform: none; }
-
     .btn-join {
       display: block; padding: .9rem;
       background: transparent; border: 2px solid var(--orange); border-radius: 10px;
@@ -131,16 +131,13 @@
     .btn-join:hover { background: var(--orange); color: #fff; transform: translateY(-1px); }
     .btn-join:active { transform: none; }
 
-    /* Join panel — hidden until Join is clicked */
+    /* Join panel */
     #join-panel {
-      width: 100%;
-      overflow: hidden;
-      max-height: 0;
-      opacity: 0;
+      width: 100%; overflow: hidden;
+      max-height: 0; opacity: 0;
       transition: max-height .3s ease, opacity .25s ease;
     }
     #join-panel.open { max-height: 200px; opacity: 1; }
-
     .lobby-hint { font-size: .8rem; color: var(--dim); text-align: center; letter-spacing: 1px; }
 
     /* Generated code display */
@@ -151,10 +148,7 @@
     }
     .room-code-display.show { display: flex; }
     .room-code-lbl { font-size: .7rem; letter-spacing: 4px; text-transform: uppercase; color: var(--dim); }
-    .room-code-val {
-      font-family: 'Bebas Neue', sans-serif; font-size: 3rem;
-      letter-spacing: 14px; color: var(--cyan); line-height: 1;
-    }
+    .room-code-val { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; letter-spacing: 14px; color: var(--cyan); line-height: 1; }
     .room-code-hint { font-size: .75rem; color: var(--dim); letter-spacing: 1px; }
 
     /* SPIN ROOM */
@@ -186,10 +180,10 @@
     }
     .role-btn .ri { font-size: 1.25rem; line-height: 1; }
     .role-btn.active[data-role="any"]     { border-color: var(--any);  color: var(--any);  background: rgba(255,210,74,.08);  box-shadow: 0 0 18px rgba(255,210,74,.15); }
-    .role-btn.disabled { opacity: .25; pointer-events: none; }
     .role-btn.active[data-role="tank"]    { border-color: var(--tank); color: var(--tank); background: rgba(91,158,255,.08);  box-shadow: 0 0 18px rgba(91,158,255,.15); }
     .role-btn.active[data-role="damage"]  { border-color: var(--dps);  color: var(--dps);  background: rgba(255,74,74,.08);   box-shadow: 0 0 18px rgba(255,74,74,.15); }
     .role-btn.active[data-role="support"] { border-color: var(--supp); color: var(--supp); background: rgba(61,255,138,.08);  box-shadow: 0 0 18px rgba(61,255,138,.15); }
+    .role-btn.disabled { opacity: .25; pointer-events: none; }
 
     /* Slot Machine */
     .slot-outer { width: 100%; display: flex; flex-direction: column; align-items: center; gap: .75rem; }
@@ -260,16 +254,16 @@
     .party-portrait {
       width: 90px; height: 90px;
       border: 2px solid var(--border2); border-radius: 12px;
-      overflow: hidden; background: var(--surf2);
+      overflow: visible; background: var(--surf2);
       position: relative; transition: border-color .3s, box-shadow .3s; flex-shrink: 0;
     }
-    .party-portrait img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .party-portrait img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 10px; }
     .party-card.is-you .party-portrait    { border-color: var(--orange); box-shadow: 0 0 12px rgba(255,107,43,.3); }
     .party-card.duplicate .party-portrait { border-color: var(--dps);   box-shadow: 0 0 14px rgba(255,74,74,.35); }
     .portrait-placeholder {
       width: 100%; height: 100%;
       display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
-      background: var(--surf2);
+      background: var(--surf2); border-radius: 10px;
     }
     .portrait-initial { font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; color: var(--border2); line-height: 1; }
     .party-name { font-size: .82rem; font-weight: 700; letter-spacing: .5px; text-align: center; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
@@ -296,6 +290,24 @@
     }
     .dup-warning.show { display: block; }
 
+    /* DUNCE HAT + WIMP TOAST */
+    .dunce-hat {
+      position: absolute; top: -12px; left: 50%;
+      transform: translateX(-50%);
+      font-size: 1.6rem; z-index: 3;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,.6));
+      pointer-events: none;
+    }
+    #wimp-toast {
+      position: fixed; top: 1.5rem; left: 50%; transform: translateX(-50%);
+      background: var(--dps); color: #fff;
+      font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: 3px;
+      padding: .6rem 1.4rem; border-radius: 10px;
+      opacity: 0; pointer-events: none; transition: opacity .3s ease;
+      z-index: 600; white-space: nowrap;
+    }
+    #wimp-toast.show { opacity: 1; }
+
     /* INSTALL BANNER */
     #install-banner {
       position: fixed; bottom: 0; left: 0; right: 0; z-index: 500;
@@ -312,8 +324,7 @@
       background: var(--orange); border: none; border-radius: 8px;
       color: #fff; font-family: 'Bebas Neue', sans-serif;
       font-size: 1rem; letter-spacing: 2px; padding: .5rem 1rem;
-      cursor: pointer; white-space: nowrap;
-      transition: box-shadow .2s;
+      cursor: pointer; white-space: nowrap; transition: box-shadow .2s;
     }
     .btn-install:hover { box-shadow: 0 0 16px rgba(255,107,43,.5); }
     .btn-dismiss {
@@ -330,6 +341,7 @@
 <body>
 
 <canvas id="confetti"></canvas>
+<div id="wimp-toast"></div>
 
 <div id="loading">
   <div class="spinner"></div>
@@ -352,8 +364,6 @@
       <button class="btn-create" id="create-btn">CREATE ROOM</button>
       <button class="btn-join" id="join-toggle-btn">JOIN ROOM</button>
     </div>
-
-    <!-- Shown only when Join Room is clicked -->
     <div id="join-panel">
       <div class="field" style="margin-top:1rem; margin-bottom:0;">
         <label>Room Code</label>
@@ -362,15 +372,12 @@
       <button class="btn-create" id="join-btn" style="margin-top:.75rem;">JOIN</button>
     </div>
   </div>
-
-  <!-- Shown after Create Room, displays the generated code -->
   <div class="room-code-display" id="code-display">
     <div class="room-code-lbl">Your Room Code</div>
     <div class="room-code-val" id="generated-code">----</div>
     <div class="room-code-hint">Share this with your squad then tap below</div>
     <button class="btn-create" id="enter-room-btn" style="width:100%; margin-top:.5rem;">ENTER ROOM</button>
   </div>
-
   <p class="lobby-hint">Create a room and share the code, or join a friend's room.</p>
 </div>
 
@@ -412,7 +419,6 @@
   </div>
 </div>
 
-<!-- Always-visible install banner -->
 <div id="install-banner">
   <div class="install-text">Add <strong>OW Roulette</strong> to your home screen for quick access.</div>
   <div class="install-actions">
@@ -442,24 +448,16 @@ const db = firebase.database();
 // ═══════════════════════════════════════
 // HERO DATA
 // ═══════════════════════════════════════
-// The hero list and portraits are loaded dynamically from the OverFast API
-// on every page load, so new heroes appear automatically.
-//
-// MANUAL_HEROES: heroes too new for the API yet. Remove once API picks them up.
 const MANUAL_HEROES = [
   { name: "Domina",      key: "domina",      role: "tank"    },
   { name: "Jetpack Cat", key: "jetpack-cat", role: "support" },
 ];
 
-// MANUAL_PORTRAITS: CDN URLs for heroes in MANUAL_HEROES.
 const MANUAL_PORTRAITS = {
   'domina':      'https://d15f34w2p8l1cc.cloudfront.net/overwatch/1161c112292c56c052c0ae711792fcde06e3251b98bc9709e582dd7585b5dcd6.png',
-  'jetpack-cat': 'https://d15f34w2p8l1cc.cloudfront.net/overwatch/d15f34w2p8l1cc.cloudfront.net/overwatch/jetpack-cat-placeholder.png',
-  // D.Va corrected portrait hash
   'd-va':        'https://d15f34w2p8l1cc.cloudfront.net/overwatch/df5a5532862d9292634fb3dc0e51a4705aa601de65e5e815513ccc663d84de56.png',
 };
 
-// Populated on load from the OverFast API + MANUAL entries.
 const HEROES    = { tank: [], damage: [], support: [] };
 const PORTRAITS = {...MANUAL_PORTRAITS};
 
@@ -473,14 +471,14 @@ function heroKeyByName(name) {
   return null;
 }
 
+// FIX 1: const list declared BEFORE the if that uses it
 function getPool(roles) {
-  // roles can be 'any', a single role string, or an array of role strings
+  const list = Array.isArray(roles) ? roles : [roles];
   if (!list.length || list.includes('any')) return [
     ...HEROES.tank.map(h    => ({...h, role: 'tank'})),
     ...HEROES.damage.map(h  => ({...h, role: 'damage'})),
     ...HEROES.support.map(h => ({...h, role: 'support'})),
   ];
-  const list = Array.isArray(roles) ? roles : [roles];
   return list.flatMap(r => (HEROES[r] || []).map(h => ({...h, role: r})));
 }
 
@@ -495,9 +493,8 @@ function shuffle(arr) {
 
 // ═══════════════════════════════════════
 // SESSION STATE
-// Use localStorage so data survives phone lock / browser suspension.
 // ═══════════════════════════════════════
-const IDLE_TIMEOUT_MS = 45 * 60 * 1000; // 45 minutes
+const IDLE_TIMEOUT_MS = 45 * 60 * 1000;
 
 let playerId = localStorage.getItem('owrr_pid');
 if (!playerId) {
@@ -505,14 +502,16 @@ if (!playerId) {
   localStorage.setItem('owrr_pid', playerId);
 }
 
-let roomCode     = null;
-let playerName   = null;
-let playerRef    = null;
-let roomListener = null;
-let selectedRoles = ['any']; // array; ['any'] means all roles
-let isSpinning   = false;
-let idleTimer    = null;
-const TILE_H     = 230;
+let roomCode      = null;
+let playerName    = null;
+let playerRef     = null;
+let roomListener  = null;
+let selectedRoles = ['any'];
+let isSpinning    = false;
+let idleTimer     = null;
+let spinTimestamps = [];
+const shownDunce  = new Set();
+const TILE_H      = 230;
 
 // ═══════════════════════════════════════
 // DOM REFS
@@ -540,21 +539,14 @@ document.fonts.ready.then(async () => {
     const res  = await fetch('https://overfast-api.tekrop.fr/heroes');
     const data = await res.json();
     data.forEach(h => {
-      // Store portrait (don't overwrite MANUAL_PORTRAITS overrides)
-      if (h.key && h.portrait && !MANUAL_PORTRAITS[h.key]) {
-        PORTRAITS[h.key] = h.portrait;
-      }
-      // Add to hero pool by role
+      if (h.key && h.portrait && !MANUAL_PORTRAITS[h.key]) PORTRAITS[h.key] = h.portrait;
       const role = h.role;
-      if (role && HEROES[role]) {
-        HEROES[role].push({ name: h.name, key: h.key });
-      }
+      if (role && HEROES[role]) HEROES[role].push({ name: h.name, key: h.key });
     });
   } catch (e) {
     console.warn('Could not load heroes from API — using manual list only:', e);
   }
 
-  // Merge MANUAL_HEROES, deduping by key
   MANUAL_HEROES.forEach(h => {
     if (HEROES[h.role] && !HEROES[h.role].find(x => x.key === h.key)) {
       HEROES[h.role].push({ name: h.name, key: h.key });
@@ -563,20 +555,16 @@ document.fonts.ready.then(async () => {
 
   loadingEl.style.display = 'none';
 
-  // Try to restore a previous session (survives phone lock)
-  const savedName = localStorage.getItem('owrr_name');
-  const savedRoom = localStorage.getItem('owrr_room');
-  const savedRole = localStorage.getItem('owrr_role') || 'any';
-  const savedHero = localStorage.getItem('owrr_hero');
+  const savedName     = localStorage.getItem('owrr_name');
+  const savedRoom     = localStorage.getItem('owrr_room');
+  const savedRole     = localStorage.getItem('owrr_role') || 'any';
+  const savedHero     = localStorage.getItem('owrr_hero');
   const savedLastSeen = parseInt(localStorage.getItem('owrr_lastseen') || '0');
-
   const sessionExpired = Date.now() - savedLastSeen > IDLE_TIMEOUT_MS;
 
   if (savedName && savedRoom && !sessionExpired) {
-    // Rejoin the room automatically
     rejoinRoom(savedName, savedRoom, savedRole, savedHero);
   } else {
-    // Clear stale session data
     clearLocalSession();
     lobbyEl.style.display = 'flex';
     const p = new URLSearchParams(location.search);
@@ -587,23 +575,19 @@ document.fonts.ready.then(async () => {
 });
 
 // ═══════════════════════════════════════
-// SESSION PERSISTENCE HELPERS
+// SESSION HELPERS
 // ═══════════════════════════════════════
 function saveLocalSession(name, room, role, hero) {
   localStorage.setItem('owrr_name', name);
   localStorage.setItem('owrr_room', room);
-  localStorage.setItem('owrr_role', role || 'any');
+  localStorage.setItem('owrr_role', Array.isArray(role) ? role.join(',') : (role || 'any'));
   if (hero) localStorage.setItem('owrr_hero', hero);
   else localStorage.removeItem('owrr_hero');
   localStorage.setItem('owrr_lastseen', Date.now().toString());
 }
 
 function clearLocalSession() {
-  localStorage.removeItem('owrr_name');
-  localStorage.removeItem('owrr_room');
-  localStorage.removeItem('owrr_role');
-  localStorage.removeItem('owrr_hero');
-  localStorage.removeItem('owrr_lastseen');
+  ['owrr_name','owrr_room','owrr_role','owrr_hero','owrr_lastseen'].forEach(k => localStorage.removeItem(k));
 }
 
 function touchSession() {
@@ -614,46 +598,31 @@ function touchSession() {
 }
 
 // ═══════════════════════════════════════
-// IDLE TIMER — clears room after 45 mins
+// IDLE TIMER
 // ═══════════════════════════════════════
 function resetIdleTimer() {
   clearTimeout(idleTimer);
-  idleTimer = setTimeout(() => {
-    console.log('Idle timeout — leaving room');
-    leaveRoom();
-    clearLocalSession();
-  }, IDLE_TIMEOUT_MS);
+  idleTimer = setTimeout(() => { leaveRoom(); clearLocalSession(); }, IDLE_TIMEOUT_MS);
 }
 
-// Track any user interaction to reset idle clock
 ['click', 'touchstart', 'keydown'].forEach(evt => {
   document.addEventListener(evt, touchSession, { passive: true });
 });
 
 // ═══════════════════════════════════════
-// VISIBILITY CHANGE — reconnect after phone unlock
+// VISIBILITY CHANGE
 // ═══════════════════════════════════════
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState !== 'visible') return;
-  if (!roomCode || !playerName) return;
-
-  // Check if we're still registered in Firebase; if not, re-register
+  if (document.visibilityState !== 'visible' || !roomCode || !playerName) return;
   db.ref(`rooms/${roomCode}/players/${playerId}`).once('value', snap => {
     if (!snap.exists()) {
-      // Our entry was removed (onDisconnect fired while locked), rejoin silently
       const savedRole = localStorage.getItem('owrr_role') || 'any';
       const savedHero = localStorage.getItem('owrr_hero') || null;
       playerRef = db.ref(`rooms/${roomCode}/players/${playerId}`);
-      playerRef.set({
-        name: playerName,
-        role: savedRole,
-        hero: savedHero,
-        spinning: false,
-        lastSeen: Date.now(),
-      });
-      playerRef.onDisconnect().update({ lastSeen: Time.now() });
+      playerRef.set({ name: playerName, role: savedRole, hero: savedHero, spinning: false, dunce: false, lastSeen: Date.now() });
+      // FIX 2: Date.now() not Time.now()
+      playerRef.onDisconnect().update({ lastSeen: Date.now() });
     } else {
-      // Still there, just update lastSeen
       playerRef.update({ lastSeen: Date.now() });
     }
     touchSession();
@@ -663,9 +632,7 @@ document.addEventListener('visibilitychange', () => {
 // ═══════════════════════════════════════
 // LOBBY
 // ═══════════════════════════════════════
-function generateCode() {
-  return String(Math.floor(1000 + Math.random() * 9000));
-}
+function generateCode() { return String(Math.floor(1000 + Math.random() * 9000)); }
 
 function showErr(msg) {
   const err = document.getElementById('join-err');
@@ -673,19 +640,14 @@ function showErr(msg) {
   err.style.display = msg ? 'block' : 'none';
 }
 
-// Toggle join panel open/closed
 document.getElementById('join-toggle-btn').addEventListener('click', () => {
   const panel = document.getElementById('join-panel');
-  const codeDisplay = document.getElementById('code-display');
-  codeDisplay.classList.remove('show');
+  document.getElementById('code-display').classList.remove('show');
   panel.classList.toggle('open');
   showErr('');
-  if (panel.classList.contains('open')) {
-    document.getElementById('code-input').focus();
-  }
+  if (panel.classList.contains('open')) document.getElementById('code-input').focus();
 });
 
-// Create Room — generate a code, show it, wait for confirmation
 document.getElementById('create-btn').addEventListener('click', () => {
   const name = document.getElementById('name-input').value.trim();
   if (!name) { showErr('Enter your callsign first.'); return; }
@@ -696,14 +658,12 @@ document.getElementById('create-btn').addEventListener('click', () => {
   document.getElementById('code-display').classList.add('show');
 });
 
-// Enter Room after seeing the generated code
 document.getElementById('enter-room-btn').addEventListener('click', () => {
   const name = document.getElementById('name-input').value.trim();
   const code = document.getElementById('generated-code').textContent;
   enterRoom(name, code, 'any', null);
 });
 
-// Join Room — submit the manually entered code
 document.getElementById('join-btn').addEventListener('click', tryJoin);
 document.getElementById('name-input').addEventListener('keydown', e => e.key === 'Enter' && tryJoin());
 document.getElementById('code-input').addEventListener('keydown', e => e.key === 'Enter' && tryJoin());
@@ -721,16 +681,15 @@ function tryJoin() {
 }
 
 function rejoinRoom(name, code, role, hero) {
-  // Set up UI without animation
   document.getElementById('room-tag').textContent   = code;
   document.getElementById('player-tag').textContent = name;
   enterRoom(name, code, role, hero, true);
 }
 
 function enterRoom(name, code, role, hero, silent = false) {
-  roomCode   = code;
-  playerName = name;
-  selectedRoles = Array.isArray(role) ? role : [role || 'any'];
+  roomCode      = code;
+  playerName    = name;
+  selectedRoles = Array.isArray(role) ? role : (typeof role === 'string' && role.includes(',') ? role.split(',') : [role || 'any']);
 
   const url = new URL(location);
   url.searchParams.set('room', code);
@@ -743,13 +702,13 @@ function enterRoom(name, code, role, hero, silent = false) {
     role: roleForDB,
     hero: hero || null,
     spinning: false,
+    dunce: false,
     lastSeen: Date.now(),
   });
-  playerRef.onDisconnect().update({ lastSeen: Time.now() });
+  // FIX 2: Date.now() not Time.now()
+  playerRef.onDisconnect().update({ lastSeen: Date.now() });
 
-  // Clean up stale players (lastSeen older than 45 mins) from this room
   cleanStalePlayersFromRoom(code);
-
   startRoomListener(code);
   saveLocalSession(name, code, selectedRoles, hero);
   resetIdleTimer();
@@ -760,11 +719,10 @@ function enterRoom(name, code, role, hero, silent = false) {
   lobbyEl.style.display    = 'none';
   spinRoomEl.style.display = 'flex';
 
-  // Restore result display if we had a hero
   if (hero) {
     const roleColors = { tank: 'var(--tank)', damage: 'var(--dps)', support: 'var(--supp)' };
     const roleNames  = { tank: 'Tank', damage: 'Damage', support: 'Support' };
-    const singleRole = Array.isArray(selectedRoles) && selectedRoles.length === 1 ? selectedRoles[0] : null;
+    const singleRole = selectedRoles.length === 1 ? selectedRoles[0] : null;
     resultName.textContent = hero;
     resultName.classList.add('show');
     resultLbl.textContent  = roleNames[singleRole] || 'Hero';
@@ -773,7 +731,7 @@ function enterRoom(name, code, role, hero, silent = false) {
     slotFrame.classList.add('done');
   }
 
-  if (typeof syncRoleButtons === 'function') syncRoleButtons();
+  syncRoleButtons();
   buildInitialReel(selectedRoles);
 }
 
@@ -824,6 +782,14 @@ function startRoomListener(code) {
   roomListener = ref.on('value', snapshot => {
     renderParty(snapshot.val() || {});
   });
+}
+
+// FIX 3: showWimpToast defined OUTSIDE renderParty as a standalone function
+function showWimpToast(name) {
+  const toast = document.getElementById('wimp-toast');
+  toast.textContent = `🎩 ${name} is a WIMP!`;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 4000);
 }
 
 function renderParty(players) {
@@ -878,6 +844,22 @@ function renderParty(players) {
       pbox.innerHTML = `<div class="portrait-placeholder"><div class="portrait-initial">${p.name[0]}</div></div>`;
     }
 
+    // Dunce hat overlay
+    if (p.dunce) {
+      const hat = document.createElement('div');
+      hat.className = 'dunce-hat';
+      hat.textContent = '🎩';
+      pbox.appendChild(hat);
+    }
+
+    // Toast notification (only once per dunce session)
+    if (p.dunce && !shownDunce.has(k)) {
+      shownDunce.add(k);
+      showWimpToast(p.name);
+    } else if (!p.dunce) {
+      shownDunce.delete(k);
+    }
+
     const nameEl = document.createElement('div');
     nameEl.className = 'party-name' + (isYou ? ' you' : '');
     nameEl.textContent = isYou ? `${p.name} (you)` : p.name;
@@ -911,9 +893,9 @@ function renderParty(players) {
 // ROLE SELECTION (multi-select)
 // ═══════════════════════════════════════
 function syncRoleButtons() {
-  const anyBtn  = document.querySelector('.role-btn[data-role="any"]');
+  const anyBtn   = document.querySelector('.role-btn[data-role="any"]');
   const roleBtns = document.querySelectorAll('.role-btn:not([data-role="any"])');
-  const isAny   = selectedRoles.includes('any');
+  const isAny    = selectedRoles.includes('any');
 
   anyBtn.classList.toggle('active', isAny);
   anyBtn.classList.toggle('disabled', !isAny && selectedRoles.length > 0);
@@ -999,6 +981,15 @@ spinBtn.addEventListener('click', () => { if (!isSpinning) doSpin(); });
 function doSpin() {
   isSpinning = true;
   spinBtn.disabled = true;
+
+  // Dunce hat check
+  const now = Date.now();
+  spinTimestamps = spinTimestamps.filter(t => now - t < 60000);
+  spinTimestamps.push(now);
+  if (spinTimestamps.length > 3 && playerRef) {
+    playerRef.update({ dunce: true });
+    setTimeout(() => { if (playerRef) playerRef.update({ dunce: false }); }, 120000);
+  }
 
   const pool   = getPool(selectedRoles);
   const winner = pool[Math.floor(Math.random() * pool.length)];
@@ -1099,12 +1090,8 @@ const installBtn    = document.getElementById('install-btn');
 const dismissBtn    = document.getElementById('dismiss-btn');
 let deferredPrompt  = null;
 
-// Hide if already dismissed this session
-if (sessionStorage.getItem('banner_dismissed')) {
-  installBanner.classList.add('hidden');
-}
+if (sessionStorage.getItem('banner_dismissed')) installBanner.classList.add('hidden');
 
-// Catch the native install prompt if available (Chrome/Android)
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   deferredPrompt = e;
@@ -1112,14 +1099,12 @@ window.addEventListener('beforeinstallprompt', e => {
 
 installBtn.addEventListener('click', async () => {
   if (deferredPrompt) {
-    // Chrome: trigger native install dialog
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
     if (outcome === 'accepted') installBanner.classList.add('hidden');
     deferredPrompt = null;
   } else {
-    // Safari / other: show manual instructions
-    alert('To install:\n\niOS Safari: tap the Share button, then "Add to Home Screen"\n\nAndroid Chrome: tap the menu (⋮), then "Add to Home Screen"');
+    alert('To install:\n\niOS Safari: tap the Share button, then "Add to Home Screen"\n\nAndroid Chrome: tap the menu (\u22EE), then "Add to Home Screen"');
   }
 });
 
@@ -1128,9 +1113,7 @@ dismissBtn.addEventListener('click', () => {
   sessionStorage.setItem('banner_dismissed', '1');
 });
 
-window.addEventListener('appinstalled', () => {
-  installBanner.classList.add('hidden');
-});
+window.addEventListener('appinstalled', () => installBanner.classList.add('hidden'));
 </script>
 </body>
 </html>
