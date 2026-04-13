@@ -33,30 +33,23 @@
     html, body { height: 100%; }
 
     body {
-      background: var(--bg);
-      color: var(--text);
+      background: var(--bg); color: var(--text);
       font-family: 'Barlow Condensed', sans-serif;
-      min-height: 100vh;
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-      padding: 1rem;
-      overflow-x: hidden;
+      min-height: 100vh; display: flex;
+      align-items: flex-start; justify-content: center;
+      padding: 1rem; overflow-x: hidden;
     }
 
     body::before {
-      content: '';
-      position: fixed; inset: 0;
+      content: ''; position: fixed; inset: 0;
       background-image:
         linear-gradient(rgba(255,107,43,.025) 1px, transparent 1px),
         linear-gradient(90deg, rgba(255,107,43,.025) 1px, transparent 1px);
-      background-size: 44px 44px;
-      pointer-events: none; z-index: 0;
+      background-size: 44px 44px; pointer-events: none; z-index: 0;
     }
 
     body::after {
-      content: '';
-      position: fixed; inset: 0;
+      content: ''; position: fixed; inset: 0;
       background: repeating-linear-gradient(to bottom, transparent 0, transparent 1px, rgba(0,0,0,.05) 1px, rgba(0,0,0,.05) 2px);
       pointer-events: none; z-index: 999;
     }
@@ -77,17 +70,14 @@
 
     /* LOBBY */
     #lobby {
-      position: relative; z-index: 1;
-      display: none; flex-direction: column;
+      position: relative; z-index: 1; display: none; flex-direction: column;
       align-items: center; gap: 1.8rem;
-      width: 100%; max-width: 380px; padding-top: 2rem;
-      padding-bottom: 5rem;
+      width: 100%; max-width: 380px; padding-top: 2rem; padding-bottom: 5rem;
     }
     .logo-block { text-align: center; }
     .logo-icon { display: block; margin: 0 auto .6rem; width: 110px; height: 110px; object-fit: contain; }
     .logo-title {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 3.8rem; letter-spacing: 6px; line-height: 1;
+      font-family: 'Bebas Neue', sans-serif; font-size: 3.8rem; letter-spacing: 6px; line-height: 1;
       background: linear-gradient(135deg, var(--orange) 0%, #ffaa66 45%, var(--cyan) 100%);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     }
@@ -98,53 +88,34 @@
     .field label { display: block; font-size: .72rem; letter-spacing: 3px; text-transform: uppercase; color: var(--dim); margin-bottom: .45rem; }
     .field input {
       width: 100%; background: var(--bg); border: 1.5px solid var(--border);
-      border-radius: 10px; color: var(--text);
-      font-family: 'Barlow Condensed', sans-serif;
+      border-radius: 10px; color: var(--text); font-family: 'Barlow Condensed', sans-serif;
       font-size: 1.1rem; font-weight: 600; padding: .7rem 1rem;
       outline: none; transition: border-color .2s, box-shadow .2s;
     }
     #code-input { text-align: center; font-size: 2rem !important; letter-spacing: 12px !important; }
     .field input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(255,107,43,.13); }
     .err { color: var(--dps); font-size: .85rem; text-align: center; margin-top: .8rem; display: none; }
-
-    /* Lobby action buttons */
-    .lobby-actions {
-      display: grid; grid-template-columns: 1fr 1fr; gap: .75rem;
-      width: 100%; margin-top: 1.3rem;
-    }
+    .lobby-actions { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; width: 100%; margin-top: 1.3rem; }
     .btn-create {
-      display: block; padding: .9rem;
-      background: var(--orange); border: none; border-radius: 10px;
-      color: #fff; font-family: 'Bebas Neue', sans-serif;
-      font-size: 1.2rem; letter-spacing: 2px; cursor: pointer;
-      transition: box-shadow .2s, transform .1s;
+      display: block; padding: .9rem; background: var(--orange); border: none; border-radius: 10px;
+      color: #fff; font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: 2px;
+      cursor: pointer; transition: box-shadow .2s, transform .1s;
     }
     .btn-create:hover { box-shadow: 0 4px 28px rgba(255,107,43,.5); transform: translateY(-1px); }
     .btn-create:active { transform: none; }
     .btn-join {
-      display: block; padding: .9rem;
-      background: transparent; border: 2px solid var(--orange); border-radius: 10px;
-      color: var(--orange); font-family: 'Bebas Neue', sans-serif;
-      font-size: 1.2rem; letter-spacing: 2px; cursor: pointer;
-      transition: background .2s, color .2s, transform .1s;
+      display: block; padding: .9rem; background: transparent; border: 2px solid var(--orange);
+      border-radius: 10px; color: var(--orange); font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.2rem; letter-spacing: 2px; cursor: pointer; transition: background .2s, color .2s, transform .1s;
     }
     .btn-join:hover { background: var(--orange); color: #fff; transform: translateY(-1px); }
     .btn-join:active { transform: none; }
-
-    /* Join panel */
-    #join-panel {
-      width: 100%; overflow: hidden;
-      max-height: 0; opacity: 0;
-      transition: max-height .3s ease, opacity .25s ease;
-    }
+    #join-panel { width: 100%; overflow: hidden; max-height: 0; opacity: 0; transition: max-height .3s ease, opacity .25s ease; }
     #join-panel.open { max-height: 200px; opacity: 1; }
     .lobby-hint { font-size: .8rem; color: var(--dim); text-align: center; letter-spacing: 1px; }
-
-    /* Generated code display */
     .room-code-display {
       display: none; flex-direction: column; align-items: center; gap: .4rem;
-      padding: 1rem; background: var(--surf2);
-      border: 1px solid var(--border); border-radius: 12px; width: 100%;
+      padding: 1rem; background: var(--surf2); border: 1px solid var(--border); border-radius: 12px; width: 100%;
     }
     .room-code-display.show { display: flex; }
     .room-code-lbl { font-size: .7rem; letter-spacing: 4px; text-transform: uppercase; color: var(--dim); }
@@ -153,11 +124,9 @@
 
     /* SPIN ROOM */
     #spin-room {
-      position: relative; z-index: 1;
-      display: none; flex-direction: column;
+      position: relative; z-index: 1; display: none; flex-direction: column;
       align-items: center; gap: 1.1rem;
-      width: 100%; max-width: 460px;
-      padding-top: 1rem; padding-bottom: 5rem;
+      width: 100%; max-width: 460px; padding-top: 1rem; padding-bottom: 5rem;
     }
     .top-bar { width: 100%; display: flex; justify-content: space-between; align-items: center; }
     .tag { background: var(--surf); border: 1px solid var(--border); border-radius: 8px; padding: .35rem .85rem; font-size: .78rem; letter-spacing: 1px; }
@@ -168,6 +137,23 @@
     .btn-back:hover { color: var(--orange); }
     .section-lbl { font-size: .7rem; letter-spacing: 4px; text-transform: uppercase; color: var(--dim); width: 100%; text-align: center; }
 
+    /* MODE TOGGLE */
+    .mode-toggle {
+      display: flex; width: 100%;
+      background: var(--surf); border: 1px solid var(--border); border-radius: 10px;
+      overflow: hidden;
+    }
+    .mode-btn {
+      flex: 1; padding: .55rem 0; border: none; background: transparent;
+      font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 2px;
+      color: var(--dim); cursor: pointer; transition: all .15s; position: relative;
+    }
+    .mode-btn + .mode-btn { border-left: 1px solid var(--border); }
+    .mode-btn.active[data-mode="normal"]    { background: rgba(255,107,43,.12); color: var(--orange); }
+    .mode-btn.active[data-mode="easy"]      { background: rgba(0,216,255,.1);   color: var(--cyan);   }
+    .mode-btn.active[data-mode="blackout"]  { background: rgba(255,74,74,.1);   color: var(--dps);    }
+    .mode-btn .mode-icon { font-size: .9rem; display: block; line-height: 1; margin-bottom: 1px; }
+
     /* Role Buttons */
     .roles { display: grid; grid-template-columns: repeat(4, 1fr); gap: .5rem; width: 100%; }
     .role-btn {
@@ -175,8 +161,7 @@
       color: var(--dim); font-family: 'Barlow Condensed', sans-serif;
       font-size: .88rem; font-weight: 700; text-transform: uppercase;
       padding: .6rem 0; cursor: pointer;
-      display: flex; flex-direction: column; align-items: center; gap: 3px;
-      transition: all .15s;
+      display: flex; flex-direction: column; align-items: center; gap: 3px; transition: all .15s;
     }
     .role-btn .ri { font-size: 1.25rem; line-height: 1; }
     .role-btn.active[data-role="any"]     { border-color: var(--any);  color: var(--any);  background: rgba(255,210,74,.08);  box-shadow: 0 0 18px rgba(255,210,74,.15); }
@@ -188,8 +173,7 @@
     /* Slot Machine */
     .slot-outer { width: 100%; display: flex; flex-direction: column; align-items: center; gap: .75rem; }
     .slot-frame {
-      width: 230px; height: 230px;
-      border: 3px solid var(--border2); border-radius: 18px;
+      width: 230px; height: 230px; border: 3px solid var(--border2); border-radius: 18px;
       overflow: hidden; position: relative; background: var(--surf);
       transition: border-color .3s, box-shadow .3s; flex-shrink: 0;
     }
@@ -221,18 +205,63 @@
     .result-role-lbl { font-size: .72rem; letter-spacing: 3px; text-transform: uppercase; opacity: 0; transition: opacity .35s ease .1s; }
     .result-role-lbl.show { opacity: 1; }
 
+    /* EASY MODE CARDS */
+    #easy-cards {
+      display: none; width: 100%; gap: .6rem; justify-content: center;
+      min-height: 230px; align-items: center;
+    }
+    #easy-cards.visible { display: flex; }
+    .easy-card {
+      flex: 1; max-width: 130px; aspect-ratio: 1;
+      border: 2.5px solid var(--border2); border-radius: 14px;
+      overflow: hidden; background: var(--surf2); cursor: pointer;
+      position: relative;
+      transition: border-color .2s, box-shadow .2s, transform .15s, opacity .3s;
+      opacity: 0; transform: scale(.85) translateY(10px);
+    }
+    .easy-card.revealed { opacity: 1; transform: none; }
+    .easy-card:hover { border-color: var(--cyan); box-shadow: 0 0 20px rgba(0,216,255,.3); transform: translateY(-3px); }
+    .easy-card.chosen  { border-color: var(--cyan); box-shadow: 0 0 28px rgba(0,216,255,.5); }
+    .easy-card.faded   { opacity: .2; pointer-events: none; }
+    .easy-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .easy-card .card-fallback {
+      width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+      font-family: 'Bebas Neue', sans-serif; font-size: 3rem; color: var(--dim);
+    }
+    .easy-card .card-name {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: linear-gradient(transparent, rgba(0,0,0,.8));
+      font-family: 'Bebas Neue', sans-serif; font-size: .85rem; letter-spacing: 1px;
+      color: #fff; text-align: center; padding: .4rem .3rem .3rem;
+    }
+
+    /* BLACKOUT EXHAUSTED */
+    #blackout-exhausted {
+      display: none; width: 100%; padding: 1.4rem;
+      background: rgba(255,74,74,.08); border: 1px solid rgba(255,74,74,.3);
+      border-radius: 14px; text-align: center;
+    }
+    #blackout-exhausted.visible { display: block; }
+    .exhausted-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 3px; color: var(--dps); }
+    .exhausted-sub { font-size: .82rem; color: var(--dim); letter-spacing: 1px; margin-top: .3rem; }
+    .blackout-remaining {
+      font-size: .72rem; letter-spacing: 2px; color: var(--dim);
+      text-align: center; width: 100%;
+    }
+    .blackout-remaining span { color: var(--dps); font-weight: 700; }
+
     /* Spin Button */
     .spin-btn {
-      width: 200px; padding: 1rem;
-      background: transparent; border: 2.5px solid var(--orange); border-radius: 12px;
+      width: 200px; padding: 1rem; background: transparent;
+      border: 2.5px solid var(--orange); border-radius: 12px;
       color: var(--orange); font-family: 'Bebas Neue', sans-serif;
       font-size: 1.75rem; letter-spacing: 4px; cursor: pointer;
-      position: relative; overflow: hidden; transition: color .2s, transform .1s;
+      position: relative; overflow: hidden; transition: color .2s, border-color .2s, transform .1s;
     }
     .spin-btn::before {
       content: ''; position: absolute; inset: 0;
       background: var(--orange); transform: scaleX(0); transform-origin: left;
-      transition: transform .2s ease; z-index: 0;
+      transition: transform .2s ease, background .2s; z-index: 0;
     }
     .spin-btn span { position: relative; z-index: 1; }
     .spin-btn:hover { color: #fff; transform: translateY(-1px); }
@@ -240,20 +269,22 @@
     .spin-btn:active { transform: none; }
     .spin-btn:disabled { opacity: .35; cursor: default; transform: none; }
     .spin-btn:disabled::before { display: none; }
+    /* Easy mode — cyan */
+    .spin-btn.mode-easy { border-color: var(--cyan); color: var(--cyan); }
+    .spin-btn.mode-easy::before { background: var(--cyan); }
+    /* Blackout mode — red */
+    .spin-btn.mode-blackout { border-color: var(--dps); color: var(--dps); }
+    .spin-btn.mode-blackout::before { background: var(--dps); }
 
     /* PARTY PANEL */
     .party-panel { width: 100%; background: var(--surf); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
-    .party-header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: .6rem 1rem; border-bottom: 1px solid var(--border);
-    }
+    .party-header { display: flex; align-items: center; justify-content: space-between; padding: .6rem 1rem; border-bottom: 1px solid var(--border); }
     .party-title { font-size: .7rem; letter-spacing: 4px; text-transform: uppercase; color: var(--dim); }
     .party-count { font-family: 'Bebas Neue', sans-serif; font-size: .95rem; letter-spacing: 2px; color: var(--cyan); }
     .party-list { padding: .85rem; display: flex; flex-wrap: wrap; gap: .75rem; justify-content: center; }
     .party-card { display: flex; flex-direction: column; align-items: center; gap: .4rem; width: 90px; }
     .party-portrait {
-      width: 90px; height: 90px;
-      border: 2px solid var(--border2); border-radius: 12px;
+      width: 90px; height: 90px; border: 2px solid var(--border2); border-radius: 12px;
       overflow: visible; background: var(--surf2);
       position: relative; transition: border-color .3s, box-shadow .3s; flex-shrink: 0;
     }
@@ -261,9 +292,8 @@
     .party-card.is-you .party-portrait    { border-color: var(--orange); box-shadow: 0 0 12px rgba(255,107,43,.3); }
     .party-card.duplicate .party-portrait { border-color: var(--dps);   box-shadow: 0 0 14px rgba(255,74,74,.35); }
     .portrait-placeholder {
-      width: 100%; height: 100%;
-      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
-      background: var(--surf2); border-radius: 10px;
+      width: 100%; height: 100%; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 6px; background: var(--surf2); border-radius: 10px;
     }
     .portrait-initial { font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; color: var(--border2); line-height: 1; }
     .party-name { font-size: .82rem; font-weight: 700; letter-spacing: .5px; text-align: center; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
@@ -283,36 +313,28 @@
     @keyframes blink { 0%,80%,100% { opacity: .15; } 40% { opacity: 1; } }
     .party-empty { padding: 1.4rem; text-align: center; font-size: .8rem; letter-spacing: 2px; color: var(--dim); }
     .dup-warning {
-      display: none; width: 100%;
-      background: rgba(255,74,74,.1); border: 1px solid rgba(255,74,74,.35);
-      border-radius: 10px; padding: .6rem 1rem;
-      font-size: .82rem; letter-spacing: 1px; color: var(--dps); text-align: center;
+      display: none; width: 100%; background: rgba(255,74,74,.1); border: 1px solid rgba(255,74,74,.35);
+      border-radius: 10px; padding: .6rem 1rem; font-size: .82rem; letter-spacing: 1px; color: var(--dps); text-align: center;
     }
     .dup-warning.show { display: block; }
 
     /* DUNCE HAT + WIMP TOAST */
     .dunce-hat {
-      position: absolute; top: -12px; left: 50%;
-      transform: translateX(-50%);
-      font-size: 1.6rem; z-index: 3;
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,.6));
-      pointer-events: none;
+      position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+      font-size: 1.6rem; z-index: 3; filter: drop-shadow(0 2px 4px rgba(0,0,0,.6)); pointer-events: none;
     }
     #wimp-toast {
       position: fixed; top: 1.5rem; left: 50%; transform: translateX(-50%);
-      background: var(--dps); color: #fff;
-      font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: 3px;
-      padding: .6rem 1.4rem; border-radius: 10px;
-      opacity: 0; pointer-events: none; transition: opacity .3s ease;
-      z-index: 600; white-space: nowrap;
+      background: var(--dps); color: #fff; font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.3rem; letter-spacing: 3px; padding: .6rem 1.4rem; border-radius: 10px;
+      opacity: 0; pointer-events: none; transition: opacity .3s ease; z-index: 600; white-space: nowrap;
     }
     #wimp-toast.show { opacity: 1; }
 
     /* INSTALL BANNER */
     #install-banner {
       position: fixed; bottom: 0; left: 0; right: 0; z-index: 500;
-      background: var(--surf); border-top: 1px solid var(--border2);
-      padding: .85rem 1.1rem;
+      background: var(--surf); border-top: 1px solid var(--border2); padding: .85rem 1.1rem;
       display: flex; align-items: center; justify-content: space-between; gap: .75rem;
       box-shadow: 0 -4px 24px rgba(0,0,0,.4);
     }
@@ -321,26 +343,21 @@
     .install-text strong { color: var(--orange); }
     .install-actions { display: flex; gap: .5rem; flex-shrink: 0; }
     .btn-install {
-      background: var(--orange); border: none; border-radius: 8px;
-      color: #fff; font-family: 'Bebas Neue', sans-serif;
-      font-size: 1rem; letter-spacing: 2px; padding: .5rem 1rem;
-      cursor: pointer; white-space: nowrap; transition: box-shadow .2s;
+      background: var(--orange); border: none; border-radius: 8px; color: #fff;
+      font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 2px;
+      padding: .5rem 1rem; cursor: pointer; white-space: nowrap; transition: box-shadow .2s;
     }
     .btn-install:hover { box-shadow: 0 0 16px rgba(255,107,43,.5); }
     .btn-dismiss {
-      background: none; border: 1px solid var(--border); border-radius: 8px;
-      color: var(--dim); font-family: 'Barlow Condensed', sans-serif;
-      font-size: .9rem; letter-spacing: 1px; padding: .5rem .75rem;
-      cursor: pointer; white-space: nowrap;
+      background: none; border: 1px solid var(--border); border-radius: 8px; color: var(--dim);
+      font-family: 'Barlow Condensed', sans-serif; font-size: .9rem; letter-spacing: 1px;
+      padding: .5rem .75rem; cursor: pointer; white-space: nowrap;
     }
     .btn-dismiss:hover { border-color: var(--dim); }
 
     /* HISTORY PANEL */
     .history-panel { width: 100%; background: var(--surf); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
-    .history-header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: .6rem 1rem; border-bottom: 1px solid var(--border);
-    }
+    .history-header { display: flex; align-items: center; justify-content: space-between; padding: .6rem 1rem; border-bottom: 1px solid var(--border); }
     .history-title { font-size: .7rem; letter-spacing: 4px; text-transform: uppercase; color: var(--dim); }
     .history-wrap { overflow-x: auto; padding: .75rem; }
     .history-table { width: 100%; border-collapse: collapse; font-size: .8rem; }
@@ -349,18 +366,12 @@
       color: var(--orange); text-align: center; padding: .3rem .6rem;
       border-bottom: 1px solid var(--border); white-space: nowrap;
     }
-    .history-table td {
-      text-align: center; padding: .25rem .6rem;
-      color: var(--text); border-bottom: 1px solid var(--border);
-      white-space: nowrap;
-    }
+    .history-table td { text-align: center; padding: .25rem .6rem; border-bottom: 1px solid var(--border); }
     .history-table tr:last-child td { border-bottom: none; }
-    .history-table td.hero-cell { color: var(--cyan); }
     .history-empty { padding: 1.2rem; text-align: center; font-size: .8rem; letter-spacing: 2px; color: var(--dim); }
     .btn-reset-history {
       display: block; width: calc(100% - 1.5rem); margin: 0 .75rem .75rem;
-      padding: .55rem; background: transparent;
-      border: 1px solid var(--border); border-radius: 8px;
+      padding: .55rem; background: transparent; border: 1px solid var(--border); border-radius: 8px;
       color: var(--dim); font-family: 'Barlow Condensed', sans-serif;
       font-size: .85rem; letter-spacing: 2px; text-transform: uppercase;
       cursor: pointer; transition: border-color .2s, color .2s;
@@ -419,6 +430,14 @@
     <div class="tag room">ROOM <strong id="room-tag"></strong></div>
     <div class="tag player" id="player-tag"></div>
   </div>
+
+  <!-- MODE TOGGLE -->
+  <div class="mode-toggle">
+    <button class="mode-btn active" data-mode="normal"><span class="mode-icon">🎰</span>Normal</button>
+    <button class="mode-btn" data-mode="easy"><span class="mode-icon">🃏</span>Easy</button>
+    <button class="mode-btn" data-mode="blackout"><span class="mode-icon">🌑</span>Blackout</button>
+  </div>
+
   <p class="section-lbl">Choose Role</p>
   <div class="roles">
     <button class="role-btn active" data-role="any"><span class="ri">🎲</span>Any</button>
@@ -426,20 +445,40 @@
     <button class="role-btn" data-role="damage"><span class="ri">⚔️</span>DPS</button>
     <button class="role-btn" data-role="support"><span class="ri">💉</span>Support</button>
   </div>
+
   <div class="slot-outer">
-    <p class="section-lbl">Your Hero</p>
+    <p class="section-lbl" id="hero-section-lbl">Your Hero</p>
+
+    <!-- Normal / Blackout: slot machine -->
     <div class="slot-frame" id="slot-frame">
       <div class="reel-window">
         <div class="reel" id="reel"></div>
       </div>
     </div>
+
+    <!-- Easy mode: 3 cards -->
+    <div id="easy-cards"></div>
+
+    <!-- Blackout exhausted -->
+    <div id="blackout-exhausted">
+      <div class="exhausted-title">All Heroes Blacked Out!</div>
+      <div class="exhausted-sub">Reset history to keep playing.</div>
+    </div>
+
     <div class="result-box">
       <div class="result-name" id="result-name"></div>
       <div class="result-role-lbl" id="result-role-lbl"></div>
     </div>
   </div>
+
+  <!-- Blackout remaining count -->
+  <div class="blackout-remaining" id="blackout-remaining" style="display:none;">
+    <span id="blackout-count">0</span> heroes remaining
+  </div>
+
   <button class="spin-btn" id="spin-btn"><span>SPIN</span></button>
   <div class="dup-warning" id="dup-warning">&#9888; Duplicate hero detected! Someone should re-spin.</div>
+
   <div class="party-panel">
     <div class="party-header">
       <span class="party-title">In This Room</span>
@@ -450,7 +489,6 @@
     </div>
   </div>
 
-  <!-- HISTORY PANEL -->
   <div class="history-panel" id="history-panel">
     <div class="history-header">
       <span class="history-title">Session History</span>
@@ -496,8 +534,8 @@ const MANUAL_HEROES = [
 ];
 
 const MANUAL_PORTRAITS = {
-  'domina':      'https://d15f34w2p8l1cc.cloudfront.net/overwatch/1161c112292c56c052c0ae711792fcde06e3251b98bc9709e582dd7585b5dcd6.png',
-  'd-va':        'https://d15f34w2p8l1cc.cloudfront.net/overwatch/df5a5532862d9292634fb3dc0e51a4705aa601de65e5e815513ccc663d84de56.png',
+  'domina': 'https://d15f34w2p8l1cc.cloudfront.net/overwatch/1161c112292c56c052c0ae711792fcde06e3251b98bc9709e582dd7585b5dcd6.png',
+  'd-va':   'https://d15f34w2p8l1cc.cloudfront.net/overwatch/df5a5532862d9292634fb3dc0e51a4705aa601de65e5e815513ccc663d84de56.png',
 };
 
 const HEROES    = { tank: [], damage: [], support: [] };
@@ -513,7 +551,6 @@ function heroKeyByName(name) {
   return null;
 }
 
-// FIX 1: const list declared BEFORE the if that uses it
 function getPool(roles) {
   const list = Array.isArray(roles) ? roles : [roles];
   if (!list.length || list.includes('any')) return [
@@ -522,6 +559,13 @@ function getPool(roles) {
     ...HEROES.support.map(h => ({...h, role: 'support'})),
   ];
   return list.flatMap(r => (HEROES[r] || []).map(h => ({...h, role: r})));
+}
+
+// Blackout-filtered pool — removes heroes already in this player's history
+function getActivePool() {
+  const base = getPool(selectedRoles);
+  if (gameMode !== 'blackout') return base;
+  return base.filter(h => !myHistory.includes(h.name));
 }
 
 function shuffle(arr) {
@@ -549,13 +593,15 @@ let playerName    = null;
 let playerRef     = null;
 let roomListener  = null;
 let selectedRoles = ['any'];
+let gameMode      = localStorage.getItem('owrr_mode') || 'normal';
 let isSpinning    = false;
 let idleTimer     = null;
 let spinTimestamps  = [];
-let heroTimer       = null;  // 45s commit timer
-let historyListener = null;  // Firebase listener for history
-const shownDunce  = new Set();
-const TILE_H      = 230;
+let heroTimer       = null;
+let historyListener = null;
+let myHistory       = [];  // local cache of this player's committed heroes (for blackout)
+const shownDunce    = new Set();
+const TILE_H        = 230;
 
 // ═══════════════════════════════════════
 // DOM REFS
@@ -566,12 +612,16 @@ const loadingEl  = document.getElementById('loading');
 const loadLbl    = document.querySelector('.load-lbl');
 const reelEl     = document.getElementById('reel');
 const slotFrame  = document.getElementById('slot-frame');
+const easyCards  = document.getElementById('easy-cards');
 const resultName = document.getElementById('result-name');
 const resultLbl  = document.getElementById('result-role-lbl');
 const spinBtn    = document.getElementById('spin-btn');
 const partyList  = document.getElementById('party-list');
 const partyCount = document.getElementById('party-count');
 const dupWarning = document.getElementById('dup-warning');
+const blackoutExhausted  = document.getElementById('blackout-exhausted');
+const blackoutRemaining  = document.getElementById('blackout-remaining');
+const blackoutCount      = document.getElementById('blackout-count');
 
 // ═══════════════════════════════════════
 // INIT
@@ -592,19 +642,20 @@ document.fonts.ready.then(async () => {
   }
 
   MANUAL_HEROES.forEach(h => {
-    if (HEROES[h.role] && !HEROES[h.role].find(x => x.key === h.key)) {
+    if (HEROES[h.role] && !HEROES[h.role].find(x => x.key === h.key))
       HEROES[h.role].push({ name: h.name, key: h.key });
-    }
   });
 
   loadingEl.style.display = 'none';
 
-  const savedName     = localStorage.getItem('owrr_name');
-  const savedRoom     = localStorage.getItem('owrr_room');
-  const savedRole     = localStorage.getItem('owrr_role') || 'any';
-  const savedHero     = localStorage.getItem('owrr_hero');
-  const savedLastSeen = parseInt(localStorage.getItem('owrr_lastseen') || '0');
+  const savedName      = localStorage.getItem('owrr_name');
+  const savedRoom      = localStorage.getItem('owrr_room');
+  const savedRole      = localStorage.getItem('owrr_role') || 'any';
+  const savedHero      = localStorage.getItem('owrr_hero');
+  const savedLastSeen  = parseInt(localStorage.getItem('owrr_lastseen') || '0');
   const sessionExpired = Date.now() - savedLastSeen > IDLE_TIMEOUT_MS;
+
+  applyModeUI(gameMode);
 
   if (savedName && savedRoom && !sessionExpired) {
     rejoinRoom(savedName, savedRoom, savedRole, savedHero);
@@ -617,6 +668,60 @@ document.fonts.ready.then(async () => {
     if (savedName) document.getElementById('name-input').value = savedName;
   }
 });
+
+// ═══════════════════════════════════════
+// MODE TOGGLE
+// ═══════════════════════════════════════
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', function () {
+    if (isSpinning) return;
+    setGameMode(this.dataset.mode);
+  });
+});
+
+function setGameMode(mode) {
+  gameMode = mode;
+  localStorage.setItem('owrr_mode', mode);
+  applyModeUI(mode);
+  resetResult();
+  updateBlackoutUI();
+  if (mode !== 'easy') buildInitialReel(selectedRoles);
+}
+
+function applyModeUI(mode) {
+  // Toggle buttons
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+
+  // Spin button label + color
+  const labels = { normal: 'SPIN', easy: 'DEAL', blackout: 'SPIN' };
+  spinBtn.querySelector('span').textContent = labels[mode];
+  spinBtn.className = `spin-btn${mode !== 'normal' ? ` mode-${mode}` : ''}`;
+
+  // Show/hide slot vs easy cards
+  const isEasy = mode === 'easy';
+  slotFrame.style.display  = isEasy ? 'none' : '';
+  easyCards.classList.toggle('visible', false);
+  blackoutExhausted.classList.toggle('visible', false);
+}
+
+function updateBlackoutUI() {
+  if (gameMode !== 'blackout') {
+    blackoutRemaining.style.display = 'none';
+    blackoutExhausted.classList.remove('visible');
+    spinBtn.disabled = isSpinning;
+    return;
+  }
+  const pool = getActivePool();
+  blackoutRemaining.style.display = 'block';
+  blackoutCount.textContent = pool.length;
+  if (pool.length === 0) {
+    blackoutExhausted.classList.add('visible');
+    spinBtn.disabled = true;
+  } else {
+    blackoutExhausted.classList.remove('visible');
+    spinBtn.disabled = false;
+  }
+}
 
 // ═══════════════════════════════════════
 // SESSION HELPERS
@@ -664,7 +769,6 @@ document.addEventListener('visibilitychange', () => {
       const savedHero = localStorage.getItem('owrr_hero') || null;
       playerRef = db.ref(`rooms/${roomCode}/players/${playerId}`);
       playerRef.set({ name: playerName, role: savedRole, hero: savedHero, spinning: false, dunce: false, lastSeen: Date.now() });
-      // FIX 2: Date.now() not Time.now()
       playerRef.onDisconnect().update({ lastSeen: Date.now() });
     } else {
       playerRef.update({ lastSeen: Date.now() });
@@ -741,15 +845,7 @@ function enterRoom(name, code, role, hero, silent = false) {
 
   playerRef = db.ref(`rooms/${code}/players/${playerId}`);
   const roleForDB = selectedRoles.length === 1 ? selectedRoles[0] : selectedRoles.join(',');
-  playerRef.set({
-    name,
-    role: roleForDB,
-    hero: hero || null,
-    spinning: false,
-    dunce: false,
-    lastSeen: Date.now(),
-  });
-  // FIX 2: Date.now() not Time.now()
+  playerRef.set({ name, role: roleForDB, hero: hero || null, spinning: false, dunce: false, lastSeen: Date.now() });
   playerRef.onDisconnect().update({ lastSeen: Date.now() });
 
   cleanStalePlayersFromRoom(code);
@@ -777,7 +873,9 @@ function enterRoom(name, code, role, hero, silent = false) {
   }
 
   syncRoleButtons();
-  buildInitialReel(selectedRoles);
+  applyModeUI(gameMode);
+  updateBlackoutUI();
+  if (gameMode !== 'easy') buildInitialReel(selectedRoles);
 }
 
 // ═══════════════════════════════════════
@@ -789,9 +887,8 @@ function cleanStalePlayersFromRoom(code) {
     if (!players) return;
     const cutoff = Date.now() - IDLE_TIMEOUT_MS;
     Object.entries(players).forEach(([pid, data]) => {
-      if (pid !== playerId && data.lastSeen && data.lastSeen < cutoff) {
+      if (pid !== playerId && data.lastSeen && data.lastSeen < cutoff)
         db.ref(`rooms/${code}/players/${pid}`).remove();
-      }
     });
   });
 }
@@ -818,6 +915,7 @@ function leaveRoom() {
   spinBtn.disabled = false;
   roomCode = null;
   playerName = null;
+  myHistory = [];
   clearLocalSession();
   resetResult();
   spinRoomEl.style.display = 'none';
@@ -835,7 +933,6 @@ function startRoomListener(code) {
   });
 }
 
-// FIX 3: showWimpToast defined OUTSIDE renderParty as a standalone function
 function showWimpToast(name) {
   const toast = document.getElementById('wimp-toast');
   toast.textContent = `🎩 ${name} is a WIMP!`;
@@ -895,21 +992,13 @@ function renderParty(players) {
       pbox.innerHTML = `<div class="portrait-placeholder"><div class="portrait-initial">${p.name[0]}</div></div>`;
     }
 
-    // Dunce hat overlay
     if (p.dunce) {
       const hat = document.createElement('div');
-      hat.className = 'dunce-hat';
-      hat.textContent = '🎩';
+      hat.className = 'dunce-hat'; hat.textContent = '🎩';
       pbox.appendChild(hat);
     }
-
-    // Toast notification (only once per dunce session)
-    if (p.dunce && !shownDunce.has(k)) {
-      shownDunce.add(k);
-      showWimpToast(p.name);
-    } else if (!p.dunce) {
-      shownDunce.delete(k);
-    }
+    if (p.dunce && !shownDunce.has(k)) { shownDunce.add(k); showWimpToast(p.name); }
+    else if (!p.dunce) { shownDunce.delete(k); }
 
     const nameEl = document.createElement('div');
     nameEl.className = 'party-name' + (isYou ? ' you' : '');
@@ -920,8 +1009,7 @@ function renderParty(players) {
 
     if (p.spinning) {
       const sub = document.createElement('div');
-      sub.className = 'party-hero-lbl';
-      sub.textContent = 'Spinning...';
+      sub.className = 'party-hero-lbl'; sub.textContent = 'Spinning...';
       card.appendChild(sub);
     } else if (p.hero) {
       const sub = document.createElement('div');
@@ -947,10 +1035,8 @@ function syncRoleButtons() {
   const anyBtn   = document.querySelector('.role-btn[data-role="any"]');
   const roleBtns = document.querySelectorAll('.role-btn:not([data-role="any"])');
   const isAny    = selectedRoles.includes('any');
-
   anyBtn.classList.toggle('active', isAny);
   anyBtn.classList.toggle('disabled', !isAny && selectedRoles.length > 0);
-
   roleBtns.forEach(b => {
     b.classList.toggle('active', selectedRoles.includes(b.dataset.role));
     b.classList.remove('disabled');
@@ -961,7 +1047,6 @@ document.querySelectorAll('.role-btn').forEach(btn => {
   btn.addEventListener('click', function () {
     if (isSpinning) return;
     const role = this.dataset.role;
-
     if (role === 'any') {
       selectedRoles = ['any'];
     } else {
@@ -973,13 +1058,14 @@ document.querySelectorAll('.role-btn').forEach(btn => {
         selectedRoles.push(role);
       }
     }
-
     syncRoleButtons();
     const roleForFirebase = selectedRoles.length === 1 ? selectedRoles[0] : selectedRoles.join(',');
     if (playerRef) playerRef.update({ role: roleForFirebase, hero: null, lastSeen: Date.now() });
     saveLocalSession(playerName, roomCode, selectedRoles, null);
-    buildInitialReel(selectedRoles);
+    if (gameMode !== 'easy') buildInitialReel(selectedRoles);
+    else easyCards.classList.remove('visible');
     resetResult();
+    updateBlackoutUI();
   });
 });
 
@@ -1022,18 +1108,34 @@ function resetResult() {
   slotFrame.classList.remove('spinning', 'done');
   reelEl.style.transition = 'none';
   reelEl.style.transform  = 'translateY(0)';
+  easyCards.classList.remove('visible');
+  easyCards.innerHTML = '';
 }
 
 // ═══════════════════════════════════════
-// SPIN
+// COMMIT TO HISTORY (shared by all modes)
 // ═══════════════════════════════════════
-spinBtn.addEventListener('click', () => { if (!isSpinning) doSpin(); });
+function commitToHistory(heroName) {
+  if (!roomCode || !playerRef) return;
+  db.ref(`rooms/${roomCode}/history/${playerId}`).transaction(current => {
+    const list = Array.isArray(current) ? current : [];
+    return [...list, heroName];
+  });
+}
+
+// ═══════════════════════════════════════
+// SPIN (Normal + Blackout)
+// ═══════════════════════════════════════
+spinBtn.addEventListener('click', () => {
+  if (isSpinning) return;
+  if (gameMode === 'easy') dealEasy();
+  else doSpin();
+});
 
 function doSpin() {
   isSpinning = true;
   spinBtn.disabled = true;
 
-  // Cancel any pending history commit (player chose to reroll)
   clearTimeout(heroTimer);
   heroTimer = null;
 
@@ -1046,7 +1148,9 @@ function doSpin() {
     setTimeout(() => { if (playerRef) playerRef.update({ dunce: false }); }, 120000);
   }
 
-  const pool   = getPool(selectedRoles);
+  const pool   = getActivePool();
+  if (!pool.length) { isSpinning = false; spinBtn.disabled = false; return; }
+
   const winner = pool[Math.floor(Math.random() * pool.length)];
   const N      = pool.length;
 
@@ -1055,7 +1159,6 @@ function doSpin() {
   const winnerSlot = Math.max(1, Math.floor(N / 2));
   const rep3 = shuffle(pool.filter(h => h.key !== winner.key));
   rep3.splice(winnerSlot, 0, {...winner});
-
   const allTiles = [...shuffle(pool), ...shuffle(pool), ...rep3, ...shuffle(pool)];
 
   reelEl.innerHTML = '';
@@ -1075,8 +1178,8 @@ function doSpin() {
 
   function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
 
-  (function animate(now) {
-    const t = Math.min((now - t0) / DURATION, 1);
+  (function animate(ts) {
+    const t = Math.min((ts - t0) / DURATION, 1);
     const y = t < 0.65
       ? fastEndY * (t / 0.65)
       : fastEndY + (targetY - fastEndY) * easeOut((t - 0.65) / 0.35);
@@ -1103,18 +1206,85 @@ function finishSpin(winner) {
   if (playerRef) playerRef.update({ hero: winner.name, role: winner.role, spinning: false, lastSeen: Date.now() });
   saveLocalSession(playerName, roomCode, selectedRoles, winner.name);
 
-  // Start 45s timer — if player stays on this hero, commit it to history
+  // 45s commit timer
   clearTimeout(heroTimer);
   const committedHero = winner.name;
-  heroTimer = setTimeout(() => {
-    if (roomCode && playerRef) {
-      db.ref(`rooms/${roomCode}/history/${playerId}`).transaction(current => {
-        const list = Array.isArray(current) ? current : [];
-        return [...list, committedHero];
-      });
-    }
-  }, 45000);
+  heroTimer = setTimeout(() => { commitToHistory(committedHero); }, 45000);
 
+  launchConfetti();
+}
+
+// ═══════════════════════════════════════
+// EASY MODE — deal 3 cards to choose from
+// ═══════════════════════════════════════
+function dealEasy() {
+  const pool = shuffle(getActivePool());
+  if (!pool.length) return;
+
+  const picks = pool.slice(0, 3);
+  easyCards.innerHTML = '';
+  easyCards.classList.add('visible');
+
+  if (playerRef) playerRef.update({ spinning: true, hero: null, lastSeen: Date.now() });
+
+  picks.forEach((hero, i) => {
+    const card = document.createElement('div');
+    card.className = 'easy-card';
+
+    const url = portrait(hero.key);
+    if (url) {
+      const img = document.createElement('img');
+      img.src = url; img.alt = hero.name;
+      img.onerror = () => {
+        img.remove();
+        const fb = document.createElement('div');
+        fb.className = 'card-fallback'; fb.textContent = hero.name[0];
+        card.insertBefore(fb, card.querySelector('.card-name'));
+      };
+      card.appendChild(img);
+    } else {
+      const fb = document.createElement('div');
+      fb.className = 'card-fallback'; fb.textContent = hero.name[0];
+      card.appendChild(fb);
+    }
+
+    const nameEl = document.createElement('div');
+    nameEl.className = 'card-name'; nameEl.textContent = hero.name;
+    card.appendChild(nameEl);
+
+    // Staggered reveal animation
+    setTimeout(() => card.classList.add('revealed'), i * 150);
+
+    card.addEventListener('click', () => pickEasyHero(hero, picks, card));
+    easyCards.appendChild(card);
+  });
+
+  if (playerRef) playerRef.update({ spinning: false, lastSeen: Date.now() });
+}
+
+function pickEasyHero(hero, allPicks, chosenCard) {
+  // Mark chosen + fade others
+  document.querySelectorAll('.easy-card').forEach(c => {
+    c.classList.toggle('chosen', c === chosenCard);
+    c.classList.toggle('faded', c !== chosenCard);
+    c.style.pointerEvents = 'none';
+  });
+
+  const roleColors = { tank: 'var(--tank)', damage: 'var(--dps)', support: 'var(--supp)' };
+  const roleNames  = { tank: 'Tank', damage: 'Damage', support: 'Support' };
+
+  resultName.textContent = hero.name;
+  resultName.classList.add('show');
+  resultLbl.textContent  = roleNames[hero.role] || 'Hero';
+  resultLbl.style.color  = roleColors[hero.role] || 'var(--any)';
+  resultLbl.classList.add('show');
+
+  if (playerRef) playerRef.update({ hero: hero.name, role: hero.role, spinning: false, lastSeen: Date.now() });
+  saveLocalSession(playerName, roomCode, selectedRoles, hero.name);
+
+  // Easy mode commits immediately — no 45s wait
+  commitToHistory(hero.name);
+  updateBlackoutUI();
   launchConfetti();
 }
 
@@ -1155,15 +1325,16 @@ function launchConfetti() {
 function startHistoryListener(code) {
   const ref = db.ref(`rooms/${code}/history`);
   historyListener = ref.on('value', snapshot => {
-    renderHistory(snapshot.val() || {});
+    const data = snapshot.val() || {};
+    // Update local history cache for blackout
+    myHistory = Array.isArray(data[playerId]) ? data[playerId] : [];
+    updateBlackoutUI();
+    renderHistory(data);
   });
 }
 
 function renderHistory(historyData) {
   const body = document.getElementById('history-body');
-
-  // Gather all player names from current party for column headers
-  // We need to cross-reference with player IDs so fetch from Firebase
   db.ref(`rooms/${roomCode}/players`).once('value', snap => {
     const players = snap.val() || {};
     const pids    = Object.keys(historyData);
@@ -1173,15 +1344,13 @@ function renderHistory(historyData) {
       return;
     }
 
-    // Build column headers from player names
     const cols = pids.map(pid => ({
       pid,
-      name: players[pid] ? players[pid].name : pid,
+      name:   players[pid] ? players[pid].name : pid,
       heroes: Array.isArray(historyData[pid]) ? historyData[pid] : [],
     }));
 
     const maxRows = Math.max(...cols.map(c => c.heroes.length), 0);
-
     if (maxRows === 0) {
       body.innerHTML = '<p class="history-empty">Heroes held for 45s+ will appear here.</p>';
       return;
@@ -1204,7 +1373,7 @@ function renderHistory(historyData) {
           if (url) {
             html += `<td><img src="${url}" alt="${heroName}" title="${heroName}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;display:block;margin:2px auto;"></td>`;
           } else {
-            html += `<td class="hero-cell" style="font-size:.7rem;">${heroName}</td>`;
+            html += `<td style="font-size:.7rem;color:var(--cyan);">${heroName}</td>`;
           }
         } else {
           html += '<td></td>';
@@ -1239,10 +1408,7 @@ if (
   installBanner.classList.add('hidden');
 }
 
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault();
-  deferredPrompt = e;
-});
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredPrompt = e; });
 
 installBtn.addEventListener('click', async () => {
   if (deferredPrompt) {
