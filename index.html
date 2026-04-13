@@ -916,7 +916,7 @@ function syncRoleButtons() {
   const isAny   = selectedRoles.includes('any');
 
   anyBtn.classList.toggle('active', isAny);
-  anyBtn.classList.toggle('disabled', !isAny);
+  anyBtn.classList.toggle('disabled', !isAny && selectedRoles.length > 0);
 
   roleBtns.forEach(b => {
     b.classList.toggle('active', selectedRoles.includes(b.dataset.role));
