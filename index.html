@@ -1231,7 +1231,13 @@ const installBtn    = document.getElementById('install-btn');
 const dismissBtn    = document.getElementById('dismiss-btn');
 let deferredPrompt  = null;
 
-if (sessionStorage.getItem('banner_dismissed')) installBanner.classList.add('hidden');
+if (
+  sessionStorage.getItem('banner_dismissed') ||
+  localStorage.getItem('pwa_installed') ||
+  window.matchMedia('(display-mode: standalone)').matches
+) {
+  installBanner.classList.add('hidden');
+}
 
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
@@ -1254,7 +1260,10 @@ dismissBtn.addEventListener('click', () => {
   sessionStorage.setItem('banner_dismissed', '1');
 });
 
-window.addEventListener('appinstalled', () => installBanner.classList.add('hidden'));
+window.addEventListener('appinstalled', () => {
+  installBanner.classList.add('hidden');
+  localStorage.setItem('pwa_installed', '1');
+});
 </script>
 </body>
 </html>
