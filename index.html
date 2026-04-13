@@ -1005,6 +1005,9 @@ dismissBtn.addEventListener('click', () => {
 window.addEventListener('appinstalled', () => {
   installBanner.classList.add('hidden');
 });
+  if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js');
+}
 </script>
 </body>
 </html>
