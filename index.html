@@ -106,16 +106,56 @@
     #code-input { text-align: center; font-size: 2rem !important; letter-spacing: 12px !important; }
     .field input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(255,107,43,.13); }
     .err { color: var(--dps); font-size: .85rem; text-align: center; margin-top: .8rem; display: none; }
-    .btn-join {
-      display: block; width: 100%; margin-top: 1.3rem; padding: .9rem;
+    /* Lobby action buttons */
+    .lobby-actions {
+      display: grid; grid-template-columns: 1fr 1fr; gap: .75rem;
+      width: 100%; margin-top: 1.3rem;
+    }
+    .btn-create {
+      display: block; padding: .9rem;
       background: var(--orange); border: none; border-radius: 10px;
       color: #fff; font-family: 'Bebas Neue', sans-serif;
-      font-size: 1.4rem; letter-spacing: 3px; cursor: pointer;
+      font-size: 1.2rem; letter-spacing: 2px; cursor: pointer;
       transition: box-shadow .2s, transform .1s;
     }
-    .btn-join:hover { box-shadow: 0 4px 28px rgba(255,107,43,.5); transform: translateY(-1px); }
+    .btn-create:hover { box-shadow: 0 4px 28px rgba(255,107,43,.5); transform: translateY(-1px); }
+    .btn-create:active { transform: none; }
+
+    .btn-join {
+      display: block; padding: .9rem;
+      background: transparent; border: 2px solid var(--orange); border-radius: 10px;
+      color: var(--orange); font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.2rem; letter-spacing: 2px; cursor: pointer;
+      transition: background .2s, color .2s, transform .1s;
+    }
+    .btn-join:hover { background: var(--orange); color: #fff; transform: translateY(-1px); }
     .btn-join:active { transform: none; }
+
+    /* Join panel — hidden until Join is clicked */
+    #join-panel {
+      width: 100%;
+      overflow: hidden;
+      max-height: 0;
+      opacity: 0;
+      transition: max-height .3s ease, opacity .25s ease;
+    }
+    #join-panel.open { max-height: 200px; opacity: 1; }
+
     .lobby-hint { font-size: .8rem; color: var(--dim); text-align: center; letter-spacing: 1px; }
+
+    /* Generated code display */
+    .room-code-display {
+      display: none; flex-direction: column; align-items: center; gap: .4rem;
+      padding: 1rem; background: var(--surf2);
+      border: 1px solid var(--border); border-radius: 12px; width: 100%;
+    }
+    .room-code-display.show { display: flex; }
+    .room-code-lbl { font-size: .7rem; letter-spacing: 4px; text-transform: uppercase; color: var(--dim); }
+    .room-code-val {
+      font-family: 'Bebas Neue', sans-serif; font-size: 3rem;
+      letter-spacing: 14px; color: var(--cyan); line-height: 1;
+    }
+    .room-code-hint { font-size: .75rem; color: var(--dim); letter-spacing: 1px; }
 
     /* SPIN ROOM */
     #spin-room {
@@ -306,14 +346,31 @@
       <label>Your Callsign</label>
       <input type="text" id="name-input" placeholder="Enter name" maxlength="20" autocomplete="off" spellcheck="false">
     </div>
-    <div class="field">
-      <label>Room Code</label>
-      <input type="text" id="code-input" placeholder="0000" maxlength="4" inputmode="numeric" autocomplete="off">
+    <p class="err" id="join-err"></p>
+    <div class="lobby-actions">
+      <button class="btn-create" id="create-btn">CREATE ROOM</button>
+      <button class="btn-join" id="join-toggle-btn">JOIN ROOM</button>
     </div>
-    <p class="err" id="join-err">Enter your name and a 4-digit room code.</p>
-    <button class="btn-join" id="join-btn">JOIN ROOM</button>
+
+    <!-- Shown only when Join Room is clicked -->
+    <div id="join-panel">
+      <div class="field" style="margin-top:1rem; margin-bottom:0;">
+        <label>Room Code</label>
+        <input type="text" id="code-input" placeholder="0000" maxlength="4" inputmode="numeric" autocomplete="off">
+      </div>
+      <button class="btn-create" id="join-btn" style="margin-top:.75rem;">JOIN</button>
+    </div>
   </div>
-  <p class="lobby-hint">Share the same 4-digit code with your squad.</p>
+
+  <!-- Shown after Create Room, displays the generated code -->
+  <div class="room-code-display" id="code-display">
+    <div class="room-code-lbl">Your Room Code</div>
+    <div class="room-code-val" id="generated-code">----</div>
+    <div class="room-code-hint">Share this with your squad then tap below</div>
+    <button class="btn-create" id="enter-room-btn" style="width:100%; margin-top:.5rem;">ENTER ROOM</button>
+  </div>
+
+  <p class="lobby-hint">Create a room and share the code, or join a friend's room.</p>
 </div>
 
 <div id="spin-room">
@@ -396,7 +453,7 @@ const MANUAL_HEROES = [
 // MANUAL_PORTRAITS: CDN URLs for heroes in MANUAL_HEROES.
 const MANUAL_PORTRAITS = {
   'domina':      'https://d15f34w2p8l1cc.cloudfront.net/overwatch/1161c112292c56c052c0ae711792fcde06e3251b98bc9709e582dd7585b5dcd6.png',
-  'jetpack-cat': 'https://d15f34w2p8l1cc.cloudfront.net/overwatch/03a184cd0de27091e0099ac22635ad9615a8f6997881a5c25cc5f2444764f729.png',
+  'jetpack-cat': 'https://d15f34w2p8l1cc.cloudfront.net/overwatch/d15f34w2p8l1cc.cloudfront.net/overwatch/jetpack-cat-placeholder.png',
   // D.Va corrected portrait hash
   'd-va':        'https://d15f34w2p8l1cc.cloudfront.net/overwatch/df5a5532862d9292634fb3dc0e51a4705aa601de65e5e815513ccc663d84de56.png',
 };
@@ -603,6 +660,47 @@ document.addEventListener('visibilitychange', () => {
 // ═══════════════════════════════════════
 // LOBBY
 // ═══════════════════════════════════════
+function generateCode() {
+  return String(Math.floor(1000 + Math.random() * 9000));
+}
+
+function showErr(msg) {
+  const err = document.getElementById('join-err');
+  err.textContent = msg;
+  err.style.display = msg ? 'block' : 'none';
+}
+
+// Toggle join panel open/closed
+document.getElementById('join-toggle-btn').addEventListener('click', () => {
+  const panel = document.getElementById('join-panel');
+  const codeDisplay = document.getElementById('code-display');
+  codeDisplay.classList.remove('show');
+  panel.classList.toggle('open');
+  showErr('');
+  if (panel.classList.contains('open')) {
+    document.getElementById('code-input').focus();
+  }
+});
+
+// Create Room — generate a code, show it, wait for confirmation
+document.getElementById('create-btn').addEventListener('click', () => {
+  const name = document.getElementById('name-input').value.trim();
+  if (!name) { showErr('Enter your callsign first.'); return; }
+  showErr('');
+  document.getElementById('join-panel').classList.remove('open');
+  const code = generateCode();
+  document.getElementById('generated-code').textContent = code;
+  document.getElementById('code-display').classList.add('show');
+});
+
+// Enter Room after seeing the generated code
+document.getElementById('enter-room-btn').addEventListener('click', () => {
+  const name = document.getElementById('name-input').value.trim();
+  const code = document.getElementById('generated-code').textContent;
+  enterRoom(name, code, 'any', null);
+});
+
+// Join Room — submit the manually entered code
 document.getElementById('join-btn').addEventListener('click', tryJoin);
 document.getElementById('name-input').addEventListener('keydown', e => e.key === 'Enter' && tryJoin());
 document.getElementById('code-input').addEventListener('keydown', e => e.key === 'Enter' && tryJoin());
@@ -613,9 +711,9 @@ document.getElementById('code-input').addEventListener('input', function () {
 function tryJoin() {
   const name = document.getElementById('name-input').value.trim();
   const code = document.getElementById('code-input').value.trim();
-  const err  = document.getElementById('join-err');
-  if (!name || !/^\d{4}$/.test(code)) { err.style.display = 'block'; return; }
-  err.style.display = 'none';
+  if (!name) { showErr('Enter your callsign first.'); return; }
+  if (!/^\d{4}$/.test(code)) { showErr('Enter a valid 4-digit room code.'); return; }
+  showErr('');
   enterRoom(name, code, 'any', null);
 }
 
@@ -1005,9 +1103,6 @@ dismissBtn.addEventListener('click', () => {
 window.addEventListener('appinstalled', () => {
   installBanner.classList.add('hidden');
 });
-  if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js');
-}
 </script>
 </body>
 </html>
