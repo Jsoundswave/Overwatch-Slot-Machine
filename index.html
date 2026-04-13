@@ -186,6 +186,7 @@
     }
     .role-btn .ri { font-size: 1.25rem; line-height: 1; }
     .role-btn.active[data-role="any"]     { border-color: var(--any);  color: var(--any);  background: rgba(255,210,74,.08);  box-shadow: 0 0 18px rgba(255,210,74,.15); }
+    .role-btn.disabled { opacity: .25; pointer-events: none; }
     .role-btn.active[data-role="tank"]    { border-color: var(--tank); color: var(--tank); background: rgba(91,158,255,.08);  box-shadow: 0 0 18px rgba(91,158,255,.15); }
     .role-btn.active[data-role="damage"]  { border-color: var(--dps);  color: var(--dps);  background: rgba(255,74,74,.08);   box-shadow: 0 0 18px rgba(255,74,74,.15); }
     .role-btn.active[data-role="support"] { border-color: var(--supp); color: var(--supp); background: rgba(61,255,138,.08);  box-shadow: 0 0 18px rgba(61,255,138,.15); }
@@ -472,13 +473,15 @@ function heroKeyByName(name) {
   return null;
 }
 
-function getPool(role) {
-  if (role === 'any') return [
+function getPool(roles) {
+  // roles can be 'any', a single role string, or an array of role strings
+  if (roles === 'any' || (Array.isArray(roles) && roles.length === 0)) return [
     ...HEROES.tank.map(h    => ({...h, role: 'tank'})),
     ...HEROES.damage.map(h  => ({...h, role: 'damage'})),
     ...HEROES.support.map(h => ({...h, role: 'support'})),
   ];
-  return HEROES[role].map(h => ({...h, role}));
+  const list = Array.isArray(roles) ? roles : [roles];
+  return list.flatMap(r => (HEROES[r] || []).map(h => ({...h, role: r})));
 }
 
 function shuffle(arr) {
@@ -506,7 +509,7 @@ let roomCode     = null;
 let playerName   = null;
 let playerRef    = null;
 let roomListener = null;
-let currentRole  = 'any';
+let selectedRoles = ['any']; // array; ['any'] means all roles
 let isSpinning   = false;
 let idleTimer    = null;
 const TILE_H     = 230;
@@ -727,16 +730,17 @@ function rejoinRoom(name, code, role, hero) {
 function enterRoom(name, code, role, hero, silent = false) {
   roomCode   = code;
   playerName = name;
-  currentRole = role || 'any';
+  selectedRoles = Array.isArray(role) ? role : [role || 'any'];
 
   const url = new URL(location);
   url.searchParams.set('room', code);
   history.pushState({}, '', url);
 
   playerRef = db.ref(`rooms/${code}/players/${playerId}`);
+  const roleForDB = selectedRoles.length === 1 ? selectedRoles[0] : selectedRoles.join(',');
   playerRef.set({
     name,
-    role: currentRole,
+    role: roleForDB,
     hero: hero || null,
     spinning: false,
     lastSeen: Date.now(),
@@ -747,16 +751,11 @@ function enterRoom(name, code, role, hero, silent = false) {
   cleanStalePlayersFromRoom(code);
 
   startRoomListener(code);
-  saveLocalSession(name, code, currentRole, hero);
+  saveLocalSession(name, code, selectedRoles, hero);
   resetIdleTimer();
 
   document.getElementById('room-tag').textContent   = code;
   document.getElementById('player-tag').textContent = name;
-
-  // Restore role button state
-  document.querySelectorAll('.role-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.role === currentRole);
-  });
 
   lobbyEl.style.display    = 'none';
   spinRoomEl.style.display = 'flex';
@@ -765,15 +764,17 @@ function enterRoom(name, code, role, hero, silent = false) {
   if (hero) {
     const roleColors = { tank: 'var(--tank)', damage: 'var(--dps)', support: 'var(--supp)' };
     const roleNames  = { tank: 'Tank', damage: 'Damage', support: 'Support' };
+    const singleRole = Array.isArray(selectedRoles) && selectedRoles.length === 1 ? selectedRoles[0] : null;
     resultName.textContent = hero;
     resultName.classList.add('show');
-    resultLbl.textContent  = roleNames[currentRole] || 'Hero';
-    resultLbl.style.color  = roleColors[currentRole] || 'var(--any)';
+    resultLbl.textContent  = roleNames[singleRole] || 'Hero';
+    resultLbl.style.color  = roleColors[singleRole] || 'var(--any)';
     resultLbl.classList.add('show');
     slotFrame.classList.add('done');
   }
 
-  buildInitialReel(currentRole);
+  if (typeof syncRoleButtons === 'function') syncRoleButtons();
+  buildInitialReel(selectedRoles);
 }
 
 // ═══════════════════════════════════════
@@ -907,17 +908,44 @@ function renderParty(players) {
 }
 
 // ═══════════════════════════════════════
-// ROLE SELECTION
+// ROLE SELECTION (multi-select)
 // ═══════════════════════════════════════
+function syncRoleButtons() {
+  const anyBtn  = document.querySelector('.role-btn[data-role="any"]');
+  const roleBtns = document.querySelectorAll('.role-btn:not([data-role="any"])');
+  const isAny   = selectedRoles.includes('any');
+
+  anyBtn.classList.toggle('active', isAny);
+  anyBtn.classList.toggle('disabled', !isAny);
+
+  roleBtns.forEach(b => {
+    b.classList.toggle('active', selectedRoles.includes(b.dataset.role));
+    b.classList.remove('disabled');
+  });
+}
+
 document.querySelectorAll('.role-btn').forEach(btn => {
   btn.addEventListener('click', function () {
     if (isSpinning) return;
-    document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
-    this.classList.add('active');
-    currentRole = this.dataset.role;
-    if (playerRef) playerRef.update({ role: currentRole, hero: null, lastSeen: Date.now() });
-    saveLocalSession(playerName, roomCode, currentRole, null);
-    buildInitialReel(currentRole);
+    const role = this.dataset.role;
+
+    if (role === 'any') {
+      selectedRoles = ['any'];
+    } else {
+      selectedRoles = selectedRoles.filter(r => r !== 'any');
+      if (selectedRoles.includes(role)) {
+        selectedRoles = selectedRoles.filter(r => r !== role);
+        if (selectedRoles.length === 0) selectedRoles = ['any'];
+      } else {
+        selectedRoles.push(role);
+      }
+    }
+
+    syncRoleButtons();
+    const roleForFirebase = selectedRoles.length === 1 ? selectedRoles[0] : selectedRoles.join(',');
+    if (playerRef) playerRef.update({ role: roleForFirebase, hero: null, lastSeen: Date.now() });
+    saveLocalSession(playerName, roomCode, selectedRoles, null);
+    buildInitialReel(selectedRoles);
     resetResult();
   });
 });
@@ -972,7 +1000,7 @@ function doSpin() {
   isSpinning = true;
   spinBtn.disabled = true;
 
-  const pool   = getPool(currentRole);
+  const pool   = getPool(selectedRoles);
   const winner = pool[Math.floor(Math.random() * pool.length)];
   const N      = pool.length;
 
@@ -1027,7 +1055,7 @@ function finishSpin(winner) {
   resultLbl.classList.add('show');
 
   if (playerRef) playerRef.update({ hero: winner.name, role: winner.role, spinning: false, lastSeen: Date.now() });
-  saveLocalSession(playerName, roomCode, winner.role, winner.name);
+  saveLocalSession(playerName, roomCode, selectedRoles, winner.name);
 
   launchConfetti();
 }
