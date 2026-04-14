@@ -457,6 +457,9 @@
 }
 #ad-banner.active { display: block; }
 #ad-banner img { display: block; width: 100%; height: auto; max-height: 35vh; object-fit: contain; }
+@media (min-width: 600px) {
+  #ad-banner img { max-height: 120px; }
+}
 #ad-close {
   position: absolute; top: 4px; right: 6px;
   background: rgba(0,0,0,.7); border: 1px solid #555; border-radius: 4px;
