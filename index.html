@@ -175,21 +175,23 @@
     .slot-frame {
       width: 230px; height: 230px; border: 3px solid var(--border2); border-radius: 18px;
       overflow: hidden; position: relative; background: var(--surf);
-      transition: border-color .3s, box-shadow .3s; flex-shrink: 0;
+      transition: border-color .3s, box-shadow .3s, width .45s ease; flex-shrink: 0;
+      max-width: 100%;
     }
-    .slot-frame.spinning { border-color: var(--orange); box-shadow: 0 0 36px rgba(255,107,43,.45); }
+    .slot-frame.spinning { border-color: var(--orange); box-shadow: 0 0 36px rgba(255,107,43,.45); width: min(460px, 100%); }
+    .slot-frame.spinning::before, .slot-frame.spinning::after { width: 220px; }
     @keyframes pulse-cyan {
       0%,100% { box-shadow: 0 0 24px rgba(0,216,255,.4); }
       50%      { box-shadow: 0 0 56px rgba(0,216,255,.75), 0 0 90px rgba(0,216,255,.15); }
     }
     .slot-frame.done { border-color: var(--cyan); animation: pulse-cyan 2s ease-in-out infinite; }
     .slot-frame::before, .slot-frame::after {
-      content: ''; position: absolute; left: 0; right: 0; height: 55px; z-index: 2; pointer-events: none;
+      content: ''; position: absolute; top: 0; bottom: 0; width: 70px; z-index: 2; pointer-events: none;
     }
-    .slot-frame::before { top: 0;    background: linear-gradient(to bottom, var(--surf), transparent); }
-    .slot-frame::after  { bottom: 0; background: linear-gradient(to top,    var(--surf), transparent); }
+    .slot-frame::before { left: 0;  background: linear-gradient(to right, var(--surf), transparent); }
+    .slot-frame::after  { right: 0; background: linear-gradient(to left,  var(--surf), transparent); }
     .reel-window { position: absolute; inset: 0; overflow: hidden; }
-    .reel { position: absolute; top: 0; left: 0; width: 100%; }
+    .reel { position: absolute; top: 0; left: 0; display: flex; flex-direction: row; height: 100%; }
     .reel-tile { width: 230px; height: 230px; display: block; position: relative; overflow: hidden; }
     .reel-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .tile-fallback {
@@ -205,34 +207,75 @@
     .result-role-lbl { font-size: .72rem; letter-spacing: 3px; text-transform: uppercase; opacity: 0; transition: opacity .35s ease .1s; }
     .result-role-lbl.show { opacity: 1; }
 
-    /* EASY MODE CARDS */
+    /* EASY MODE CARDS — dealer flip */
     #easy-cards {
-      display: none; width: 100%; gap: .6rem; justify-content: center;
-      min-height: 230px; align-items: center;
+      display: none; width: 100%; gap: .75rem; justify-content: center;
+      min-height: 150px; align-items: center;
     }
     #easy-cards.visible { display: flex; }
-    .easy-card {
+
+    /* Wrapper: handles slide-in from above */
+    .card-flip-wrapper {
       flex: 1; max-width: 130px; aspect-ratio: 1;
-      border: 2.5px solid var(--border2); border-radius: 14px;
-      overflow: hidden; background: var(--surf2); cursor: pointer;
-      position: relative;
-      transition: border-color .2s, box-shadow .2s, transform .15s, opacity .3s;
-      opacity: 0; transform: scale(.85) translateY(10px);
+      perspective: 700px;
+      opacity: 0; transform: translateY(-90px);
+      pointer-events: none;
     }
-    .easy-card.revealed { opacity: 1; transform: none; }
-    .easy-card:hover { border-color: var(--cyan); box-shadow: 0 0 20px rgba(0,216,255,.3); transform: translateY(-3px); }
-    .easy-card.chosen  { border-color: var(--cyan); box-shadow: 0 0 28px rgba(0,216,255,.5); }
-    .easy-card.faded   { opacity: .2; pointer-events: none; }
-    .easy-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .easy-card .card-fallback {
+    .card-flip-wrapper.pickable { pointer-events: auto; cursor: pointer; }
+
+    /* Inner: the flip element */
+    .card-inner {
+      width: 100%; height: 100%; position: relative;
+      transform-style: preserve-3d;
+      transition: transform .48s cubic-bezier(.4,0,.2,1);
+      border-radius: 14px;
+    }
+    .card-flip-wrapper.flipped .card-inner { transform: rotateY(180deg); }
+
+    /* Both faces */
+    .card-back, .card-front {
+      position: absolute; inset: 0; border-radius: 14px;
+      backface-visibility: hidden; -webkit-backface-visibility: hidden;
+      overflow: hidden;
+    }
+
+    /* Back: off-white playing card */
+    .card-back {
+      background: #ede8dc; border: 2px solid #c0b49a;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .card-back img { width: 52%; opacity: .35; }
+
+    /* Front: hero portrait */
+    .card-front {
+      background: var(--surf2); border: 2.5px solid var(--border2);
+      transform: rotateY(180deg);
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .card-front img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .card-front .card-name {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: linear-gradient(transparent, rgba(0,0,0,.85));
+      font-family: 'Bebas Neue', sans-serif; font-size: .8rem; letter-spacing: 1px;
+      color: #fff; text-align: center; padding: .4rem .3rem .3rem;
+    }
+    .card-front .card-fallback {
       width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
       font-family: 'Bebas Neue', sans-serif; font-size: 3rem; color: var(--dim);
     }
-    .easy-card .card-name {
-      position: absolute; bottom: 0; left: 0; right: 0;
-      background: linear-gradient(transparent, rgba(0,0,0,.8));
-      font-family: 'Bebas Neue', sans-serif; font-size: .85rem; letter-spacing: 1px;
-      color: #fff; text-align: center; padding: .4rem .3rem .3rem;
+
+    /* Hover / chosen states (applied to front) */
+    .card-flip-wrapper.pickable:hover .card-front { border-color: var(--cyan); box-shadow: 0 0 20px rgba(0,216,255,.35); }
+    .card-flip-wrapper.chosen .card-front   { border-color: var(--cyan); box-shadow: 0 0 30px rgba(0,216,255,.6); }
+    .card-flip-wrapper.chosen               { transform: translateY(-6px) !important; }
+
+    /* Unchosen: fly back off screen */
+    @keyframes card-leave {
+      to { opacity: 0; transform: translateY(-90px); }
+    }
+    .card-flip-wrapper.leaving {
+      animation: card-leave .35s ease-in forwards;
+      pointer-events: none;
     }
 
     /* BLACKOUT EXHAUSTED */
@@ -401,6 +444,16 @@
 }
 #ad-mode-btn:hover { opacity: .8; }
 #ad-mode-btn.ads-on { color: var(--orange); opacity: .7; }
+
+    #lock-in-btn {
+      display: none;
+      background: transparent; border: 2px solid var(--cyan); border-radius: 10px;
+      color: var(--cyan); font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.2rem; letter-spacing: 3px; padding: .55rem 1.4rem;
+      cursor: pointer; transition: background .2s, color .2s;
+    }
+    #lock-in-btn:hover { background: var(--cyan); color: var(--bg); }
+
     #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 998; }
   </style>
 </head>
@@ -492,6 +545,7 @@
       <div class="result-name" id="result-name"></div>
       <div class="result-role-lbl" id="result-role-lbl"></div>
     </div>
+    <button id="lock-in-btn">&#128274; LOCK IN</button>
   </div>
 
   <!-- Blackout remaining count -->
@@ -629,6 +683,7 @@ let gameMode      = localStorage.getItem('owrr_mode') || 'normal';
 let isSpinning    = false;
 let idleTimer     = null;
 let spinTimestamps  = [];
+let spinFinalX      = 0;  // winner position for 230px frame
 let heroTimer       = null;
 let historyListener = null;
 let myHistory       = [];  // local cache of this player's committed heroes (for blackout)
@@ -651,6 +706,7 @@ const spinBtn    = document.getElementById('spin-btn');
 const partyList  = document.getElementById('party-list');
 const partyCount = document.getElementById('party-count');
 const dupWarning = document.getElementById('dup-warning');
+const lockInBtn  = document.getElementById('lock-in-btn');
 const blackoutExhausted  = document.getElementById('blackout-exhausted');
 const blackoutRemaining  = document.getElementById('blackout-remaining');
 const blackoutCount      = document.getElementById('blackout-count');
@@ -1144,7 +1200,7 @@ function buildInitialReel(role) {
   reelEl.innerHTML = '';
   shuffle(getPool(role)).forEach(h => reelEl.appendChild(makeTile(h)));
   reelEl.style.transition = 'none';
-  reelEl.style.transform  = 'translateY(0)';
+  reelEl.style.transform  = 'translateX(0)';
 }
 
 function resetResult() {
@@ -1152,8 +1208,9 @@ function resetResult() {
   resultLbl.classList.remove('show');
   resultName.textContent = '';
   slotFrame.classList.remove('spinning', 'done');
+  lockInBtn.style.display = 'none';
   reelEl.style.transition = 'none';
-  reelEl.style.transform  = 'translateY(0)';
+  reelEl.style.transform  = 'translateX(0)';
   easyCards.classList.remove('visible');
   easyCards.innerHTML = '';
 }
@@ -1184,6 +1241,7 @@ function doSpin() {
 
   clearTimeout(heroTimer);
   heroTimer = null;
+  lockInBtn.style.display = 'none';
 
   // Dunce hat check
   const now = Date.now();
@@ -1210,26 +1268,42 @@ function doSpin() {
   reelEl.innerHTML = '';
   allTiles.forEach(h => reelEl.appendChild(makeTile(h)));
   reelEl.style.transition = 'none';
-  reelEl.style.transform  = 'translateY(0)';
+  reelEl.style.transform  = 'translateX(0)';
 
   slotFrame.classList.remove('done');
   slotFrame.classList.add('spinning');
   resultName.classList.remove('show');
   resultLbl.classList.remove('show');
 
-  const targetY  = -((N * 2 + winnerSlot) * TILE_H);
-  const fastEndY = -(N * 2 * TILE_H);
+  const targetX   = -((N * 2 + winnerSlot) * TILE_H) + (TILE_H / 2);
+  spinFinalX = -((N * 2 + winnerSlot) * TILE_H); // 230px-centered (no offset)
+  const fastEndX = -(N * 2 * TILE_H) + (TILE_H / 2);
   const DURATION = 3200;
   const t0       = performance.now();
+  const tiles    = Array.from(reelEl.children);
+  const frameW   = TILE_H; // slot frame is 230px wide = 1 tile
 
   function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
 
+  function applyScales(x) {
+    // Centre of the slot frame in reel-space
+    const centerInReel = -x + frameW;  // 2x frame: center = TILE_H px from left
+    tiles.forEach((tile, i) => {
+      const tileCenterX = i * frameW + frameW / 2;
+      const dist = Math.abs(tileCenterX - centerInReel);
+      // Full size at centre, shrinks as it moves away — min scale 0.65
+      const scale = Math.max(0.65, 1 - (dist / (frameW * 2.2)));
+      tile.style.transform = `scale(${scale})`;
+    });
+  }
+
   (function animate(ts) {
     const t = Math.min((ts - t0) / DURATION, 1);
-    const y = t < 0.65
-      ? fastEndY * (t / 0.65)
-      : fastEndY + (targetY - fastEndY) * easeOut((t - 0.65) / 0.35);
-    reelEl.style.transform = `translateY(${y}px)`;
+    const x = t < 0.65
+      ? fastEndX * (t / 0.65)
+      : fastEndX + (targetX - fastEndX) * easeOut((t - 0.65) / 0.35);
+    reelEl.style.transform = `translateX(${x}px)`;
+    applyScales(x);
     t < 1 ? requestAnimationFrame(animate) : finishSpin(winner);
   })(t0);
 }
@@ -1239,6 +1313,15 @@ function finishSpin(winner) {
   spinBtn.disabled = false;
   slotFrame.classList.remove('spinning');
   slotFrame.classList.add('done');
+
+  // Smoothly recentre winner in the now-collapsing 230px frame
+  // (transition matches the frame width collapse at 0.45s)
+  reelEl.style.transition = 'transform 0.45s ease';
+  reelEl.style.transform  = `translateX(${spinFinalX}px)`;
+  Array.from(reelEl.children).forEach(tile => {
+    tile.style.transition = 'transform 0.45s ease';
+    tile.style.transform  = 'scale(1)';
+  });
 
   const roleColors = { tank: 'var(--tank)', damage: 'var(--dps)', support: 'var(--supp)' };
   const roleNames  = { tank: 'Tank', damage: 'Damage', support: 'Support' };
@@ -1255,7 +1338,19 @@ function finishSpin(winner) {
   // 45s commit timer
   clearTimeout(heroTimer);
   const committedHero = winner.name;
-  heroTimer = setTimeout(() => { commitToHistory(committedHero); }, 45000);
+  heroTimer = setTimeout(() => {
+    commitToHistory(committedHero);
+    lockInBtn.style.display = 'none';
+  }, 45000);
+
+  // Show lock-in button for immediate commit
+  lockInBtn.style.display = 'block';
+  lockInBtn.onclick = () => {
+    clearTimeout(heroTimer);
+    heroTimer = null;
+    commitToHistory(committedHero);
+    lockInBtn.style.display = 'none';
+  };
 
   launchConfetti();
 }
@@ -1273,10 +1368,30 @@ function dealEasy() {
 
   if (playerRef) playerRef.update({ spinning: true, hero: null, lastSeen: Date.now() });
 
-  picks.forEach((hero, i) => {
-    const card = document.createElement('div');
-    card.className = 'easy-card';
+  const SLIDE_MS  = 380;  // slide-in duration per card
+  const STAGGER   = 200;  // delay between each card sliding in
+  const PAUSE     = 100;  // gap between landing and flip
+  const FLIP_MS   = 480;  // flip animation duration (matches CSS .48s)
 
+  picks.forEach((hero, i) => {
+    // ── Wrapper (handles slide + perspective) ──
+    const wrapper = document.createElement('div');
+    wrapper.className = 'card-flip-wrapper';
+
+    // ── Inner flip element ──
+    const inner = document.createElement('div');
+    inner.className = 'card-inner';
+
+    // ── Back face: off-white + logo ──
+    const back = document.createElement('div');
+    back.className = 'card-back';
+    const logoImg = document.createElement('img');
+    logoImg.src = 'OW_roulette_Logo.png'; logoImg.alt = '';
+    back.appendChild(logoImg);
+
+    // ── Front face: hero portrait ──
+    const front = document.createElement('div');
+    front.className = 'card-front';
     const url = portrait(hero.key);
     if (url) {
       const img = document.createElement('img');
@@ -1284,36 +1399,65 @@ function dealEasy() {
       img.onerror = () => {
         img.remove();
         const fb = document.createElement('div');
-        fb.className = 'card-fallback'; fb.textContent = hero.name[0];
-        card.insertBefore(fb, card.querySelector('.card-name'));
+        fb.className = 'card-fallback';
+        fb.textContent = (hero.name || '?')[0];
+        front.insertBefore(fb, front.querySelector('.card-name'));
       };
-      card.appendChild(img);
+      front.appendChild(img);
     } else {
       const fb = document.createElement('div');
-      fb.className = 'card-fallback'; fb.textContent = hero.name[0];
-      card.appendChild(fb);
+      fb.className = 'card-fallback';
+      fb.textContent = (hero.name || '?')[0];
+      front.appendChild(fb);
     }
-
     const nameEl = document.createElement('div');
     nameEl.className = 'card-name'; nameEl.textContent = hero.name;
-    card.appendChild(nameEl);
+    front.appendChild(nameEl);
 
-    // Staggered reveal animation
-    setTimeout(() => card.classList.add('revealed'), i * 150);
+    inner.appendChild(back);
+    inner.appendChild(front);
+    wrapper.appendChild(inner);
+    easyCards.appendChild(wrapper);
 
-    card.addEventListener('click', () => pickEasyHero(hero, picks, card));
-    easyCards.appendChild(card);
+    // ── Slide in (staggered) ──
+    const slideDelay = i * STAGGER;
+    setTimeout(() => {
+      wrapper.style.transition =
+        `opacity ${SLIDE_MS}ms ease, transform ${SLIDE_MS}ms cubic-bezier(.2,0,.1,1)`;
+      wrapper.style.opacity   = '1';
+      wrapper.style.transform = 'translateY(0)';
+    }, slideDelay + 10); // +10 forces repaint before transition
+
+    // ── Flip after landing ──
+    setTimeout(() => {
+      wrapper.classList.add('flipped');
+    }, slideDelay + SLIDE_MS + PAUSE);
+
+    // ── Enable picking after ALL cards have fully flipped ──
+    if (i === picks.length - 1) {
+      const allDoneMs = slideDelay + SLIDE_MS + PAUSE + FLIP_MS + 60;
+      setTimeout(() => {
+        document.querySelectorAll('.card-flip-wrapper').forEach(w => w.classList.add('pickable'));
+        if (playerRef) playerRef.update({ spinning: false, lastSeen: Date.now() });
+      }, allDoneMs);
+    }
+
+    wrapper.addEventListener('click', () => {
+      if (!wrapper.classList.contains('pickable')) return;
+      pickEasyHero(hero, picks, wrapper);
+    });
   });
-
-  if (playerRef) playerRef.update({ spinning: false, lastSeen: Date.now() });
 }
 
 function pickEasyHero(hero, allPicks, chosenCard) {
-  // Mark chosen + fade others
-  document.querySelectorAll('.easy-card').forEach(c => {
-    c.classList.toggle('chosen', c === chosenCard);
-    c.classList.toggle('faded', c !== chosenCard);
-    c.style.pointerEvents = 'none';
+  // Mark chosen + send unchosen cards flying back off screen
+  document.querySelectorAll('.card-flip-wrapper').forEach(c => {
+    c.classList.remove('pickable');
+    if (c === chosenCard) {
+      c.classList.add('chosen');
+    } else {
+      c.classList.add('leaving');
+    }
   });
 
   const roleColors = { tank: 'var(--tank)', damage: 'var(--dps)', support: 'var(--supp)' };
