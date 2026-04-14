@@ -1595,11 +1595,12 @@ function startAdMode() {
   if (!AD_IMAGES.length) { setTimeout(startAdMode, 500); return; } // wait for API
   currentAdIdx = Math.floor(Math.random() * AD_IMAGES.length);
   showAdBanner();
-  adInterval = setInterval(() => {
-    if (!AD_IMAGES.length) return;
-    currentAdIdx = (currentAdIdx + 1) % AD_IMAGES.length;
-    document.getElementById('ad-img').src = AD_IMAGES[currentAdIdx];
-  }, 60000);
+adInterval = setInterval(() => {
+  if (!AD_IMAGES.length) return;
+  currentAdIdx = (currentAdIdx + 1) % AD_IMAGES.length;
+  document.getElementById('ad-img').src = AD_IMAGES[currentAdIdx];
+  showAdBanner(); // re-show even if they closed it
+}, 30000);
 }
 
 function stopAdMode() {
