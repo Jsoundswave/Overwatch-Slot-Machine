@@ -398,9 +398,11 @@
       position: fixed; top: 1.5rem; left: 50%; transform: translateX(-50%);
       background: var(--dps); color: #fff; font-family: 'Bebas Neue', sans-serif;
       font-size: 1.3rem; letter-spacing: 3px; padding: .6rem 1.4rem; border-radius: 10px;
-      opacity: 0; pointer-events: none; transition: opacity .3s ease; z-index: 600; white-space: nowrap;
+      opacity: 0; pointer-events: none; transition: opacity .3s ease; z-index: 600;
+      white-space: nowrap; max-width: 90vw; overflow: hidden; text-overflow: ellipsis;
     }
     #wimp-toast.show { opacity: 1; }
+    #wimp-toast.ad-click { background: var(--any); color: var(--bg); }
 
     /* INSTALL BANNER */
     #install-banner {
@@ -451,14 +453,24 @@
     /* AD BANNER */
 #ad-banner {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 502;
-  background: transparent no-repeat center / 100% auto; display: none; align-items: center; justify-content: center;
-  height: auto; min-height: 50px; overflow: hidden; border-top: none;
-}
-@media (min-width: 600px) {
-  #ad-banner { background-repeat: repeat-x; background-size: auto 120px; height: 120px; }
+  background: transparent; display: none; align-items: center; justify-content: center;
+  overflow: hidden; border-top: none;
 }
 #ad-banner.active { display: flex; }
-#ad-banner img { display: none; }
+/* Mobile: real <img> fills full width, height is natural */
+#ad-banner img {
+  display: block; width: 100%; height: auto; object-fit: contain;
+}
+/* Desktop: hide img, use tiling background instead */
+@media (min-width: 600px) {
+  #ad-banner {
+    height: 120px;
+    background-repeat: repeat-x;
+    background-position: center;
+    background-size: auto 120px;
+  }
+  #ad-banner img { display: none; }
+}
 #ad-close {
   position: absolute; top: 4px; right: 6px;
   background: rgba(0,0,0,.7); border: 1px solid #555; border-radius: 4px;
@@ -613,7 +625,7 @@
 
 <div id="ad-banner">
   <button id="ad-close">&#x2715;</button>
-  <img id="ad-img" src="" alt="Advertisement">
+  <img id="ad-img" src="" alt="Advertisement" style="display:none;">
 </div>
 
 <div id="install-banner">
@@ -1055,6 +1067,15 @@ function startRoomListener(code) {
   roomListener = ref.on('value', snapshot => {
     renderParty(snapshot.val() || {});
   });
+}
+
+function showAdClickToast(player, adName) {
+  const toast = document.getElementById('wimp-toast');
+  toast.classList.remove('show', 'ad-click');
+  void toast.offsetWidth;
+  toast.textContent = `📢 ${player} clicked ${adName}`;
+  toast.classList.add('show', 'ad-click');
+  setTimeout(() => toast.classList.remove('show', 'ad-click'), 4000);
 }
 
 function showWimpToast(name) {
@@ -1571,7 +1592,9 @@ loadAdImages();
 function showAdBanner() {
   if (!AD_IMAGES.length) return;
   const banner = document.getElementById('ad-banner');
-  banner.style.backgroundImage = `url('${AD_IMAGES[currentAdIdx]}')`;
+  const src    = AD_IMAGES[currentAdIdx];
+  banner.style.backgroundImage = `url('${src}')`;  // desktop tiling
+  document.getElementById('ad-img').src = src;       // mobile img
   banner.classList.add('active');
   document.getElementById('install-banner').style.bottom = '120px';
 }
@@ -1588,7 +1611,9 @@ function startAdMode() {
   adInterval = setInterval(() => {
     if (!AD_IMAGES.length) return;
     currentAdIdx = (currentAdIdx + 1) % AD_IMAGES.length;
-    document.getElementById('ad-banner').style.backgroundImage = `url('${AD_IMAGES[currentAdIdx]}')`;
+    const src = AD_IMAGES[currentAdIdx];
+    document.getElementById('ad-banner').style.backgroundImage = `url('${src}')`;
+    document.getElementById('ad-img').src = src;
   }, 60000);
 }
 
@@ -1611,14 +1636,32 @@ document.getElementById('ad-mode-btn').addEventListener('click', () => {
   db.ref(`rooms/${roomCode}/adMode`).set(!isOn);
 });
 
-document.getElementById('ad-close').addEventListener('click', () => {
+document.getElementById('ad-close').addEventListener('click', (e) => {
+  e.stopPropagation();
   document.getElementById('ad-banner').classList.remove('active');
   document.getElementById('install-banner').style.bottom = '';
 });
 
+// Clicking the ad (not the X) broadcasts a notification to the room
+document.getElementById('ad-banner').addEventListener('click', () => {
+  if (!roomCode || !playerName || !AD_IMAGES.length) return;
+  const raw    = AD_IMAGES[currentAdIdx] || '';
+  const adName = raw.replace(/^ads\//, '').replace(/\.[^.]+$/, '');
+  db.ref(`rooms/${roomCode}/adClick`).set({ player: playerName, ad: adName, ts: Date.now() });
+});
+
+let adClickListener = null;
+let lastAdClickTs   = 0;
+
 function startAdListener(code) {
   adListener = db.ref(`rooms/${code}/adMode`).on('value', snap => {
     syncAdMode(snap.val() === true);
+  });
+  adClickListener = db.ref(`rooms/${code}/adClick`).on('value', snap => {
+    const data = snap.val();
+    if (!data || !data.ts || data.ts <= lastAdClickTs) return;
+    lastAdClickTs = data.ts;
+    showAdClickToast(data.player, data.ad);
   });
 }
 
@@ -1627,6 +1670,11 @@ function stopAdListener(code) {
     db.ref(`rooms/${code}/adMode`).off('value', adListener);
     adListener = null;
   }
+  if (adClickListener && code) {
+    db.ref(`rooms/${code}/adClick`).off('value', adClickListener);
+    adClickListener = null;
+  }
+  lastAdClickTs = 0;
   stopAdMode();
 }
 // ═══════════════════════════════════════
