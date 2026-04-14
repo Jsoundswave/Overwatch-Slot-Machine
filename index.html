@@ -809,9 +809,11 @@ document.getElementById('create-btn').addEventListener('click', () => {
 document.getElementById('enter-room-btn').addEventListener('click', () => {
   const name = document.getElementById('name-input').value.trim();
   const code = document.getElementById('generated-code').textContent;
+  window.speechSynthesis.getVoices(); // iOS requires speech triggered near a user gesture
   enterRoom(name, code, 'any', null);
 });
 
+window.speechSynthesis.getVoices(); // pre-load voices so first TTS isn't delayed
 document.getElementById('join-btn').addEventListener('click', tryJoin);
 document.getElementById('name-input').addEventListener('keydown', e => e.key === 'Enter' && tryJoin());
 document.getElementById('code-input').addEventListener('keydown', e => e.key === 'Enter' && tryJoin());
@@ -820,6 +822,7 @@ document.getElementById('code-input').addEventListener('input', function () {
 });
 
 function tryJoin() {
+  window.speechSynthesis.getVoices();
   const name = document.getElementById('name-input').value.trim();
   const code = document.getElementById('code-input').value.trim();
   if (!name) { showErr('Enter your callsign first.'); return; }
@@ -938,6 +941,15 @@ function showWimpToast(name) {
   toast.textContent = `🎩 ${name} is a WIMP!`;
   toast.classList.add('show');
   setTimeout(() => toast.classList.remove('show'), 4000);
+
+  // Text-to-speech announcement
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel(); // stop anything already speaking
+    const utter = new SpeechSynthesisUtterance(`${name} is a wimp!`);
+    utter.rate  = 0.95;
+    utter.pitch = 1.1;
+    window.speechSynthesis.speak(utter);
+  }
 }
 
 function renderParty(players) {
