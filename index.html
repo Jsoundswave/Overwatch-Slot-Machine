@@ -451,8 +451,11 @@
     /* AD BANNER */
 #ad-banner {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 502;
-  background: #000 repeat-x center / auto 120px; display: none; align-items: center; justify-content: center;
-  height: 120px; overflow: hidden; border-top: 2px solid #333;
+  background: transparent no-repeat center / 100% auto; display: none; align-items: center; justify-content: center;
+  height: auto; min-height: 50px; overflow: hidden; border-top: none;
+}
+@media (min-width: 600px) {
+  #ad-banner { background-repeat: repeat-x; background-size: auto 120px; height: 120px; }
 }
 #ad-banner.active { display: flex; }
 #ad-banner img { display: none; }
