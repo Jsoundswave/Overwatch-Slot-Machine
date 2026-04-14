@@ -380,11 +380,11 @@
     /* AD BANNER */
 #ad-banner {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 502;
-  background: #000; display: none; align-items: center; justify-content: center;
+  background: #000 repeat-x center / auto 120px; display: none; align-items: center; justify-content: center;
   height: 120px; overflow: hidden; border-top: 2px solid #333;
 }
 #ad-banner.active { display: flex; }
-#ad-banner img { height: 120px; width: 100%; object-fit: fill; object-position: center; display: block; }
+#ad-banner img { display: none; }
 #ad-close {
   position: absolute; top: 4px; right: 6px;
   background: rgba(0,0,0,.7); border: 1px solid #555; border-radius: 4px;
@@ -1379,9 +1379,9 @@ let adListener  = null;
 let currentAdIdx = 0;
 
 function showAdBanner() {
-  const img = document.getElementById('ad-img');
-  img.src = AD_IMAGES[currentAdIdx];
-  document.getElementById('ad-banner').classList.add('active');
+  const banner = document.getElementById('ad-banner');
+  banner.style.backgroundImage = `url('${AD_IMAGES[currentAdIdx]}')`;
+  banner.classList.add('active');
   document.getElementById('install-banner').style.bottom = '120px';
 }
 
@@ -1393,10 +1393,10 @@ function hideAdBanner() {
 function startAdMode() {
   currentAdIdx = Math.floor(Math.random() * AD_IMAGES.length);
   showAdBanner();
-  adInterval = setInterval(() => {
-    currentAdIdx = (currentAdIdx + 1) % AD_IMAGES.length;
-    document.getElementById('ad-img').src = AD_IMAGES[currentAdIdx];
-  }, 60000);
+adInterval = setInterval(() => {
+  currentAdIdx = (currentAdIdx + 1) % AD_IMAGES.length;
+  document.getElementById('ad-banner').style.backgroundImage = `url('${AD_IMAGES[currentAdIdx]}')`;
+}, 60000);
 }
 
 function stopAdMode() {
