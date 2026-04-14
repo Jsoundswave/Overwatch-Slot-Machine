@@ -171,7 +171,7 @@
     .role-btn.disabled { opacity: .25; pointer-events: none; }
 
     /* Slot Machine */
-    .slot-outer { width: 100%; display: flex; flex-direction: column; align-items: center; gap: .75rem; }
+    .slot-outer { width: 100%; display: flex; flex-direction: column; align-items: center; gap: .5rem; }
     .slot-frame {
       width: 230px; height: 230px; border: 3px solid var(--border2); border-radius: 18px;
       overflow: hidden; position: relative; background: var(--surf);
@@ -198,7 +198,8 @@
       width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
       font-family: 'Bebas Neue', sans-serif; font-size: 5rem; color: var(--dim); background: var(--surf2);
     }
-    .result-box { height: 58px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
+    .result-box { min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; transition: min-height .3s ease; }
+    .result-box.has-result { min-height: 52px; }
     .result-name {
       font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 3px; color: var(--cyan);
       opacity: 0; transform: translateY(8px); transition: opacity .35s ease, transform .35s ease;
@@ -294,12 +295,16 @@
     .blackout-remaining span { color: var(--dps); font-weight: 700; }
 
     /* Spin Button */
+    /* Spin / Lock-in button row */
+    .action-row {
+      width: 100%; display: flex; gap: .5rem;
+    }
     .spin-btn {
-      width: 200px; padding: 1rem; background: transparent;
+      flex: 1; padding: .9rem; background: transparent;
       border: 2.5px solid var(--orange); border-radius: 12px;
       color: var(--orange); font-family: 'Bebas Neue', sans-serif;
-      font-size: 1.75rem; letter-spacing: 4px; cursor: pointer;
-      position: relative; overflow: hidden; transition: color .2s, border-color .2s, transform .1s;
+      font-size: 1.6rem; letter-spacing: 4px; cursor: pointer;
+      position: relative; overflow: hidden; transition: color .2s, border-color .2s, transform .1s, flex .35s ease;
     }
     .spin-btn::before {
       content: ''; position: absolute; inset: 0;
@@ -318,6 +323,29 @@
     /* Blackout mode — red */
     .spin-btn.mode-blackout { border-color: var(--dps); color: var(--dps); }
     .spin-btn.mode-blackout::before { background: var(--dps); }
+
+    /* Lock-in button — shares the row */
+    #lock-in-btn {
+      flex: 0; width: 0; padding: .9rem 0; overflow: hidden; white-space: nowrap;
+      background: transparent; border: 2.5px solid var(--cyan); border-radius: 12px;
+      color: var(--cyan); font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.1rem; letter-spacing: 2px; cursor: pointer;
+      position: relative; overflow: hidden;
+      transition: flex .35s ease, width .35s ease, padding .35s ease, color .2s;
+      opacity: 0;
+    }
+    #lock-in-btn::before {
+      content: ''; position: absolute; inset: 0;
+      background: var(--cyan); transform: scaleX(0); transform-origin: left;
+      transition: transform .2s ease; z-index: 0;
+    }
+    #lock-in-btn span { position: relative; z-index: 1; }
+    #lock-in-btn:hover { color: var(--bg); }
+    #lock-in-btn:hover::before { transform: scaleX(1); }
+    #lock-in-btn.visible {
+      flex: 1; width: auto; padding: .9rem;
+      opacity: 1;
+    }
 
     /* PARTY PANEL */
     .party-panel { width: 100%; background: var(--surf); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
@@ -445,14 +473,7 @@
 #ad-mode-btn:hover { opacity: .8; }
 #ad-mode-btn.ads-on { color: var(--orange); opacity: .7; }
 
-    #lock-in-btn {
-      display: none;
-      background: transparent; border: 2px solid var(--cyan); border-radius: 10px;
-      color: var(--cyan); font-family: 'Bebas Neue', sans-serif;
-      font-size: 1.2rem; letter-spacing: 3px; padding: .55rem 1.4rem;
-      cursor: pointer; transition: background .2s, color .2s;
-    }
-    #lock-in-btn:hover { background: var(--cyan); color: var(--bg); }
+
 
     #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 998; }
   </style>
@@ -545,7 +566,6 @@
       <div class="result-name" id="result-name"></div>
       <div class="result-role-lbl" id="result-role-lbl"></div>
     </div>
-    <button id="lock-in-btn">&#128274; LOCK IN</button>
   </div>
 
   <!-- Blackout remaining count -->
@@ -553,7 +573,10 @@
     <span id="blackout-count">0</span> heroes remaining
   </div>
 
-  <button class="spin-btn" id="spin-btn"><span>SPIN</span></button>
+  <div class="action-row">
+    <button class="spin-btn" id="spin-btn"><span>SPIN</span></button>
+    <button id="lock-in-btn"><span>&#128274; LOCK IN</span></button>
+  </div>
   <div class="dup-warning" id="dup-warning">&#9888; Duplicate hero detected! Someone should re-spin.</div>
 
   <div class="party-panel">
@@ -1207,8 +1230,9 @@ function resetResult() {
   resultName.classList.remove('show');
   resultLbl.classList.remove('show');
   resultName.textContent = '';
+  document.querySelector('.result-box') && document.querySelector('.result-box').classList.remove('has-result');
   slotFrame.classList.remove('spinning', 'done');
-  lockInBtn.style.display = 'none';
+  lockInBtn.classList.remove('visible');
   reelEl.style.transition = 'none';
   reelEl.style.transform  = 'translateX(0)';
   easyCards.classList.remove('visible');
@@ -1241,7 +1265,7 @@ function doSpin() {
 
   clearTimeout(heroTimer);
   heroTimer = null;
-  lockInBtn.style.display = 'none';
+  lockInBtn.classList.remove('visible');
 
   // Dunce hat check
   const now = Date.now();
@@ -1326,6 +1350,7 @@ function finishSpin(winner) {
   const roleColors = { tank: 'var(--tank)', damage: 'var(--dps)', support: 'var(--supp)' };
   const roleNames  = { tank: 'Tank', damage: 'Damage', support: 'Support' };
 
+  document.querySelector('.result-box').classList.add('has-result');
   resultName.textContent = winner.name;
   resultName.classList.add('show');
   resultLbl.textContent  = roleNames[winner.role] || 'Hero';
@@ -1340,16 +1365,16 @@ function finishSpin(winner) {
   const committedHero = winner.name;
   heroTimer = setTimeout(() => {
     commitToHistory(committedHero);
-    lockInBtn.style.display = 'none';
+    lockInBtn.classList.remove('visible');
   }, 45000);
 
   // Show lock-in button for immediate commit
-  lockInBtn.style.display = 'block';
+  lockInBtn.classList.add('visible');
   lockInBtn.onclick = () => {
     clearTimeout(heroTimer);
     heroTimer = null;
     commitToHistory(committedHero);
-    lockInBtn.style.display = 'none';
+    lockInBtn.classList.remove('visible');
   };
 
   launchConfetti();
@@ -1512,21 +1537,11 @@ function launchConfetti() {
 // AD MODE
 // ═══════════════════════════════════════
 const AD_IMAGES = [
-  'Onlyfeets.png',
-  'AngerMeds.jpg',
-  'hotPans.png',
-  'Pacifier.png',
-  'Aimbot.png',
-  'Gay.png',
-  'Conv.png',
-  'TrumpCoinTrans.png',
-  'TrumpCoin.jpg',
-  'ProtienWeedTrans.png',
-  'Iran.png',
-  'GayBlackJewishPeopleMeet.png',
-  'GayBlackPeopleMeet.png',
-  'IDF.png',
-  'FreshFur.png',
+  'ads/Aimbot.png',
+  'ads/AngerMeds.jpg',
+  'ads/hotPans.png',
+  'ads/Onlyfeets.png',
+  'ads/Pacifier.png',
 ];
 let adInterval  = null;
 let adListener  = null;
