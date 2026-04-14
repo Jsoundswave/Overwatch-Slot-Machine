@@ -451,11 +451,8 @@
     /* AD BANNER */
 #ad-banner {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 502;
-  background: transparent no-repeat center / 100% auto; display: none; align-items: center; justify-content: center;
-  height: auto; min-height: 50px; overflow: hidden; border-top: none;
-}
-@media (min-width: 600px) {
-  #ad-banner { background: #000 repeat-x center / auto 120px; height: 120px; }
+  background: #000 repeat-x center / auto 120px; display: none; align-items: center; justify-content: center;
+  height: 120px; overflow: hidden; border-top: 2px solid #333;
 }
 #ad-banner.active { display: flex; }
 #ad-banner img { display: none; }
@@ -466,15 +463,20 @@
   font-family: monospace; line-height: 1.4;
 }
 #ad-close:hover { color: #fff; }
-#ad-toggle-wrap { width: 100%; text-align: center; padding: 1.5rem 0 .5rem; position: relative; z-index: 1; }
+#ad-toggle-wrap { width: 100%; text-align: center; padding: 1.2rem 0 .5rem; position: relative; z-index: 1; }
 #ad-mode-btn {
-  background: none; border: none; color: var(--border2);
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: .6rem; letter-spacing: 3px; text-transform: uppercase;
-  cursor: pointer; opacity: .5; transition: opacity .2s;
+  background: transparent; border: 1.5px solid var(--border);
+  border-radius: 8px; padding: .45rem 1rem;
+  color: var(--dim); font-family: 'Barlow Condensed', sans-serif;
+  font-size: .85rem; letter-spacing: 2px; text-transform: uppercase;
+  cursor: pointer; transition: border-color .2s, color .2s, box-shadow .2s;
 }
-#ad-mode-btn:hover { opacity: .8; }
-#ad-mode-btn.ads-on { color: var(--orange); opacity: .7; }
+#ad-mode-btn:hover { border-color: var(--orange); color: var(--orange); }
+#ad-mode-btn.ads-on {
+  border-color: var(--orange); color: var(--orange);
+  box-shadow: 0 0 12px rgba(255,107,43,.3);
+  background: rgba(255,107,43,.08);
+}
 
 
 
