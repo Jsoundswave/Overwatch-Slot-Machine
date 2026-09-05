@@ -130,12 +130,25 @@
       align-items: center; gap: 1.1rem;
       width: 100%; max-width: 460px; padding-top: 1rem; padding-bottom: 5rem;
     }
-    .top-bar { width: 100%; display: flex; justify-content: space-between; align-items: center; }
+    .top-bar { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: .4rem; }
     .tag { background: var(--surf); border: 1px solid var(--border); border-radius: 8px; padding: .35rem .85rem; font-size: .78rem; letter-spacing: 1px; }
-    .tag.room { color: var(--dim); }
+    .tag.room { color: var(--dim); flex-shrink: 0; }
     .tag.room strong { color: var(--cyan); font-family: 'Bebas Neue', sans-serif; font-size: .95rem; letter-spacing: 5px; margin-left: 4px; }
-    .tag.player { font-weight: 700; font-size: .9rem; color: var(--orange); }
-    .btn-back { background: none; border: none; color: var(--dim); font-family: 'Barlow Condensed', sans-serif; font-size: .85rem; letter-spacing: 1px; cursor: pointer; transition: color .2s; }
+    .tag.player {
+      font-weight: 700; font-size: .9rem; color: var(--orange);
+      min-width: 0; flex-shrink: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .group-toggle-btn {
+      flex-shrink: 0; background: var(--surf); border: 1.5px solid var(--border); border-radius: 8px;
+      padding: .3rem .55rem; font-size: 1rem; line-height: 1; cursor: pointer;
+      color: var(--dim); transition: all .15s;
+    }
+    .group-toggle-btn:hover { border-color: var(--plinko); }
+    .group-toggle-btn.active {
+      border-color: var(--plinko); color: var(--plinko); background: rgba(179,136,255,.12);
+      box-shadow: 0 0 10px rgba(179,136,255,.35);
+    }
+    .btn-back { flex-shrink: 0; background: none; border: none; color: var(--dim); font-family: 'Barlow Condensed', sans-serif; font-size: .85rem; letter-spacing: 1px; cursor: pointer; transition: color .2s; }
     .btn-back:hover { color: var(--orange); }
     .section-lbl { font-size: .7rem; letter-spacing: 4px; text-transform: uppercase; color: var(--dim); width: 100%; text-align: center; }
 
@@ -388,6 +401,77 @@
     }
     .plinko-slot.winner { border-color: var(--cyan); box-shadow: 0 0 14px rgba(0,216,255,.6); }
 
+    /* GROUP MODE — shared stage */
+    #group-stage { display: none; width: 100%; flex-direction: column; gap: .7rem; align-items: center; }
+    #group-stage.active { display: flex; }
+    .gs-plinko {
+      display: flex; flex-direction: column; gap: .6rem;
+      width: 100%; background: var(--surf); border: 2px solid var(--border2);
+      border-radius: 16px; padding: .8rem .5rem;
+    }
+    .gs-note {
+      width: 100%; font-size: .8rem; letter-spacing: 1px; color: var(--dim); text-align: center;
+      padding: 1.2rem; background: var(--surf); border: 1px solid var(--border); border-radius: 14px;
+    }
+    .gs-players { display: flex; flex-wrap: wrap; gap: .6rem; justify-content: center; width: 100%; }
+    .gs-player {
+      flex: 1 1 140px; max-width: 220px; min-width: 0;
+      background: var(--surf); border: 2px solid hsl(var(--ph) 70% 55% / .5); border-radius: 14px;
+      padding: .6rem; display: flex; flex-direction: column; align-items: center; gap: .4rem;
+    }
+    .gs-player.me { box-shadow: 0 0 14px hsl(var(--ph) 80% 60% / .35); }
+    .gs-player-name {
+      font-size: .75rem; font-weight: 700; letter-spacing: 1px; color: hsl(var(--ph) 80% 70%);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+    }
+    .gs-player-result { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 2px; color: var(--cyan); min-height: 1.2em; text-align: center; }
+    .gs-frame {
+      position: relative; overflow: hidden; border: 3px solid var(--border2); border-radius: 14px;
+      background: var(--surf2); transition: border-color .3s, box-shadow .3s; flex-shrink: 0;
+    }
+    .gs-frame.spinning { border-color: var(--orange); box-shadow: 0 0 18px rgba(255,107,43,.4); }
+    .gs-frame.done { border-color: var(--cyan); box-shadow: 0 0 18px rgba(0,216,255,.45); }
+    .gs-reel { position: absolute; top: 0; left: 0; height: 100%; display: flex; }
+    .gs-hand { display: flex; gap: .4rem; justify-content: center; }
+    .gs-hand .card-flip-wrapper { width: 64px; max-width: 64px; flex: 0 0 64px; }
+    .gs-hand .card-front .card-name { font-size: .6rem; padding: .25rem .2rem .2rem; }
+    .gs-race {
+      width: 100%; background: var(--surf); border: 2px solid var(--border2); border-radius: 16px;
+      padding: .6rem; display: flex; flex-direction: column; gap: .5rem;
+    }
+    .gs-race-group { position: relative; width: 100%; --gate: 70px; }
+    .gs-lane { position: absolute; left: 0; right: var(--gate); height: 32px; background: var(--surf2); border-radius: 8px; }
+    .gs-gate {
+      position: absolute; right: 0; top: 0; bottom: 0; width: calc(var(--gate) - 6px);
+      border: 2px dashed hsl(var(--ph) 70% 60%); border-radius: 10px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+      background: hsl(var(--ph) 70% 55% / .08); transition: background .3s, box-shadow .3s;
+    }
+    .gs-gate.arrived { background: hsl(var(--ph) 70% 55% / .25); box-shadow: 0 0 16px hsl(var(--ph) 80% 60% / .6); }
+    .gs-gate-initial { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; color: hsl(var(--ph) 80% 70%); line-height: 1; }
+    .gs-gate-name { font-size: .6rem; color: var(--dim); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 4px; }
+    .gs-race-group .race-runner { transition: top .45s ease; }
+    .gs-race-group .race-runner.winner { border-color: hsl(var(--ph) 80% 65%); box-shadow: 0 0 12px hsl(var(--ph) 80% 65% / .7); }
+    .gs-legend { display: flex; flex-wrap: wrap; gap: .4rem .9rem; justify-content: center; font-size: .74rem; width: 100%; }
+    .gs-legend-item { display: flex; align-items: center; gap: .35rem; color: var(--text); }
+    .gs-dot { width: 10px; height: 10px; border-radius: 50%; background: hsl(var(--ph) 80% 60%); box-shadow: 0 0 6px hsl(var(--ph) 80% 60% / .8); flex-shrink: 0; }
+    .gs-legend-hero { color: var(--cyan); }
+    .plinko-slot { position: relative; }
+    .plinko-slot.blocked { opacity: .35; }
+    .plinko-slot.blocked::after {
+      content: '\2715'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; color: var(--dps);
+    }
+    .gs-cap {
+      position: absolute; bottom: 0; height: 6px; border-radius: 3px; opacity: .75;
+      background: repeating-linear-gradient(90deg, var(--dps) 0 6px, #0a0a0a 6px 12px);
+    }
+    .plinko-chip.waiting { animation: plinko-squash .6s ease-in-out infinite; }
+    .plinko-chip .chip-tag {
+      position: absolute; top: -13px; left: 50%; transform: translateX(-50%);
+      font-size: .55rem; font-weight: 700; color: #fff; white-space: nowrap; text-shadow: 0 1px 2px #000; pointer-events: none;
+    }
+
     /* BLACKOUT EXHAUSTED */
     #blackout-exhausted {
       display: none; width: 100%; padding: 1.4rem;
@@ -402,11 +486,11 @@
       text-align: center; width: 100%;
     }
     .blackout-remaining span { color: var(--dps); font-weight: 700; }
-    .plinko-ready-status {
+    .group-ready-status {
       font-size: .72rem; letter-spacing: 2px; color: var(--dim);
       text-align: center; width: 100%; text-transform: uppercase;
     }
-    .plinko-ready-status strong { color: var(--plinko); }
+    .group-ready-status strong { color: var(--plinko); }
 
     /* Spin Button */
     /* Spin / Lock-in button row */
@@ -443,6 +527,9 @@
     /* Plinko mode — purple */
     .spin-btn.mode-plinko { border-color: var(--plinko); color: var(--plinko); }
     .spin-btn.mode-plinko::before { background: var(--plinko); }
+    /* Group ready-up — purple, overrides whichever mode color is active */
+    .spin-btn.mode-group { border-color: var(--plinko); color: var(--plinko); }
+    .spin-btn.mode-group::before { background: var(--plinko); }
 
     /* Lock-in button — shares the row */
     #lock-in-btn {
@@ -482,6 +569,11 @@
     .party-portrait img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 10px; }
     .party-card.is-you .party-portrait    { border-color: var(--orange); box-shadow: 0 0 12px rgba(255,107,43,.3); }
     .party-card.duplicate .party-portrait { border-color: var(--dps);   box-shadow: 0 0 14px rgba(255,74,74,.35); }
+    @keyframes flicker-pulse {
+      0%, 100% { box-shadow: 0 0 10px rgba(0,216,255,.35); }
+      50%      { box-shadow: 0 0 18px rgba(0,216,255,.7); }
+    }
+    .party-portrait.flickering { border-color: var(--cyan); animation: flicker-pulse .5s ease-in-out infinite; }
     .portrait-placeholder {
       width: 100%; height: 100%; display: flex; flex-direction: column;
       align-items: center; justify-content: center; gap: 6px; background: var(--surf2); border-radius: 10px;
@@ -655,6 +747,7 @@
     <button class="btn-back" id="back-btn">&#8592; Leave</button>
     <div class="tag room">ROOM <strong id="room-tag"></strong></div>
     <div class="tag player" id="player-tag"></div>
+    <button class="group-toggle-btn" id="group-mode-btn" title="Group Mode: ready-up together before any mode acts">&#128101;</button>
   </div>
 
   <!-- MODE TOGGLE -->
@@ -693,6 +786,9 @@
     <!-- Plinko mode: peg board drop -->
     <div id="plinko-board"></div>
 
+    <!-- Group Mode: the shared round everyone plays together -->
+    <div id="group-stage"></div>
+
     <!-- Blackout exhausted -->
     <div id="blackout-exhausted">
       <div class="exhausted-title">All Heroes Blacked Out!</div>
@@ -710,8 +806,8 @@
     <span id="blackout-count">0</span> heroes remaining
   </div>
 
-  <!-- Plinko group-ready status -->
-  <div class="plinko-ready-status" id="plinko-ready-status" style="display:none;"></div>
+  <!-- Group ready status -->
+  <div class="group-ready-status" id="group-ready-status" style="display:none;"></div>
 
   <div class="action-row">
     <button class="spin-btn" id="spin-btn"><span>SPIN</span></button>
@@ -845,6 +941,7 @@ let playerRef     = null;
 let roomListener  = null;
 let selectedRoles = ['any'];
 let gameMode      = localStorage.getItem('owrr_mode') || 'normal';
+let groupMode     = localStorage.getItem('owrr_group') === '1';
 let isSpinning    = false;
 let idleTimer     = null;
 let spinTimestamps  = [];
@@ -867,6 +964,7 @@ const slotFrame  = document.getElementById('slot-frame');
 const easyCards  = document.getElementById('easy-cards');
 const raceTrack  = document.getElementById('race-track');
 const plinkoBoard = document.getElementById('plinko-board');
+const groupStage  = document.getElementById('group-stage');
 const resultName = document.getElementById('result-name');
 const resultLbl  = document.getElementById('result-role-lbl');
 const spinBtn    = document.getElementById('spin-btn');
@@ -934,41 +1032,75 @@ document.querySelectorAll('.mode-btn').forEach(btn => {
   });
 });
 
+const groupModeBtn = document.getElementById('group-mode-btn');
+groupModeBtn.addEventListener('click', () => {
+  if (isSpinning) return;
+  setGroupMode(!groupMode);
+});
+
 function setGameMode(mode) {
-  if (gameMode === 'plinko' && mode !== 'plinko' && roomCode) {
-    db.ref(`rooms/${roomCode}/plinko/ready/${playerId}`).remove();
-    setPlinkoPresence(false);
-  }
   gameMode = mode;
   localStorage.setItem('owrr_mode', mode);
   applyModeUI(mode);
   resetResult();
   updateBlackoutUI();
-  if (mode === 'plinko') {
-    setPlinkoPresence(true);
-    buildInitialPlinko(selectedRoles);
-  } else if (mode !== 'easy' && mode !== 'race') {
-    buildInitialReel(selectedRoles);
+  rebuildIdleUI();
+  publishGroupMode();
+}
+
+// Rebuilds whatever should be showing while nothing is in progress: the shared Group
+// Mode stage when it's on, otherwise the personal reel / plinko board for the mode.
+function rebuildIdleUI() {
+  if (groupMode) { renderGroupIdle(true); return; }
+  if (gameMode === 'plinko') buildInitialPlinko(selectedRoles);
+  else if (gameMode !== 'easy' && gameMode !== 'race') buildInitialReel(selectedRoles);
+}
+
+// Group Mode is a site-wide toggle. When it's on, the mode is shared by the whole room
+// (everyone plays the same game together), everyone readies up, and one shared round is
+// rendered on every screen — see GROUP MODE — SHARED ROUNDS below.
+function setGroupMode(on) {
+  groupMode = on;
+  localStorage.setItem('owrr_group', on ? '1' : '0');
+  groupModeBtn.classList.toggle('active', on);
+  updateSpinBtnLabel();
+  setGroupPresence(on);
+  if (on) {
+    // Solo finishes overwrite the stored role with the winner's; re-publish the real pick
+    const roleForDB = selectedRoles.length === 1 ? selectedRoles[0] : selectedRoles.join(',');
+    if (playerRef) playerRef.update({ role: roleForDB, lastSeen: Date.now() });
+    if (groupState.mode && groupState.mode !== gameMode) { applyRoomMode(groupState.mode); return; }
+    publishGroupMode();
   }
+  applyModeUI(gameMode);
+  resetResult();
+  rebuildIdleUI();
+}
+
+function updateSpinBtnLabel() {
+  const labels = { normal: 'SPIN', easy: 'DEAL', blackout: 'SPIN', race: 'RACE', plinko: 'DROP' };
+  spinBtn.querySelector('span').textContent = groupMode ? 'READY' : labels[gameMode];
+  spinBtn.className = groupMode
+    ? 'spin-btn mode-group'
+    : `spin-btn${gameMode !== 'normal' ? ` mode-${gameMode}` : ''}`;
 }
 
 function applyModeUI(mode) {
   // Toggle buttons
   document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
 
-  // Spin button label + color
-  const labels = { normal: 'SPIN', easy: 'DEAL', blackout: 'SPIN', race: 'RACE', plinko: 'READY' };
-  spinBtn.querySelector('span').textContent = labels[mode];
-  spinBtn.className = `spin-btn${mode !== 'normal' ? ` mode-${mode}` : ''}`;
+  // Spin button label + color — Group Mode overrides both regardless of the active mode
+  updateSpinBtnLabel();
 
   // Show/hide slot vs easy cards vs race track vs plinko board
   const isEasy   = mode === 'easy';
   const isRace   = mode === 'race';
   const isPlinko = mode === 'plinko';
-  slotFrame.style.display  = (isEasy || isRace || isPlinko) ? 'none' : '';
+  slotFrame.style.display  = (isEasy || isRace || isPlinko || groupMode) ? 'none' : '';
   easyCards.classList.toggle('visible', false);
   raceTrack.classList.toggle('active', false);
   plinkoBoard.classList.toggle('active', false);
+  groupStage.classList.toggle('active', groupMode);
   blackoutExhausted.classList.toggle('visible', false);
 }
 
@@ -987,7 +1119,7 @@ function updateBlackoutUI() {
     spinBtn.disabled = true;
   } else {
     blackoutExhausted.classList.remove('visible');
-    spinBtn.disabled = false;
+    spinBtn.disabled = isSpinning;
   }
 }
 
@@ -1123,7 +1255,7 @@ function enterRoom(name, code, role, hero, silent = false) {
   startRoomListener(code);
   startHistoryListener(code);
   startAdListener(code);
-  startPlinkoRoundListener(code);
+  startGroupRoundListener(code);
   saveLocalSession(name, code, selectedRoles, hero);
   resetIdleTimer();
 
@@ -1146,10 +1278,10 @@ function enterRoom(name, code, role, hero, silent = false) {
   }
 
   syncRoleButtons();
+  groupModeBtn.classList.toggle('active', groupMode);
   applyModeUI(gameMode);
   updateBlackoutUI();
-  if (gameMode === 'plinko') buildInitialPlinko(selectedRoles);
-  else if (gameMode !== 'easy' && gameMode !== 'race') buildInitialReel(selectedRoles);
+  rebuildIdleUI();
 }
 
 // ═══════════════════════════════════════
@@ -1186,9 +1318,9 @@ function leaveRoom() {
     historyListener = null;
   }
   stopAdListener(roomCode);
-  if (roomCode) db.ref(`rooms/${roomCode}/plinko/ready/${playerId}`).remove();
-  setPlinkoPresence(false);
-  stopPlinkoRoundListener(roomCode);
+  if (roomCode) db.ref(`rooms/${roomCode}/group/ready/${playerId}`).remove();
+  setGroupPresence(false);
+  stopGroupRoundListener(roomCode);
   isSpinning = false;
   spinBtn.disabled = false;
   roomCode = null;
@@ -1236,10 +1368,38 @@ function showWimpToast(name) {
   }
 }
 
+// Live "someone else is spinning" preview — a rapid portrait flicker in their party
+// card, driven purely by the existing spinning/hero fields (no extra broadcast needed).
+// So everyone in the room sees everyone else's result unfold live, not just appear.
+const flickerIntervals = {};
+
+function stopFlicker(pid) {
+  if (flickerIntervals[pid]) { clearInterval(flickerIntervals[pid]); delete flickerIntervals[pid]; }
+}
+
+function startFlicker(imgEl, pid) {
+  stopFlicker(pid);
+  const allHeroes = getPool('any');
+  if (!allHeroes.length) return;
+  const tick = () => {
+    const h = allHeroes[Math.floor(Math.random() * allHeroes.length)];
+    const url = portrait(h.key);
+    if (url) imgEl.src = url;
+  };
+  tick();
+  flickerIntervals[pid] = setInterval(tick, 100);
+}
+
 function renderParty(players) {
+  latestPlayers = players;
   const keys  = Object.keys(players);
   const count = keys.length;
   partyCount.textContent = count === 1 ? '1 player' : `${count} players`;
+
+  Object.keys(flickerIntervals).forEach(pid => {
+    if (!players[pid] || !players[pid].spinning) stopFlicker(pid);
+  });
+  maybeRefreshPlinkoPreview();
 
   if (count === 0) {
     partyList.innerHTML = '<p class="party-empty">Waiting for players...</p>';
@@ -1266,10 +1426,11 @@ function renderParty(players) {
     pbox.className = 'party-portrait';
 
     if (p.spinning) {
-      pbox.innerHTML = `<div class="portrait-placeholder">
-        <div class="portrait-initial">${p.name[0]}</div>
-        <div class="spin-dots"><span></span><span></span><span></span></div>
-      </div>`;
+      pbox.classList.add('flickering');
+      const flickerImg = document.createElement('img');
+      flickerImg.alt = p.name;
+      pbox.appendChild(flickerImg);
+      startFlicker(flickerImg, k);
     } else if (p.hero) {
       const hKey = heroKeyByName(p.hero);
       const url  = hKey ? portrait(hKey) : null;
@@ -1359,10 +1520,7 @@ document.querySelectorAll('.role-btn').forEach(btn => {
     if (playerRef) playerRef.update({ role: roleForFirebase, hero: null, lastSeen: Date.now() });
     saveLocalSession(playerName, roomCode, selectedRoles, null);
     resetResult();
-    if (gameMode === 'easy') easyCards.classList.remove('visible');
-    else if (gameMode === 'race') raceTrack.classList.remove('active');
-    else if (gameMode === 'plinko') buildInitialPlinko(selectedRoles);
-    else buildInitialReel(selectedRoles);
+    rebuildIdleUI();
     updateBlackoutUI();
   });
 });
@@ -1432,10 +1590,8 @@ function commitToHistory(heroName) {
 // ═══════════════════════════════════════
 spinBtn.addEventListener('click', () => {
   if (isSpinning) return;
-  if (gameMode === 'easy') dealEasy();
-  else if (gameMode === 'race') doRace();
-  else if (gameMode === 'plinko') readyUpPlinko();
-  else doSpin();
+  if (groupMode) readyUpGroup();
+  else runCurrentModeAction();
 });
 
 function doSpin() {
@@ -1512,8 +1668,10 @@ function doSpin() {
 }
 
 function finishSpin(winner) {
-  isSpinning = false;
-  spinBtn.disabled = false;
+  if (!groupModeActionCompleted()) {
+    isSpinning = false;
+    spinBtn.disabled = false;
+  }
   slotFrame.classList.remove('spinning');
   slotFrame.classList.add('done');
 
@@ -1674,8 +1832,10 @@ function doRace() {
 }
 
 function finishRace(winner, state, winnerState) {
-  isSpinning = false;
-  spinBtn.disabled = false;
+  if (!groupModeActionCompleted()) {
+    isSpinning = false;
+    spinBtn.disabled = false;
+  }
   state.forEach(s => s.el.classList.remove('racing'));
   winnerState.el.classList.add('winner');
 
@@ -1849,10 +2009,21 @@ function buildInitialPlinko(role) {
 // every peg (reflect velocity off the contact normal, with restitution and a bit of
 // randomness so it doesn't bounce perfectly symmetrically), plus wall bounds. Whichever
 // slot column the ball actually lands in determines the winner — nothing is pre-decided.
-function runPlinkoPhysics(pegsEl, pegs, slotCount, startFrac, onLand) {
-  const chip = document.getElementById('plinko-chip');
+function runPlinkoPhysics(pegsEl, pegs, slotCount, startFrac, onLand, opts = {}) {
+  const chip = opts.chip || document.getElementById('plinko-chip');
   const boardW = pegsEl.clientWidth;
   const boardH = pegsEl.clientHeight;
+
+  // Group Mode blockers: columns outside the player's own roles are capped just above the
+  // slots, so the ball bounces off them and can only settle on a hero it's allowed to get.
+  const allowedSet = opts.allowed && opts.allowed.length ? new Set(opts.allowed) : null;
+  const CAP_H = 22;
+  const colAt = x => Math.max(0, Math.min(slotCount - 1, Math.floor(x / (boardW / slotCount))));
+  const nearestAllowed = col => {
+    let best = col, bd = Infinity;
+    allowedSet.forEach(a => { const d = Math.abs(a - col); if (d < bd) { bd = d; best = a; } });
+    return best;
+  };
 
   const ball = {
     x: Math.min(boardW - PLINKO_BALL_R, Math.max(PLINKO_BALL_R, startFrac * boardW)),
@@ -1933,6 +2104,17 @@ function runPlinkoPhysics(pegsEl, pegs, slotCount, startFrac, onLand) {
         }
       }
 
+      if (allowedSet) {
+        const col  = colAt(ball.x);
+        const capY = boardH - CAP_H;
+        if (!allowedSet.has(col) && ball.y + PLINKO_BALL_R >= capY && ball.vy > 0) {
+          ball.y  = capY - PLINKO_BALL_R;
+          ball.vy = -Math.abs(ball.vy) * 0.55 - 80;
+          ball.vx = (nearestAllowed(col) > col ? 1 : -1) * (150 + Math.random() * 130);
+          bounced = true;
+        }
+      }
+
       if (ball.y + PLINKO_BALL_R >= boardH || elapsedTotal > HARD_TIMEOUT) {
         ball.y = Math.min(ball.y, boardH - PLINKO_BALL_R);
         landed = true;
@@ -1956,8 +2138,8 @@ function runPlinkoPhysics(pegsEl, pegs, slotCount, startFrac, onLand) {
       requestAnimationFrame(frame);
     } else {
       chip.classList.add('landed');
-      const slotW = boardW / slotCount;
-      const slotIndex = Math.max(0, Math.min(slotCount - 1, Math.floor(ball.x / slotW)));
+      let slotIndex = colAt(ball.x);
+      if (allowedSet && !allowedSet.has(slotIndex)) slotIndex = nearestAllowed(slotIndex); // timeout fallback
       onLand(slotIndex);
     }
   }
@@ -1965,23 +2147,136 @@ function runPlinkoPhysics(pegsEl, pegs, slotCount, startFrac, onLand) {
 }
 
 // ═══════════════════════════════════════
-// PLINKO GROUP READY-UP — everyone aims, then it drops for the whole room at once
+// GROUP MODE — SHARED ROUNDS
+// Everyone with Group Mode on shares one mode and readies up; the round is then generated
+// ONCE (by whichever client wins the fire transaction) and every client renders the same
+// shared stage. Each player's section is built only from that player's own selected roles,
+// so nobody ever gets a hero outside what they picked — but everyone watches it all happen.
 // ═══════════════════════════════════════
-let plinkoRoundListener     = null;
-let plinkoLastDropAt        = null;
-let plinkoReadyStatusEl     = null;
+let groupRoundListener  = null;
+let groupLastFireAt     = null;
+let groupRoundRendered  = null;
+let groupReadyStatusEl  = null;
+let groupState          = {};     // last snapshot of rooms/{code}/group
+let latestPlayers       = {};     // cache from the players listener (roles/names)
+let latestHistory       = {};     // cache from the history listener (blackout)
+let groupPlinkoRail     = null;   // the aim rail on the shared plinko preview
+let groupPreviewKey     = null;
+let groupIdleTimer      = null;
+let groupHoldUntil      = 0;      // keep finished results on screen briefly before the next preview
+let groupRemoteBalls    = {};     // pid -> controller for other players' plinko balls
+let groupEasyTimer      = null;
+
+const PLAYER_HUES = [195, 28, 140, 285, 55, 335, 100, 0];
 
 function pidsEvery(map, pids) {
   return pids.length > 0 && pids.every(pid => Object.prototype.hasOwnProperty.call(map, pid));
 }
 
-// Marks whether I'm currently looking at Plinko mode (a room-visible "present" flag,
-// separate from `ready`) — only players who are actually in Plinko mode need to ready up,
-// so someone parked in Normal/Race/etc. doesn't block the group forever. Cleans itself up
-// via onDisconnect so a dropped connection can't leave the round hanging either.
-function setPlinkoPresence(present) {
+// ── Deterministic helpers: the shared plinko preview must be identical on every screen ──
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function hashStr(s) {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+function makeRng(...parts) { return mulberry32(hashStr(parts.join('|'))); }
+function rngShuffle(arr, rng) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function rngSample(arr, n, rng) { return rngShuffle(arr, rng).slice(0, n); }
+function rngPick(arr, rng)      { return arr[Math.floor(rng() * arr.length)]; }
+
+function heroPayload(h)      { return { name: h.name, key: h.key, role: h.role }; }
+function parseRoles(roleStr) { return Array.isArray(roleStr) ? roleStr : (typeof roleStr === 'string' && roleStr.includes(',') ? roleStr.split(',') : [roleStr || 'any']); }
+function rolesExpanded(roles) { return roles.includes('any') ? ['tank', 'damage', 'support'] : roles.filter(r => HEROES[r]); }
+
+function groupParticipants(present, ready) {
+  return Object.keys(present || {}).filter(pid => latestPlayers[pid]).sort().map((pid, i) => {
+    const p = latestPlayers[pid];
+    const aim = (ready || {})[pid];
+    return { pid, name: p.name || '?', roles: parseRoles(p.role), aim: typeof aim === 'number' ? aim : 0.5, hue: PLAYER_HUES[i % PLAYER_HUES.length] };
+  });
+}
+function participantPool(part, mode) {
+  const base = getPool(part.roles);
+  if (mode !== 'blackout') return base;
+  const hist = Array.isArray(latestHistory[part.pid]) ? latestHistory[part.pid] : [];
+  return base.filter(h => !hist.includes(h.name));
+}
+function allowedSlotIndices(slots, part) {
+  const roles = rolesExpanded(part.roles);
+  const idx = slots.map((s, i) => roles.includes(s.role) ? i : -1).filter(i => i >= 0);
+  return idx.length ? idx : slots.map((_, i) => i);
+}
+
+// Shared plinko board: slots are split across every role somebody wants, in proportion to
+// how many players want it. Seeded from the round seed + everyone's roles, so the preview
+// each player aims at is identical on every screen and IS the board the round uses.
+function buildSharedPlinkoSlots(parts, seed) {
+  const rng  = makeRng('slots', seed, parts.map(p => p.pid + ':' + p.roles.join('+')).join(','));
+  const want = { tank: 0, damage: 0, support: 0 };
+  parts.forEach(p => rolesExpanded(p.roles).forEach(r => { want[r] += 1; }));
+  const roles = Object.keys(want).filter(r => want[r] > 0 && HEROES[r].length);
+  if (!roles.length) return [];
+  const total = PLINKO_MAX_SLOTS;
+  const sumW  = roles.reduce((a, r) => a + want[r], 0);
+  const counts = {}; let used = 0;
+  roles.forEach(r => { counts[r] = Math.max(1, Math.floor(total * want[r] / sumW)); used += counts[r]; });
+  const order = [...roles].sort((a, b) => want[b] - want[a]);
+  for (let i = 0; used < total; i++) { counts[order[i % order.length]]++; used++; }
+  while (used > total) { const r = order[order.length - 1]; if (counts[r] > 1) { counts[r]--; used--; } else break; }
+  let slots = [];
+  roles.forEach(r => {
+    const pool = HEROES[r].map(h => ({ ...h, role: r }));
+    rngSample(pool, Math.min(counts[r], pool.length), rng).forEach(h => slots.push(heroPayload(h)));
+  });
+  return rngShuffle(slots, rng);
+}
+
+// Everything the round needs, generated once by the firing client and written to Firebase.
+function buildGroupRound(mode, parts, seed, fireAt) {
+  const rng   = makeRng('round', seed, fireAt);
+  const round = { id: fireAt, mode, players: parts.map(p => ({ pid: p.pid, name: p.name, roles: p.roles, aim: p.aim, hue: p.hue })) };
+  if (mode === 'easy') {
+    round.hands = {};
+    parts.forEach(p => { round.hands[p.pid] = rngSample(participantPool(p, mode), 3, rng).map(heroPayload); });
+  } else if (mode === 'race') {
+    const K = Math.max(2, Math.min(4, Math.floor(9 / Math.max(parts.length, 1))));
+    round.race = {};
+    parts.forEach(p => {
+      const pool   = participantPool(p, mode);
+      const racers = rngSample(pool, Math.min(K, pool.length), rng).map(heroPayload);
+      round.race[p.pid] = { racers, winner: racers.length ? rngPick(racers, rng).key : null };
+    });
+  } else if (mode === 'plinko') {
+    round.slots = buildSharedPlinkoSlots(parts, seed);
+  } else {
+    round.reels = {};
+    parts.forEach(p => {
+      const pool = participantPool(p, mode);
+      round.reels[p.pid] = { winner: pool.length ? heroPayload(rngPick(pool, rng)) : null };
+    });
+  }
+  return round;
+}
+
+// Marks whether I currently have Group Mode on (a room-visible "present" flag, separate
+// from `ready`) — only players with it on need to ready up, so someone who hasn't toggled
+// it doesn't block the room forever. Cleans itself up via onDisconnect so a dropped
+// connection can't leave a round hanging either.
+function setGroupPresence(present) {
   if (!roomCode) return;
-  const ref = db.ref(`rooms/${roomCode}/plinko/present/${playerId}`);
+  const ref = db.ref(`rooms/${roomCode}/group/present/${playerId}`);
   if (present) {
     ref.set(true);
     ref.onDisconnect().remove();
@@ -1991,89 +2286,136 @@ function setPlinkoPresence(present) {
   }
 }
 
-// Once everyone currently present in Plinko mode has readied up, claim the drop via a
-// transaction so exactly one client sets it (no double-fire race between everyone's listeners).
-function maybeTriggerPlinkoDrop(ready, present) {
-  const pids = Object.keys(present);
-  if (!pidsEvery(ready, pids)) return;
-  db.ref(`rooms/${roomCode}/plinko/dropAt`).transaction(current => current ? undefined : Date.now());
+// In Group Mode the mode itself is shared by the room — everyone plays the same game.
+function publishGroupMode() {
+  if (groupMode && roomCode) db.ref(`rooms/${roomCode}/group/mode`).set(gameMode);
+}
+function applyRoomMode(mode) {
+  gameMode = mode;
+  localStorage.setItem('owrr_mode', mode);
+  applyModeUI(mode);
+  resetResult();
+  updateBlackoutUI();
+  rebuildIdleUI();
 }
 
-// Once everyone present has finished their own local animation, reset the round so
-// everyone can aim again. Guarded so a stale/late reset can't clobber a newer round.
-function maybeResetPlinkoRound(done, present, dropAt) {
+// Once everyone present has readied up, one client wins this transaction and writes the
+// fire signal AND the generated round atomically, so everyone renders the same thing.
+function maybeTriggerGroupFire(data) {
+  const present = data.present || {}, ready = data.ready || {};
   const pids = Object.keys(present);
-  if (!dropAt || !pidsEvery(done, pids)) return;
-  db.ref(`rooms/${roomCode}/plinko`).transaction(current => {
-    if (!current || current.dropAt !== dropAt) return; // already reset or superseded, abort
-    return { present: current.present || {} }; // clear ready/done/dropAt, keep who's still present
+  if (!pidsEvery(ready, pids) || !pids.every(pid => latestPlayers[pid])) return;
+  db.ref(`rooms/${roomCode}/group`).transaction(current => {
+    if (!current || current.fireAt) return;
+    const cp = current.present || {}, cr = current.ready || {};
+    if (!pidsEvery(cr, Object.keys(cp))) return;
+    const parts = groupParticipants(cp, cr);
+    if (!parts.length) return;
+    const fireAt = Date.now();
+    return { ...current, fireAt, round: buildGroupRound(current.mode || gameMode, parts, current.seed || 1, fireAt) };
   });
 }
 
-function updatePlinkoReadyUI(ready, present, dropAt) {
-  if (!plinkoReadyStatusEl) plinkoReadyStatusEl = document.getElementById('plinko-ready-status');
-  if (!plinkoReadyStatusEl) return;
+// Once everyone present has finished, reset for the next round: keep presence + mode,
+// roll a new seed (so the next shared plinko board is fresh). Guarded against stale resets.
+function maybeResetGroupRound(data) {
+  const present = data.present || {}, done = data.done || {}, fireAt = data.fireAt;
+  if (!fireAt || !pidsEvery(done, Object.keys(present))) return;
+  db.ref(`rooms/${roomCode}/group`).transaction(current => {
+    if (!current || current.fireAt !== fireAt) return;
+    const next = { present: current.present || {}, seed: Math.floor(Math.random() * 1e9) };
+    if (current.mode) next.mode = current.mode;
+    return next;
+  });
+}
+
+function updateGroupReadyUI(ready, present, fireAt) {
+  if (!groupReadyStatusEl) groupReadyStatusEl = document.getElementById('group-ready-status');
+  if (!groupReadyStatusEl) return;
   const pids = Object.keys(present);
-  if (gameMode !== 'plinko' || pids.length <= 1) { plinkoReadyStatusEl.style.display = 'none'; return; }
-  plinkoReadyStatusEl.style.display = 'block';
-  if (dropAt) {
-    plinkoReadyStatusEl.innerHTML = 'Dropping for the group&hellip;';
+  if (!groupMode || pids.length <= 1) { groupReadyStatusEl.style.display = 'none'; return; }
+  groupReadyStatusEl.style.display = 'block';
+  if (fireAt) {
+    groupReadyStatusEl.innerHTML = 'Going for the group&hellip;';
   } else {
     const readyCount = pids.filter(pid => Object.prototype.hasOwnProperty.call(ready, pid)).length;
-    plinkoReadyStatusEl.innerHTML = `<strong>${readyCount}</strong> / ${pids.length} ready`;
+    groupReadyStatusEl.innerHTML = `<strong>${readyCount}</strong> / ${pids.length} ready`;
   }
 }
 
-function handlePlinkoRoundUpdate(data) {
-  const ready   = data.ready   || {};
-  const done    = data.done    || {};
-  const present = data.present || {};
-  const dropAt  = data.dropAt  || null;
+function handleGroupRoundUpdate(data) {
+  groupState = data;
+  const fireAt = data.fireAt || null;
 
-  if (dropAt && dropAt !== plinkoLastDropAt) {
-    plinkoLastDropAt = dropAt;
-    const myFrac = ready[playerId];
-    if (typeof myFrac === 'number' && gameMode === 'plinko' && plinkoCurrent) {
-      executeLocalPlinkoDrop(myFrac);
+  if (groupMode && data.mode && data.mode !== gameMode && !isSpinning) applyRoomMode(data.mode);
+
+  if (fireAt && data.round && data.round.id === fireAt) {
+    if (groupRoundRendered !== fireAt) {
+      groupRoundRendered = fireAt;
+      groupLastFireAt = fireAt;
+      clearTimeout(groupIdleTimer);
+      if (groupMode) renderGroupRound(data.round);
+    } else if (groupMode) {
+      applyRoundUpdates(data.round); // other players' picks / landings arriving
     }
-  } else if (!dropAt && plinkoLastDropAt !== null) {
-    plinkoLastDropAt = null;
-    if (gameMode === 'plinko') {
+  } else if (!fireAt && groupLastFireAt !== null) {
+    groupLastFireAt = null;
+    groupRoundRendered = null;
+    if (groupMode) {
       isSpinning = false;
       spinBtn.disabled = false;
-      buildInitialPlinko(selectedRoles); // fresh board + re-armed rail for the next round
+      clearTimeout(groupIdleTimer);
+      if (gameMode === 'plinko') {
+        groupHoldUntil = Date.now() + 3500; // let everyone admire the landings first
+        groupIdleTimer = setTimeout(() => { groupPreviewKey = null; maybeRefreshPlinkoPreview(); }, 3600);
+      }
     }
   }
 
-  updatePlinkoReadyUI(ready, present, dropAt);
-  if (!dropAt) maybeTriggerPlinkoDrop(ready, present);
-  else maybeResetPlinkoRound(done, present, dropAt);
+  updateGroupReadyUI(data.ready || {}, data.present || {}, fireAt);
+  if (!fireAt) { maybeTriggerGroupFire(data); maybeRefreshPlinkoPreview(); }
+  else maybeResetGroupRound(data);
 }
 
-function startPlinkoRoundListener(code) {
-  plinkoRoundListener = db.ref(`rooms/${code}/plinko`).on('value', snap => {
-    handlePlinkoRoundUpdate(snap.val() || {});
+function startGroupRoundListener(code) {
+  groupRoundListener = db.ref(`rooms/${code}/group`).on('value', snap => {
+    handleGroupRoundUpdate(snap.val() || {});
   });
-  if (gameMode === 'plinko') setPlinkoPresence(true);
+  if (groupMode) setGroupPresence(true);
 }
 
-function stopPlinkoRoundListener(code) {
-  if (plinkoRoundListener && code) {
-    db.ref(`rooms/${code}/plinko`).off('value', plinkoRoundListener);
-    plinkoRoundListener = null;
+function stopGroupRoundListener(code) {
+  if (groupRoundListener && code) {
+    db.ref(`rooms/${code}/group`).off('value', groupRoundListener);
+    groupRoundListener = null;
   }
-  plinkoLastDropAt = null;
+  clearTimeout(groupIdleTimer);
+  clearTimeout(groupEasyTimer);
+  groupLastFireAt = null;
+  groupRoundRendered = null;
+  groupState = {};
+  groupRemoteBalls = {};
+  groupPlinkoRail = null;
+  groupPreviewKey = null;
 }
 
-// Click handler while in Plinko mode: locks in your aim and marks you ready: nothing
-// drops until every player currently in the room has also readied up.
-function readyUpPlinko() {
-  if (isSpinning) return;
-  if (!plinkoCurrent || !roomCode) return;
+// Runs whichever mode is currently active, right now, with no waiting — used when
+// Group Mode is off (each player still acts independently and instantly).
+function runCurrentModeAction() {
+  if (gameMode === 'easy') dealEasy();
+  else if (gameMode === 'race') doRace();
+  else if (gameMode === 'plinko') executeLocalPlinkoDrop(plinkoDropX);
+  else doSpin();
+}
+
+// Click handler while Group Mode is on: locks in your aim (plinko) and marks you ready —
+// nothing fires until everyone currently in Group Mode has also readied up.
+function readyUpGroup() {
+  if (isSpinning || !roomCode) return;
 
   isSpinning = true;
   spinBtn.disabled = true;
-  plinkoCurrent.rail.classList.add('disabled');
+  if (groupPlinkoRail) groupPlinkoRail.classList.add('disabled');
   clearTimeout(heroTimer);
   heroTimer = null;
   lockInBtn.classList.remove('visible');
@@ -2081,14 +2423,544 @@ function readyUpPlinko() {
   resultLbl.classList.remove('show');
   document.querySelector('.result-box').classList.remove('has-result');
 
-  if (playerRef) playerRef.update({ spinning: true, hero: null, lastSeen: Date.now() });
-  db.ref(`rooms/${roomCode}/plinko/ready/${playerId}`).set(plinkoDropX);
+  const roleForDB = selectedRoles.length === 1 ? selectedRoles[0] : selectedRoles.join(',');
+  if (playerRef) playerRef.update({ role: roleForDB, spinning: true, hero: null, lastSeen: Date.now() });
+  const payload = gameMode === 'plinko' ? plinkoDropX : true;
+  db.ref(`rooms/${roomCode}/group/ready/${playerId}`).set(payload);
 }
 
-// Runs MY OWN local physics using the board I locked in when I readied up, then reports
-// completion back so the group knows when everyone's done and the round can reset.
+// Called from each mode's own "finish" point. Returns true (and keeps the button locked +
+// reports completion) if Group Mode is on; false if it's off, so the caller should do its
+// own normal solo reset.
+function groupModeActionCompleted() {
+  if (!groupMode) return false;
+  isSpinning = true;
+  spinBtn.disabled = true;
+  if (roomCode) db.ref(`rooms/${roomCode}/group/done/${playerId}`).set(true);
+  return true;
+}
+
+// My result from a shared round: same lock-in / history / party flow as a solo win, but
+// WITHOUT overwriting my stored role selection (the shared board depends on it).
+function finishGroupResult(winner, commitNow) {
+  const roleColors = { tank: 'var(--tank)', damage: 'var(--dps)', support: 'var(--supp)' };
+  const roleNames  = { tank: 'Tank', damage: 'Damage', support: 'Support' };
+  document.querySelector('.result-box').classList.add('has-result');
+  resultName.textContent = winner.name;
+  resultName.classList.add('show');
+  resultLbl.textContent  = roleNames[winner.role] || 'Hero';
+  resultLbl.style.color  = roleColors[winner.role] || 'var(--any)';
+  resultLbl.classList.add('show');
+
+  if (playerRef) playerRef.update({ hero: winner.name, spinning: false, lastSeen: Date.now() });
+  saveLocalSession(playerName, roomCode, selectedRoles, winner.name);
+
+  clearTimeout(heroTimer);
+  heroTimer = null;
+  if (commitNow) {
+    commitToHistory(winner.name);
+    lockInBtn.classList.remove('visible');
+  } else {
+    const committedHero = winner.name;
+    heroTimer = setTimeout(() => { commitToHistory(committedHero); lockInBtn.classList.remove('visible'); }, 45000);
+    lockInBtn.classList.add('visible');
+    lockInBtn.onclick = () => {
+      clearTimeout(heroTimer);
+      heroTimer = null;
+      commitToHistory(committedHero);
+      lockInBtn.classList.remove('visible');
+    };
+  }
+  launchConfetti();
+  groupModeActionCompleted();
+}
+
+// ── Stage: idle / preview ──
+function renderGroupIdle(force) {
+  if (!groupMode) return;
+  groupRemoteBalls = {};
+  groupPlinkoRail = null;
+  if (gameMode === 'plinko') { groupPreviewKey = null; maybeRefreshPlinkoPreview(); return; }
+  if (force || !groupStage.dataset.round) {
+    delete groupStage.dataset.round;
+    groupStage.dataset.view = 'idle';
+    groupStage.innerHTML = '';
+    const note = document.createElement('div');
+    note.className = 'gs-note';
+    note.textContent = 'Group Mode: everyone plays this round together. Ready up when you\'re set.';
+    groupStage.appendChild(note);
+  }
+}
+
+function maybeRefreshPlinkoPreview() {
+  if (!groupMode || gameMode !== 'plinko' || isSpinning || groupState.fireAt) return;
+  if (Date.now() < groupHoldUntil) return;
+  const parts = groupParticipants(groupState.present, groupState.ready);
+  const key = (groupState.seed || 1) + '|' + parts.map(p => p.pid + ':' + p.roles.join('+')).join(',');
+  if (key === groupPreviewKey && groupStage.dataset.view === 'plinko-preview') return;
+  groupPreviewKey = key;
+  renderGroupPlinkoPreview(parts);
+}
+
+function buildPlinkoStage(withRail) {
+  groupStage.innerHTML = '';
+  const board = document.createElement('div');
+  board.className = 'gs-plinko';
+  if (withRail) {
+    const hint = document.createElement('div');
+    hint.className = 'plinko-rail-hint'; hint.textContent = 'Tap or drag to aim your drop';
+    const rail = document.createElement('div');
+    rail.className = 'plinko-rail'; rail.id = 'gs-plinko-rail';
+    rail.innerHTML = '<div class="plinko-rail-track"></div><div class="plinko-rail-marker" id="gs-plinko-rail-marker"></div>';
+    board.append(hint, rail);
+  }
+  const pegs  = document.createElement('div'); pegs.className  = 'plinko-pegs';  pegs.id  = 'gs-plinko-pegs';
+  const slots = document.createElement('div'); slots.className = 'plinko-slots'; slots.id = 'gs-plinko-slots';
+  board.append(pegs, slots);
+  const legend = document.createElement('div'); legend.className = 'gs-legend'; legend.id = 'gs-legend';
+  groupStage.append(board, legend);
+  return { board, pegs, slots, legend };
+}
+
+// Covers every slot outside the player's own roles: a red cross on the slot and a striped
+// cap above it that the ball physically bounces off.
+function applyBlockers(slotsEl, pegsEl, slots, me) {
+  if (!me || !slots.length) return [];
+  const allowed = new Set(allowedSlotIndices(slots, me));
+  const colW = 100 / slots.length;
+  slots.forEach((_, i) => {
+    if (allowed.has(i)) return;
+    slotsEl.children[i].classList.add('blocked');
+    const cap = document.createElement('div');
+    cap.className = 'gs-cap';
+    cap.style.left = (i * colW) + '%'; cap.style.width = colW + '%';
+    pegsEl.appendChild(cap);
+  });
+  return [...allowed];
+}
+
+function renderLegend(legendEl, players) {
+  legendEl.innerHTML = '';
+  players.forEach(p => {
+    const item = document.createElement('div');
+    item.className = 'gs-legend-item'; item.style.setProperty('--ph', p.hue); item.dataset.pid = p.pid;
+    const dot  = document.createElement('span'); dot.className = 'gs-dot';
+    const name = document.createElement('span'); name.textContent = p.name + (p.pid === playerId ? ' (you)' : '');
+    const hero = document.createElement('span'); hero.className = 'gs-legend-hero'; hero.textContent = '…';
+    item.append(dot, name, hero);
+    legendEl.appendChild(item);
+  });
+}
+function setLegendHero(pid, text) {
+  const it = groupStage.querySelector(`.gs-legend-item[data-pid="${pid}"] .gs-legend-hero`);
+  if (it) it.textContent = text;
+}
+
+function renderGroupPlinkoPreview(parts) {
+  groupStage.dataset.view = 'plinko-preview';
+  delete groupStage.dataset.round;
+  const slots = buildSharedPlinkoSlots(parts, groupState.seed || 1);
+  const me = parts.find(p => p.pid === playerId);
+  const { pegs, slots: slotsEl, legend } = buildPlinkoStage(true);
+  if (!slots.length) { legend.textContent = 'Waiting for players…'; groupPlinkoRail = null; return; }
+  buildPlinkoPegs(pegs, Math.max(slots.length - 1, 1), slots.length);
+  buildPlinkoSlots(slotsEl, slots);
+  applyBlockers(slotsEl, pegs, slots, me);
+  renderLegend(legend, parts);
+  const rail   = document.getElementById('gs-plinko-rail');
+  const marker = document.getElementById('gs-plinko-rail-marker');
+  marker.style.left = `calc((100% - 18px) * ${plinkoDropX})`;
+  setupPlinkoRail(rail, marker);
+  groupPlinkoRail = rail;
+}
+
+// ── Stage: a fired round ──
+function renderGroupRound(round) {
+  clearTimeout(groupEasyTimer);
+  groupRemoteBalls = {};
+  groupPlinkoRail = null;
+  groupStage.dataset.round = round.id;
+  groupStage.dataset.view  = round.mode;
+  if (round.mode === 'easy')        renderGroupEasy(round);
+  else if (round.mode === 'race')   renderGroupRace(round);
+  else if (round.mode === 'plinko') renderGroupPlinko(round);
+  else                              renderGroupReels(round);
+}
+
+function playerSection(p) {
+  const el = document.createElement('div');
+  el.className = 'gs-player' + (p.pid === playerId ? ' me' : '');
+  el.style.setProperty('--ph', p.hue);
+  const name = document.createElement('div');   name.className = 'gs-player-name';   name.textContent = p.name + (p.pid === playerId ? ' (you)' : '');
+  const body = document.createElement('div');   body.className = 'gs-player-body';
+  const result = document.createElement('div'); result.className = 'gs-player-result';
+  el.append(name, body, result);
+  return { el, body, result };
+}
+
+// Other players' picks / landings, applied idempotently as they arrive.
+function applyRoundUpdates(round) {
+  if (!round) return;
+  if (round.mode === 'easy') {
+    Object.entries(round.picks || {}).forEach(([pid, key]) => {
+      if (pid === playerId) return;
+      const hand = groupStage.querySelector(`.gs-hand[data-pid="${pid}"]`);
+      if (!hand || !hand.dataset.ready || hand.dataset.picked) return;
+      hand.dataset.picked = '1';
+      let name = '';
+      Array.from(hand.children).forEach(c => {
+        const isIt = c.dataset.key === key;
+        c.classList.add(isIt ? 'chosen' : 'leaving');
+        if (isIt) name = c.dataset.name;
+      });
+      const sec = hand.closest('.gs-player');
+      if (sec) sec.querySelector('.gs-player-result').textContent = name;
+    });
+  } else if (round.mode === 'plinko') {
+    Object.entries(round.results || {}).forEach(([pid, slotIndex]) => {
+      if (pid === playerId) return;
+      const ctrl = groupRemoteBalls[pid];
+      if (ctrl) ctrl.land(slotIndex);
+      const slot = (round.slots || [])[slotIndex];
+      if (slot) setLegendHero(pid, slot.name);
+    });
+  }
+}
+
+// ── Normal / Blackout: one reel per player, side by side ──
+function animateMiniReel(reelEl, frameEl, pool, winner, T, onDone) {
+  const N = Math.max(pool.length, 1);
+  const rep = shuffle(pool.filter(h => h.key !== winner.key));
+  const winnerSlot = Math.min(Math.max(1, Math.floor(N / 2)), rep.length);
+  rep.splice(winnerSlot, 0, { ...winner });
+  const tiles = [...shuffle(pool), ...shuffle(pool), ...rep, ...shuffle(pool)];
+  reelEl.innerHTML = '';
+  tiles.forEach(h => { const t = makeTile(h); t.style.width = t.style.height = T + 'px'; reelEl.appendChild(t); });
+  const targetX  = -((N * 2 + winnerSlot) * T);
+  const fastEndX = -(N * 2 * T);
+  const DURATION = 3200, t0 = performance.now();
+  frameEl.classList.add('spinning');
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  (function animate(ts) {
+    const t = Math.min((ts - t0) / DURATION, 1);
+    const x = t < 0.65 ? fastEndX * (t / 0.65) : fastEndX + (targetX - fastEndX) * easeOut((t - 0.65) / 0.35);
+    reelEl.style.transform = `translateX(${x}px)`;
+    if (t < 1) requestAnimationFrame(animate);
+    else { frameEl.classList.remove('spinning'); onDone(); }
+  })(t0);
+}
+
+function renderGroupReels(round) {
+  groupStage.innerHTML = '';
+  const wrap = document.createElement('div'); wrap.className = 'gs-players'; groupStage.appendChild(wrap);
+  const T = round.players.length <= 2 ? 130 : 100;
+  round.players.forEach(p => {
+    const sec = playerSection(p); wrap.appendChild(sec.el);
+    const info = (round.reels || {})[p.pid];
+    if (!info || !info.winner) {
+      sec.result.textContent = 'No heroes left';
+      if (p.pid === playerId) groupModeActionCompleted();
+      return;
+    }
+    const frame = document.createElement('div'); frame.className = 'gs-frame'; frame.style.width = frame.style.height = T + 'px';
+    const reel  = document.createElement('div'); reel.className = 'gs-reel';
+    frame.appendChild(reel); sec.body.appendChild(frame);
+    const pool = participantPool({ pid: p.pid, roles: p.roles }, round.mode);
+    animateMiniReel(reel, frame, pool.length ? pool : [info.winner], info.winner, T, () => {
+      frame.classList.add('done');
+      sec.result.textContent = info.winner.name;
+      if (p.pid === playerId) finishGroupResult(info.winner, false);
+    });
+  });
+}
+
+// ── Easy: 3 cards per player from their own roles, dealt as one shared spread ──
+function buildFlipCard(hero) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'card-flip-wrapper';
+  wrapper.dataset.key = hero.key; wrapper.dataset.name = hero.name;
+  const inner = document.createElement('div'); inner.className = 'card-inner';
+  const back  = document.createElement('div'); back.className = 'card-back';
+  const logo  = document.createElement('img'); logo.src = 'OW_roulette_Logo.png'; logo.alt = '';
+  back.appendChild(logo);
+  const front = document.createElement('div'); front.className = 'card-front';
+  const url = portrait(hero.key);
+  if (url) {
+    const img = document.createElement('img'); img.src = url; img.alt = hero.name;
+    img.onerror = () => { img.remove(); const fb = document.createElement('div'); fb.className = 'card-fallback'; fb.textContent = (hero.name || '?')[0]; front.insertBefore(fb, front.querySelector('.card-name')); };
+    front.appendChild(img);
+  } else {
+    const fb = document.createElement('div'); fb.className = 'card-fallback'; fb.textContent = (hero.name || '?')[0]; front.appendChild(fb);
+  }
+  const nameEl = document.createElement('div'); nameEl.className = 'card-name'; nameEl.textContent = hero.name;
+  front.appendChild(nameEl);
+  inner.append(back, front);
+  wrapper.appendChild(inner);
+  return wrapper;
+}
+
+function animateCardsIn(wrappers, onAllFlipped) {
+  const SLIDE_MS = 380, STAGGER = 200, PAUSE = 100, FLIP_MS = 480;
+  wrappers.forEach((w, i) => {
+    const d = i * STAGGER;
+    setTimeout(() => {
+      w.style.transition = `opacity ${SLIDE_MS}ms ease, transform ${SLIDE_MS}ms cubic-bezier(.2,0,.1,1)`;
+      w.style.opacity = '1'; w.style.transform = 'translateY(0)';
+    }, d + 10);
+    setTimeout(() => w.classList.add('flipped'), d + SLIDE_MS + PAUSE);
+  });
+  const total = Math.max(0, wrappers.length - 1) * STAGGER + SLIDE_MS + PAUSE + FLIP_MS + 60;
+  setTimeout(onAllFlipped, total);
+}
+
+function renderGroupEasy(round) {
+  groupStage.innerHTML = '';
+  const wrap = document.createElement('div'); wrap.className = 'gs-players'; groupStage.appendChild(wrap);
+  const all = [], mine = [], hands = [];
+  round.players.forEach(p => {
+    const sec = playerSection(p); wrap.appendChild(sec.el);
+    const hand = document.createElement('div'); hand.className = 'gs-hand'; hand.dataset.pid = p.pid; sec.body.appendChild(hand);
+    hands.push(hand);
+    const cards = (round.hands || {})[p.pid] || [];
+    if (!cards.length) {
+      sec.result.textContent = 'No heroes left';
+      if (p.pid === playerId) groupModeActionCompleted();
+      return;
+    }
+    cards.forEach(hero => {
+      const w = buildFlipCard(hero); hand.appendChild(w); all.push(w);
+      if (p.pid === playerId) {
+        mine.push({ w, hero });
+        w.addEventListener('click', () => { if (w.classList.contains('pickable')) groupPickCard(hero); });
+      }
+    });
+  });
+  animateCardsIn(all, () => {
+    hands.forEach(h => { h.dataset.ready = '1'; });
+    mine.forEach(m => m.w.classList.add('pickable'));
+    applyRoundUpdates(groupState.round || round);
+    if (mine.length) {
+      clearTimeout(groupEasyTimer);
+      groupEasyTimer = setTimeout(() => {
+        if (mine.some(m => m.w.classList.contains('pickable'))) groupPickCard(mine[Math.floor(Math.random() * mine.length)].hero);
+      }, 20000);
+    }
+  });
+}
+
+function groupPickCard(hero) {
+  clearTimeout(groupEasyTimer);
+  const hand = groupStage.querySelector(`.gs-hand[data-pid="${playerId}"]`);
+  if (hand) {
+    hand.dataset.picked = '1';
+    Array.from(hand.children).forEach(c => { c.classList.remove('pickable'); c.classList.add(c.dataset.key === hero.key ? 'chosen' : 'leaving'); });
+    const sec = hand.closest('.gs-player');
+    if (sec) sec.querySelector('.gs-player-result').textContent = hero.name;
+  }
+  if (roomCode) db.ref(`rooms/${roomCode}/group/round/picks/${playerId}`).set(hero.key);
+  finishGroupResult(hero, true);
+}
+
+// ── Race: one shared track, each player is a finish gate, racers swap lanes on the way ──
+function makeRunnerEl(hero) {
+  const runner = document.createElement('div');
+  runner.className = 'race-runner';
+  const url = portrait(hero.key);
+  if (url) {
+    const img = document.createElement('img'); img.src = url; img.alt = hero.name;
+    img.onerror = () => { img.remove(); const fb = document.createElement('div'); fb.className = 'rr-fallback'; fb.textContent = hero.name[0]; runner.appendChild(fb); };
+    runner.appendChild(img);
+  } else {
+    const fb = document.createElement('div'); fb.className = 'rr-fallback'; fb.textContent = hero.name[0]; runner.appendChild(fb);
+  }
+  return runner;
+}
+
+function renderGroupRace(round) {
+  groupStage.innerHTML = '';
+  const track  = document.createElement('div'); track.className = 'gs-race';
+  const legend = document.createElement('div'); legend.className = 'gs-legend'; legend.id = 'gs-legend';
+  groupStage.append(track, legend);
+  renderLegend(legend, round.players);
+
+  const LANE_H = 34;
+  const state = [], groups = {};
+  round.players.forEach(p => {
+    const info   = (round.race || {})[p.pid];
+    const racers = (info && info.racers) || [];
+    const group  = document.createElement('div');
+    group.className = 'gs-race-group'; group.style.setProperty('--ph', p.hue);
+    const lanes = Math.max(racers.length, 1);
+    group.style.height = (lanes * LANE_H) + 'px';
+    for (let i = 0; i < lanes; i++) {
+      const lane = document.createElement('div'); lane.className = 'gs-lane'; lane.style.top = (i * LANE_H + 1) + 'px'; group.appendChild(lane);
+    }
+    const gate = document.createElement('div'); gate.className = 'gs-gate';
+    const gi = document.createElement('div'); gi.className = 'gs-gate-initial'; gi.textContent = (p.name || '?')[0];
+    const gn = document.createElement('div'); gn.className = 'gs-gate-name';    gn.textContent = p.name;
+    gate.append(gi, gn); group.appendChild(gate);
+    track.appendChild(group);
+    groups[p.pid] = { gate, done: false };
+
+    if (!racers.length) {
+      setLegendHero(p.pid, 'No heroes left');
+      groups[p.pid].done = true;
+      if (p.pid === playerId) groupModeActionCompleted();
+      return;
+    }
+    racers.forEach((hero, i) => {
+      const el = makeRunnerEl(hero);
+      el.style.top = (i * LANE_H + 1) + 'px'; el.style.left = '2px';
+      el.style.animationDuration = `${(0.22 + Math.random() * 0.14).toFixed(2)}s`;
+      el.style.animationDelay    = `${(Math.random() * 0.3).toFixed(2)}s`;
+      el.classList.add('racing');
+      group.appendChild(el);
+      const isWinner = hero.key === info.winner;
+      state.push({ pid: p.pid, hero, el, lane: i, lanes, progress: 0, isWinner,
+                   speed: isWinner ? 17 + Math.random() * 4 : 12 + Math.random() * 6,
+                   nextSwap: performance.now() + 800 + Math.random() * 1200 });
+    });
+  });
+
+  const NON_WINNER_CAP = 96, SPEED_MULT = 0.75; // about half the pace of a solo race
+  let last = performance.now();
+  (function frame(ts) {
+    const dt = Math.min((ts - last) / 1000, 0.05);
+    last = ts;
+    let anyRunning = false;
+    state.forEach(s => {
+      const g = groups[s.pid];
+      if (g.done) return;
+      anyRunning = true;
+      const jitter = 0.4 + Math.random() * 1.2;
+      const cap = s.isWinner ? 100 : NON_WINNER_CAP;
+      s.progress = Math.min(cap, s.progress + s.speed * jitter * dt * SPEED_MULT);
+      s.el.style.left = `calc((100% - var(--gate) - ${RACE_RUNNER_PX}px) * ${(s.progress / 100).toFixed(4)})`;
+      if (ts > s.nextSwap && s.lanes > 1 && s.progress < 88) {
+        s.nextSwap = ts + 900 + Math.random() * 1400;
+        if (Math.random() < 0.45) {
+          let l; do { l = Math.floor(Math.random() * s.lanes); } while (l === s.lane);
+          s.lane = l; s.el.style.top = (l * LANE_H + 1) + 'px';
+        }
+      }
+      if (s.isWinner && s.progress >= 100) {
+        g.done = true;
+        g.gate.classList.add('arrived');
+        state.filter(x => x.pid === s.pid).forEach(x => x.el.classList.remove('racing'));
+        s.el.classList.add('winner');
+        setLegendHero(s.pid, s.hero.name);
+        if (s.pid === playerId) finishGroupResult(s.hero, false);
+      }
+    });
+    if (anyRunning) requestAnimationFrame(frame);
+  })(last);
+}
+
+// ── Plinko: one shared board, every ball on every screen ──
+function colorizeChip(chip, hue, label) {
+  chip.style.background = `radial-gradient(circle at 35% 30%, #fff, hsl(${hue} 80% 62%) 65%)`;
+  chip.style.boxShadow  = `0 0 10px hsl(${hue} 80% 62% / .8)`;
+  if (label) { const tag = document.createElement('div'); tag.className = 'chip-tag'; tag.textContent = label; chip.appendChild(tag); }
+}
+
+// Another player's ball: falls row by row from their aim, drifting randomly until we hear
+// where their real physics landed, then steers into that slot.
+function startRemoteBall(pegsEl, rows, slotCount, p) {
+  const R = PLINKO_BALL_R;
+  const chip = createPlinkoChip(pegsEl, p.aim);
+  chip.removeAttribute('id');
+  colorizeChip(chip, p.hue, p.name);
+  const boardW = pegsEl.clientWidth, boardH = pegsEl.clientHeight;
+  const colW = boardW / slotCount;
+  let x = Math.min(boardW - R, Math.max(R, p.aim * boardW));
+  let row = 0, target = null, landed = false, waiting = false;
+  const rowY = r => R + (r / rows) * (boardH - 2 * R);
+  const place = (px, py) => { chip.style.left = (px - R) + 'px'; chip.style.top = (py - R) + 'px'; };
+  const bounce = () => { chip.classList.remove('bounce'); void chip.offsetWidth; chip.classList.add('bounce'); };
+  function animateTo(tx, ty, dur, done) {
+    const sx = parseFloat(chip.style.left) + R, sy = parseFloat(chip.style.top) + R, t0 = performance.now();
+    (function f(ts) {
+      const t = Math.min((ts - t0) / dur, 1);
+      place(sx + (tx - sx) * Math.min(1, t * 1.1), sy + (ty - sy) * t * t);
+      if (t < 1) requestAnimationFrame(f); else done();
+    })(t0);
+  }
+  function step() {
+    if (landed) return;
+    if (row >= rows) {
+      if (target === null) { waiting = true; chip.classList.add('waiting'); return; }
+      animateTo((target + 0.5) * colW, boardH - R, 260, () => { landed = true; chip.classList.remove('waiting'); chip.classList.add('landed'); });
+      return;
+    }
+    row++;
+    let nx;
+    if (target !== null) {
+      const tx = (target + 0.5) * colW, remaining = rows - row + 1;
+      nx = x + (tx - x) / remaining + (Math.random() - 0.5) * colW * 0.4;
+    } else {
+      nx = x + (Math.random() < 0.5 ? -1 : 1) * colW * (0.35 + Math.random() * 0.4);
+    }
+    nx = Math.min(boardW - R, Math.max(R, nx));
+    animateTo(nx, rowY(row), 300 + Math.random() * 80, () => { x = nx; bounce(); step(); });
+  }
+  place(x, R);
+  setTimeout(step, 150 + Math.random() * 250);
+  return {
+    land(slotIndex) {
+      if (landed || target !== null) return;
+      target = slotIndex;
+      if (waiting) { waiting = false; chip.classList.remove('waiting'); step(); }
+    },
+  };
+}
+
+function renderGroupPlinko(round) {
+  const slots = round.slots || [];
+  const me = round.players.find(p => p.pid === playerId);
+  const { pegs: pegsEl, slots: slotsEl, legend } = buildPlinkoStage(false);
+  renderLegend(legend, round.players);
+  if (!slots.length) { if (me) groupModeActionCompleted(); return; }
+
+  const rows = Math.max(slots.length - 1, 1);
+  const pegs = buildPlinkoPegs(pegsEl, rows, slots.length);
+  buildPlinkoSlots(slotsEl, slots);
+  const allowed = applyBlockers(slotsEl, pegsEl, slots, me);
+
+  round.players.forEach(p => {
+    if (p.pid === playerId) return;
+    groupRemoteBalls[p.pid] = startRemoteBall(pegsEl, rows, slots.length, p);
+  });
+
+  if (me) {
+    const chip = createPlinkoChip(pegsEl, me.aim);
+    chip.removeAttribute('id');
+    colorizeChip(chip, me.hue, 'YOU');
+    runPlinkoPhysics(pegsEl, pegs, slots.length, me.aim, (slotIndex) => {
+      const slotEl = slotsEl.children[slotIndex];
+      if (slotEl) slotEl.classList.add('winner');
+      setLegendHero(playerId, slots[slotIndex].name);
+      if (roomCode) db.ref(`rooms/${roomCode}/group/round/results/${playerId}`).set(slotIndex);
+      finishGroupResult(slots[slotIndex], false);
+    }, { chip, allowed });
+  }
+  applyRoundUpdates(round);
+}
+
+// Runs MY OWN local Plinko physics using the board I'm currently aiming at (or, in Group
+// Mode, the one I locked in when I readied up).
 function executeLocalPlinkoDrop(dropFrac) {
-  const { rows, pegsEl, pegs, slotCount, slotHeroes } = plinkoCurrent;
+  const { rows, pegsEl, pegs, slotCount, slotHeroes, rail } = plinkoCurrent;
+
+  isSpinning = true;
+  spinBtn.disabled = true;
+  rail.classList.add('disabled');
+  clearTimeout(heroTimer);
+  heroTimer = null;
+  lockInBtn.classList.remove('visible');
+  resultName.classList.remove('show');
+  resultLbl.classList.remove('show');
+  document.querySelector('.result-box').classList.remove('has-result');
+  if (playerRef) playerRef.update({ spinning: true, hero: null, lastSeen: Date.now() });
 
   const now = Date.now();
   spinTimestamps = spinTimestamps.filter(t => now - t < 60000);
@@ -2099,23 +2971,24 @@ function executeLocalPlinkoDrop(dropFrac) {
   }
 
   createPlinkoChip(pegsEl, dropFrac);
-  const markDone = () => { if (roomCode) db.ref(`rooms/${roomCode}/plinko/done/${playerId}`).set(true); };
 
   if (rows === 0 || !pegs.length) {
-    setTimeout(() => { finishPlinko(slotHeroes[0], 0); markDone(); }, 400);
+    setTimeout(() => finishPlinko(slotHeroes[0], 0), 400);
     return;
   }
 
   runPlinkoPhysics(pegsEl, pegs, slotCount, dropFrac, (slotIndex) => {
     finishPlinko(slotHeroes[slotIndex], slotIndex);
-    markDone();
   });
 }
 
 function finishPlinko(winner, winnerSlot) {
-  // Stay locked until the group round actually resets (handlePlinkoRoundUpdate re-enables).
-  isSpinning = true;
-  spinBtn.disabled = true;
+  if (!groupModeActionCompleted()) {
+    isSpinning = false;
+    spinBtn.disabled = false;
+    const rail = document.getElementById('plinko-rail');
+    if (rail) rail.classList.remove('disabled');
+  }
 
   const slotEl = document.getElementById(`plinko-slot-${winnerSlot}`);
   if (slotEl) slotEl.classList.add('winner');
@@ -2235,6 +3108,9 @@ function dealEasy() {
       setTimeout(() => {
         document.querySelectorAll('.card-flip-wrapper').forEach(w => w.classList.add('pickable'));
         if (playerRef) playerRef.update({ spinning: false, lastSeen: Date.now() });
+        // The deal happened together (Group Mode); choosing a card is still an individual
+        // follow-up, so report done now rather than waiting on that pick.
+        groupModeActionCompleted();
       }, allDoneMs);
     }
 
@@ -2433,6 +3309,7 @@ function startHistoryListener(code) {
   const ref = db.ref(`rooms/${code}/history`);
   historyListener = ref.on('value', snapshot => {
     const data = snapshot.val() || {};
+    latestHistory = data;
     // Update local history cache for blackout
     myHistory = Array.isArray(data[playerId]) ? data[playerId] : [];
     updateBlackoutUI();
