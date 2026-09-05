@@ -351,6 +351,20 @@
     .race-runner img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .race-runner .rr-fallback { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; color: var(--dim); }
     .race-runner.winner { border-color: var(--cyan); box-shadow: 0 0 14px rgba(0,216,255,.65); }
+    /* A runner mid-surge pulls ahead visibly, so a late charge reads at a glance.
+       The scale has to live in the keyframes: the gallop bob already animates transform,
+       and an animation beats a static transform on the same element. */
+    @keyframes horse-bob-surge {
+      0%, 100% { transform: translateY(0) rotate(0deg) scale(1.14); }
+      50%      { transform: translateY(-7px) rotate(-4deg) scale(1.14); }
+    }
+    .race-runner.racing.surging { animation-name: horse-bob-surge; }
+    .race-runner.surging {
+      border-color: var(--any);
+      box-shadow: 0 0 15px rgba(255,210,74,.8);
+      z-index: 2;
+    }
+    .race-runner { transition: box-shadow .18s ease, border-color .18s ease; }
     @keyframes horse-bob {
       0%, 100% { transform: translateY(0) rotate(0deg); }
       50%      { transform: translateY(-5px) rotate(-3deg); }
@@ -2020,6 +2034,69 @@ function buildRaceTrack(racers) {
   });
 }
 
+// ── Race choreography ──
+// The winner is already decided before the race starts, so rather than giving them a flat
+// speed edge (which made them lead wire-to-wire and gave the result away in the first
+// second), each racer gets a "form" curve: sustained surges and fades at their own rhythm,
+// so the lead genuinely changes hands. The curves are then normalised so the winner lands
+// exactly on the line and everyone else just short, in a spread finishing order.
+//
+// The drama falls out of that normalisation: because the winner's curve includes a big
+// late charge, scaling it to finish at 100 makes them SLOWER than the pack early on. They
+// sit mid-field and come from behind.
+function smoothstep(a, b, x) {
+  const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+}
+
+const RACE_STEPS = 240;
+function buildRaceScript(racers, winnerKey) {
+  const lanes = racers.map(hero => ({
+    hero,
+    isWinner: hero.key === winnerKey,
+    amp:   0.40 + Math.random() * 0.24,  // how hard this one surges and fades
+    freq:  1.6  + Math.random() * 1.5,   // surges over the course of the race
+    phase: Math.random(),                // so they don't all surge together
+    target: 0,
+  }));
+
+  // One close chaser for a photo finish, the rest strung out behind.
+  const spread = [97.5, 93.5, 90, 86.5, 83, 79.5, 76];
+  const losers = shuffle(lanes.filter(l => !l.isWinner));
+  losers.forEach((l, i) => { l.target = spread[Math.min(i, spread.length - 1)]; });
+  lanes.forEach(l => { if (l.isWinner) l.target = 100; });
+
+  lanes.forEach(l => {
+    const cum = new Float64Array(RACE_STEPS + 1);
+    let total = 0;
+    for (let s = 0; s < RACE_STEPS; s++) {
+      const u = s / RACE_STEPS;
+      let v = 1 + l.amp * Math.sin(2 * Math.PI * (l.freq * u + l.phase));
+      if (l.isWinner) v *= 1 + 1.30 * smoothstep(0.58, 0.94, u); // the charge
+      else            v *= 1 - 0.40 * smoothstep(0.66, 1.00, u); // legs go late
+      v = Math.max(0.12, v);   // always creeping forward, never stopped or reversing
+      total += v;
+      cum[s + 1] = total;
+    }
+    const k = l.target / total;
+    for (let s = 0; s <= RACE_STEPS; s++) cum[s] *= k;
+    l.curve = cum;
+    // Relative to this racer's own average pace, so 1.35 means "35% above their normal"
+    // rather than an absolute figure that would light every runner up at once.
+    l.speedAt = u => {
+      const i = Math.min(RACE_STEPS - 1, Math.max(0, Math.floor(u * RACE_STEPS)));
+      return ((l.curve[i + 1] - l.curve[i]) * RACE_STEPS) / (l.target || 1);
+    };
+  });
+  return lanes;
+}
+
+function racePosAt(lane, u) {
+  const x = Math.max(0, Math.min(1, u)) * RACE_STEPS;
+  const i = Math.min(RACE_STEPS - 1, Math.floor(x));
+  return lane.curve[i] + (lane.curve[i + 1] - lane.curve[i]) * (x - i);
+}
+
 function doRace() {
   isSpinning = true;
   spinBtn.disabled = true;
@@ -2057,14 +2134,14 @@ function doRace() {
   raceTrack.classList.add('active');
   buildRaceTrack(racers);
 
-  const state = racers.map((hero, i) => ({
-    hero,
-    progress: 0,
-    speed: 12 + Math.random() * 6,
+  const script = buildRaceScript(racers, winner.key);
+  // No lane weaving here: solo runners sit inside their own lane element, which clips
+  // its contents. The group track positions runners as siblings, so it can weave.
+  const state = script.map((lane, i) => ({
+    hero: lane.hero, lane, progress: 0,
     el: document.getElementById(`race-runner-${i}`),
   }));
   const winnerState = state.find(s => s.hero.key === winner.key);
-  winnerState.speed = 17 + Math.random() * 4; // faster on average, but not guaranteed each frame
 
   // Independent gallop bob per runner so they don't bounce in sync
   state.forEach(s => {
@@ -2073,25 +2150,24 @@ function doRace() {
     s.el.classList.add('racing');
   });
 
-  const NON_WINNER_CAP = 96; // losers can never actually cross the line
-  let last = performance.now();
+  const RACE_MS = 6200;
+  const t0 = performance.now();
 
   (function frame(ts) {
-    const dt = Math.min((ts - last) / 1000, 0.05);
-    last = ts;
+    const u = Math.min((ts - t0) / RACE_MS, 1);
     let lead = state[0];
     state.forEach(s => {
-      const jitter = 0.4 + Math.random() * 1.2;
-      const delta  = s.speed * jitter * dt * 1.5;
-      const cap    = s === winnerState ? 100 : NON_WINNER_CAP;
-      s.progress = Math.min(cap, s.progress + delta);
+      s.progress = racePosAt(s.lane, u);
       s.el.style.left = `calc((100% - ${RACE_RUNNER_PX}px) * ${(s.progress / 100).toFixed(4)})`;
+      s.el.classList.toggle('surging', s.lane.speedAt(u) > 1.35);
       if (s.progress > lead.progress) lead = s;
     });
     reportLeader(playerId, lead.hero); // whoever is out front right now
-    if (winnerState.progress >= 100) finishRace(winner, state, winnerState);
-    else requestAnimationFrame(frame);
-  })(last);
+    if (u >= 1) {
+      state.forEach(s => s.el.classList.remove('surging'));
+      finishRace(winner, state, winnerState);
+    } else requestAnimationFrame(frame);
+  })(t0);
 }
 
 function finishRace(winner, state, winnerState) {
@@ -3083,47 +3159,45 @@ function renderGroupRace(round) {
       if (p.pid === playerId) groupModeActionCompleted();
       return;
     }
-    racers.forEach((hero, i) => {
-      const el = makeRunnerEl(hero);
+    const script = buildRaceScript(racers, info.winner);
+    script.forEach((laneScript, i) => {
+      const el = makeRunnerEl(laneScript.hero);
       el.style.top = (i * LANE_H + 1) + 'px'; el.style.left = '2px';
       el.style.animationDuration = `${(0.22 + Math.random() * 0.14).toFixed(2)}s`;
       el.style.animationDelay    = `${(Math.random() * 0.3).toFixed(2)}s`;
       el.classList.add('racing');
       group.appendChild(el);
-      const isWinner = hero.key === info.winner;
-      state.push({ pid: p.pid, hero, el, lane: i, lanes, progress: 0, isWinner,
-                   speed: isWinner ? 17 + Math.random() * 4 : 12 + Math.random() * 6,
+      state.push({ pid: p.pid, hero: laneScript.hero, el, lane: i, lanes, progress: 0,
+                   script: laneScript, isWinner: laneScript.isWinner,
                    nextSwap: performance.now() + 800 + Math.random() * 1200 });
     });
   });
 
-  const NON_WINNER_CAP = 96, SPEED_MULT = 0.75; // about half the pace of a solo race
-  let last = performance.now();
+  const RACE_MS = 7200; // longer than solo, so a full table can watch it play out
+  const t0 = performance.now();
   (function frame(ts) {
-    const dt = Math.min((ts - last) / 1000, 0.05);
-    last = ts;
+    const u = Math.min((ts - t0) / RACE_MS, 1);
     let anyRunning = false;
     const leadFor = {}; // each player has their own race toward their own gate
     state.forEach(s => {
       const g = groups[s.pid];
       if (g.done) return;
       anyRunning = true;
+      s.progress = racePosAt(s.script, u);
       if (!leadFor[s.pid] || s.progress > leadFor[s.pid].progress) leadFor[s.pid] = s;
-      const jitter = 0.4 + Math.random() * 1.2;
-      const cap = s.isWinner ? 100 : NON_WINNER_CAP;
-      s.progress = Math.min(cap, s.progress + s.speed * jitter * dt * SPEED_MULT);
       s.el.style.left = `calc((100% - var(--gate) - ${RACE_RUNNER_PX}px) * ${(s.progress / 100).toFixed(4)})`;
-      if (ts > s.nextSwap && s.lanes > 1 && s.progress < 88) {
+      s.el.classList.toggle('surging', s.script.speedAt(u) > 1.35);
+      if (ts > s.nextSwap && s.lanes > 1 && u < 0.82) {
         s.nextSwap = ts + 900 + Math.random() * 1400;
         if (Math.random() < 0.45) {
           let l; do { l = Math.floor(Math.random() * s.lanes); } while (l === s.lane);
           s.lane = l; s.el.style.top = (l * LANE_H + 1) + 'px';
         }
       }
-      if (s.isWinner && s.progress >= 100) {
+      if (s.isWinner && u >= 1) {
         g.done = true;
         g.gate.classList.add('arrived');
-        state.filter(x => x.pid === s.pid).forEach(x => x.el.classList.remove('racing'));
+        state.filter(x => x.pid === s.pid).forEach(x => { x.el.classList.remove('racing', 'surging'); });
         s.el.classList.add('winner');
         setLegendHero(s.pid, s.hero.name);
         if (s.pid === playerId) finishGroupResult(s.hero, false);
@@ -3131,7 +3205,7 @@ function renderGroupRace(round) {
     });
     Object.keys(leadFor).forEach(pid => reportLeader(pid, leadFor[pid].hero));
     if (anyRunning) requestAnimationFrame(frame);
-  })(last);
+  })(t0);
 }
 
 // ── Plinko: one shared board, every ball on every screen ──
