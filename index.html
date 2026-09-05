@@ -366,15 +366,22 @@
     }
     .race-runner { transition: box-shadow .18s ease, border-color .18s ease; }
 
-    /* ── Bananas ── */
+    /* ── Bananas ──
+       A peel blocks its spot on the course for every lane in that player's race, so it's
+       drawn as a full-height column with one banana sitting in each lane. */
     .race-banana {
-      position: absolute; bottom: 2px; width: 20px; height: 20px;
-      font-size: 15px; line-height: 20px; text-align: center;
+      position: absolute; top: 0; bottom: 0; width: 20px;
       pointer-events: none; z-index: 1;
-      filter: drop-shadow(0 1px 3px rgba(0,0,0,.8));
-      transition: opacity .2s ease, transform .2s ease;
+      transition: opacity .2s ease;
     }
-    .race-banana.squashed { opacity: 0; transform: scale(1.9) rotate(35deg); }
+    .race-banana i {
+      position: absolute; left: 0; width: 20px; height: 20px;
+      font-size: 15px; line-height: 20px; text-align: center; font-style: normal;
+      filter: drop-shadow(0 1px 3px rgba(0,0,0,.8));
+      transition: transform .2s ease;
+    }
+    .race-banana.squashed { opacity: 0; }
+    .race-banana.squashed i { transform: scale(1.9) rotate(35deg); }
     /* The slip has to carry its own transform: the gallop bob animates transform too,
        and an animation always beats a static one on the same element. */
     @keyframes horse-slip {
@@ -393,13 +400,15 @@
     }
 
     /* Placing a banana on the course, after the field is shown but before the gates open */
-    .race-banana.mine { filter: drop-shadow(0 0 7px rgba(255,210,74,.95)); }
+    .race-banana.mine i { filter: drop-shadow(0 0 7px rgba(255,210,74,.95)); }
     @keyframes banana-land {
       0%   { transform: translateY(-18px) scale(.3); opacity: 0; }
       70%  { transform: translateY(0) scale(1.3);    opacity: 1; }
       100% { transform: translateY(0) scale(1);      opacity: 1; }
     }
-    .race-banana.landing { animation: banana-land .32s ease-out; }
+    /* backwards fill so a staggered peel holds the hidden first frame during its delay
+       instead of flashing in at full size and then dropping */
+    .race-banana.landing i { animation: banana-land .32s ease-out backwards; }
     .gs-place-layer { position: absolute; left: .6rem; right: .6rem; top: .6rem; bottom: .6rem; pointer-events: none; z-index: 3; }
     .gs-place-guide, .gs-place-ghost { opacity: 0; transition: opacity .12s ease; }
     .gs-place-layer.aiming .gs-place-guide { opacity: .55; }
@@ -409,7 +418,7 @@
       background: var(--any); box-shadow: 0 0 8px rgba(255,210,74,.7);
     }
     .gs-place-ghost {
-      position: absolute; bottom: 0; width: 20px; height: 20px; margin-left: -10px;
+      position: absolute; top: 50%; width: 20px; height: 20px; margin: -10px 0 0 -10px;
       font-size: 15px; line-height: 20px; text-align: center;
     }
     .gs-race.placing { cursor: crosshair; touch-action: none; }
@@ -3233,7 +3242,7 @@ function renderGroupRace(round) {
     const gn = document.createElement('div'); gn.className = 'gs-gate-name';    gn.textContent = p.name;
     gate.append(gi, gn); group.appendChild(gate);
     track.appendChild(group);
-    groups[p.pid] = { gate, el: group, bananas: [], done: false };
+    groups[p.pid] = { gate, el: group, lanes, bananas: [], done: false };
 
     if (!racers.length) {
       setLegendHero(p.pid, 'No heroes left');
@@ -3295,10 +3304,18 @@ function renderGroupRace(round) {
       if (!g.el) return;
       const el = document.createElement('div');
       el.className = 'race-banana landing' + (mine ? ' mine' : '');
-      el.textContent = '🍌';
       el.style.left = `calc((100% - var(--gate) - 20px) * ${placed[pid]})`;
+      // One peel per lane: the hazard blocks that spot for whichever lane gets there first,
+      // so it has to look like it covers all of them.
+      for (let i = 0; i < (g.lanes || 1); i++) {
+        const peel = document.createElement('i');
+        peel.textContent = '🍌';
+        peel.style.top = (i * LANE_H + 7) + 'px';
+        peel.style.animationDelay = (i * 40) + 'ms';
+        el.appendChild(peel);
+      }
       g.el.appendChild(el);
-      setTimeout(() => el.classList.remove('landing'), 340);
+      setTimeout(() => el.classList.remove('landing'), 340 + (g.lanes || 1) * 40);
       g.bananas.push({ id: pid, at: placed[pid] * 100, el, taken: false });
     });
   }
