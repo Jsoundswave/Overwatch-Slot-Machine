@@ -392,24 +392,36 @@
       box-shadow: 0 0 16px rgba(255,210,74,.85);
     }
 
-    /* Placing a banana before a group race */
-    .gs-course {
-      position: relative; width: 100%; height: 34px; margin-top: .2rem;
-      background: var(--surf2); border: 1px solid var(--border2); border-radius: 8px;
-      cursor: pointer; touch-action: none; overflow: hidden;
+    /* Placing a banana on the course, after the field is shown but before the gates open */
+    .race-banana.mine { filter: drop-shadow(0 0 7px rgba(255,210,74,.95)); }
+    @keyframes banana-land {
+      0%   { transform: translateY(-18px) scale(.3); opacity: 0; }
+      70%  { transform: translateY(0) scale(1.3);    opacity: 1; }
+      100% { transform: translateY(0) scale(1);      opacity: 1; }
     }
-    .gs-course-line {
-      position: absolute; left: 6px; right: 6px; top: 50%; height: 2px;
-      background: repeating-linear-gradient(90deg, var(--border2) 0 8px, transparent 8px 16px);
-      transform: translateY(-50%);
+    .race-banana.landing { animation: banana-land .32s ease-out; }
+    .gs-place-layer { position: absolute; left: .6rem; right: .6rem; top: .6rem; bottom: .6rem; pointer-events: none; z-index: 3; }
+    .gs-place-guide, .gs-place-ghost { opacity: 0; transition: opacity .12s ease; }
+    .gs-place-layer.aiming .gs-place-guide { opacity: .55; }
+    .gs-place-layer.aiming .gs-place-ghost { opacity: .6; }
+    .gs-place-guide {
+      position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px;
+      background: var(--any); box-shadow: 0 0 8px rgba(255,210,74,.7);
     }
-    .gs-course-marker {
-      position: absolute; top: 50%; width: 22px; height: 22px; margin-top: -11px;
-      font-size: 16px; line-height: 22px; text-align: center; pointer-events: none;
-      filter: drop-shadow(0 0 6px rgba(255,210,74,.7));
+    .gs-place-ghost {
+      position: absolute; bottom: 0; width: 20px; height: 20px; margin-left: -10px;
+      font-size: 15px; line-height: 20px; text-align: center;
     }
-    .gs-course.disabled { opacity: .45; pointer-events: none; }
-    .gs-banana-hint { font-size: .62rem; letter-spacing: 1.5px; text-transform: uppercase; text-align: center; color: var(--dim); }
+    .gs-race.placing { cursor: crosshair; touch-action: none; }
+    .gs-race.placing:focus-visible { outline: 2px solid var(--any); outline-offset: 3px; }
+    .gs-place-bar {
+      display: flex; align-items: center; flex-wrap: wrap; gap: .35rem .6rem; width: 100%;
+      font-size: .62rem; letter-spacing: 1.4px; text-transform: uppercase; color: var(--dim);
+    }
+    .gs-place-meter { min-width: 90px; }
+    .gs-place-bar .gs-place-count { color: var(--any); }
+    .gs-place-meter { flex: 1; height: 4px; border-radius: 2px; background: var(--surf2); overflow: hidden; }
+    .gs-place-fill { height: 100%; width: 100%; background: var(--any); transform-origin: left center; }
     @keyframes horse-bob {
       0%, 100% { transform: translateY(0) rotate(0deg); }
       50%      { transform: translateY(-5px) rotate(-3deg); }
@@ -524,6 +536,7 @@
     .gs-hand .card-flip-wrapper { width: 64px; max-width: 64px; flex: 0 0 64px; }
     .gs-hand .card-front .card-name { font-size: .6rem; padding: .25rem .2rem .2rem; }
     .gs-race {
+      position: relative;
       width: 100%; background: var(--surf); border: 2px solid var(--border2); border-radius: 16px;
       padding: .6rem; display: flex; flex-direction: column; gap: .5rem;
     }
@@ -2261,7 +2274,6 @@ function finishRace(winner, state, winnerState) {
 const PLINKO_MAX_SLOTS = 9;
 
 let plinkoDropX    = 0.5; // last drop position the player picked, 0..1
-let raceBananaX    = 0.5; // where this player drops their banana on the race course, 0..1
 let plinkoDragging = false;
 window.addEventListener('pointerup', () => { plinkoDragging = false; });
 
@@ -2556,6 +2568,7 @@ let groupPreviewKey     = null;
 let groupIdleTimer      = null;
 let groupHoldUntil      = 0;      // keep finished results on screen briefly before the next preview
 let groupRemoteBalls    = {};     // pid -> controller for other players' plinko balls
+let groupRaceCtl        = null;   // accepts other players' bananas while a race is on screen
 let groupEasyTimer      = null;
 
 const PLAYER_HUES = [195, 28, 140, 285, 55, 335, 100, 0];
@@ -2649,10 +2662,8 @@ function buildGroupRound(mode, parts, seed, fireAt) {
       const racers = rngSample(pool, Math.min(K, pool.length), rng).map(heroPayload);
       round.race[p.pid] = { racers, winner: racers.length ? rngPick(racers, rng).key : null };
     });
-    // Everyone's banana goes on the course, laid across every player's lanes.
-    round.bananas = parts
-      .map(p => ({ by: p.pid, at: Math.min(0.92, Math.max(0.10, p.aim)) }))
-      .sort((a, b) => a.at - b.at);
+    // round.bananas is filled in live: the field is drawn first, then everyone gets a few
+    // seconds to drop a peel on the course before the gates open.
   } else if (mode === 'plinko') {
     round.slots = buildSharedPlinkoSlots(parts, seed);
   } else {
@@ -2800,6 +2811,7 @@ function stopGroupRoundListener(code) {
   groupRoundRendered = null;
   groupState = {};
   groupRemoteBalls = {};
+  groupRaceCtl = null;
   groupPlinkoRail = null;
   groupPreviewKey = null;
 }
@@ -2830,10 +2842,8 @@ function readyUpGroup() {
 
   const roleForDB = selectedRoles.length === 1 ? selectedRoles[0] : selectedRoles.join(',');
   if (playerRef) playerRef.update({ role: roleForDB, spinning: true, hero: null, lastSeen: Date.now() });
-  // Plinko sends the aim, Race sends where the banana went; other modes just say "ready".
-  const payload = gameMode === 'plinko' ? plinkoDropX
-                : gameMode === 'race'   ? raceBananaX
-                : true;
+  // Plinko sends the aim it locked in; every other mode just says "ready".
+  const payload = gameMode === 'plinko' ? plinkoDropX : true;
   db.ref(`rooms/${roomCode}/group/ready/${playerId}`).set(payload);
 }
 
@@ -2887,42 +2897,20 @@ function finishGroupResult(winner, commitNow) {
 function renderGroupIdle(force) {
   if (!groupMode) return;
   groupRemoteBalls = {};
+  groupRaceCtl = null;
   groupPlinkoRail = null;
   if (gameMode === 'plinko') { groupPreviewKey = null; maybeRefreshPlinkoPreview(); return; }
   if (force || !groupStage.dataset.round) {
     delete groupStage.dataset.round;
     groupStage.dataset.view = 'idle';
     groupStage.innerHTML = '';
-    if (gameMode === 'race') { renderRaceBananaPicker(); return; }
     const note = document.createElement('div');
     note.className = 'gs-note';
-    note.textContent = 'Group Mode: everyone plays this round together. Ready up when you\'re set.';
+    note.textContent = gameMode === 'race'
+      ? 'Everyone races together. Ready up — you\'ll get a few seconds to drop a banana once the field is out.'
+      : 'Group Mode: everyone plays this round together. Ready up when you\'re set.';
     groupStage.appendChild(note);
   }
-}
-
-// Before a group race everyone drops one banana somewhere on the course. It can't change
-// who wins — the losers' curves stop short of the line no matter what — but it genuinely
-// stalls whoever hits it, so it reshuffles the running order and can hold up the eventual
-// winner long enough to make the finish look lost.
-function renderRaceBananaPicker() {
-  const note = document.createElement('div');
-  note.className = 'gs-note';
-  note.textContent = 'Everyone races together. Drop a banana on the course, then ready up.';
-
-  const hint = document.createElement('div');
-  hint.className = 'gs-banana-hint';
-  hint.textContent = 'Tap or drag to place your banana';
-
-  const course = document.createElement('div');
-  course.className = 'gs-course'; course.id = 'gs-course';
-  const line = document.createElement('div'); line.className = 'gs-course-line';
-  const marker = document.createElement('div'); marker.className = 'gs-course-marker'; marker.textContent = '🍌';
-  marker.style.left = `calc((100% - 22px) * ${raceBananaX})`;
-  course.append(line, marker);
-
-  groupStage.append(note, hint, course);
-  setupDropRail(course, marker, 22, frac => { raceBananaX = frac; });
 }
 
 function maybeRefreshPlinkoPreview() {
@@ -3011,6 +2999,7 @@ function renderGroupPlinkoPreview(parts) {
 function renderGroupRound(round) {
   clearTimeout(groupEasyTimer);
   groupRemoteBalls = {};
+  groupRaceCtl = null;
   groupPlinkoRail = null;
   groupStage.dataset.round = round.id;
   groupStage.dataset.view  = round.mode;
@@ -3048,6 +3037,11 @@ function applyRoundUpdates(round) {
       });
       const sec = hand.closest('.gs-player');
       if (sec) sec.querySelector('.gs-player-result').textContent = name;
+    });
+  } else if (round.mode === 'race') {
+    if (!groupRaceCtl) return;
+    Object.entries(round.bananas || {}).forEach(([pid, at]) => {
+      if (pid !== playerId) groupRaceCtl.addBanana(pid, at);
     });
   } else if (round.mode === 'plinko') {
     Object.entries(round.results || {}).forEach(([pid, slotIndex]) => {
@@ -3212,9 +3206,14 @@ function makeRunnerEl(hero) {
 
 function renderGroupRace(round) {
   groupStage.innerHTML = '';
-  const track  = document.createElement('div'); track.className = 'gs-race';
+  const bar    = document.createElement('div'); bar.className = 'gs-place-bar';
+  const barLbl = document.createElement('span'); barLbl.className = 'gs-place-count';
+  const meter  = document.createElement('div'); meter.className = 'gs-place-meter';
+  const fill   = document.createElement('div'); fill.className = 'gs-place-fill';
+  meter.appendChild(fill); bar.append(barLbl, meter);
+  const track  = document.createElement('div'); track.className = 'gs-race placing';
   const legend = document.createElement('div'); legend.className = 'gs-legend'; legend.id = 'gs-legend';
-  groupStage.append(track, legend);
+  groupStage.append(bar, track, legend);
   renderLegend(legend, round.players);
 
   const LANE_H = 34;
@@ -3234,7 +3233,7 @@ function renderGroupRace(round) {
     const gn = document.createElement('div'); gn.className = 'gs-gate-name';    gn.textContent = p.name;
     gate.append(gi, gn); group.appendChild(gate);
     track.appendChild(group);
-    groups[p.pid] = { gate, done: false };
+    groups[p.pid] = { gate, el: group, bananas: [], done: false };
 
     if (!racers.length) {
       setLegendHero(p.pid, 'No heroes left');
@@ -3256,23 +3255,130 @@ function renderGroupRace(round) {
                    nextSwap: performance.now() + 800 + Math.random() * 1200 });
     });
 
-    // Each player's lanes get their own copy of every banana, so one peel can catch one
-    // racer per player rather than being used up by whoever happens to reach it first.
-    groups[p.pid].bananas = (round.bananas || []).map((b, bi) => {
-      const el = document.createElement('div');
-      el.className = 'race-banana';
-      el.textContent = '🍌';
-      el.style.left = `calc((100% - var(--gate) - 20px) * ${b.at})`;
-      el.style.bottom = '2px';
-      group.appendChild(el);
-      return { id: bi, at: b.at * 100, el, taken: false };
-    });
   });
 
   const RACE_MS  = 7200; // longer than solo, so a full table can watch it play out
   const STALL_MS = 750;  // how long a banana holds someone up
   let last = performance.now();
-  (function frame(ts) {
+
+  // ── Banana placement window ──────────────────────────────────────────────
+  // The field is already on screen, so you place a peel knowing who's running. Everyone's
+  // banana is laid across every player's lanes (each group gets its own copy, so one peel
+  // catches one racer per player rather than being used up by whoever reaches it first).
+  const layer = document.createElement('div'); layer.className = 'gs-place-layer';
+  const guide = document.createElement('div'); guide.className = 'gs-place-guide';
+  const ghost = document.createElement('div'); ghost.className = 'gs-place-ghost'; ghost.textContent = '🍌';
+  layer.append(guide, ghost);
+  track.appendChild(layer);
+
+  const placed = {};              // pid -> position, so nobody gets two
+  let myBananaPlaced = false, raceStarted = false;
+
+  // The usable stretch stops short of the gate and leaves room for the peel itself, so a
+  // banana can never sit under the finish where nobody could ever reach it.
+  function courseMetrics() {
+    const g = track.querySelector('.gs-race-group');
+    if (!g) return null;
+    const gate  = parseFloat(getComputedStyle(g).getPropertyValue('--gate')) || 70;
+    const rect  = g.getBoundingClientRect();
+    const usable = rect.width - gate - 20;
+    return usable > 0 ? { rect, usable } : null;
+  }
+  function clampFrac(f) { return Math.min(0.94, Math.max(0.06, f)); }
+
+  function addBanana(pid, at, mine) {
+    const frac = Number(at);
+    if (raceStarted || placed[pid] != null || !isFinite(frac)) return;
+    placed[pid] = clampFrac(frac);
+    Object.keys(groups).forEach(gp => {
+      const g = groups[gp];
+      if (!g.el) return;
+      const el = document.createElement('div');
+      el.className = 'race-banana landing' + (mine ? ' mine' : '');
+      el.textContent = '🍌';
+      el.style.left = `calc((100% - var(--gate) - 20px) * ${placed[pid]})`;
+      g.el.appendChild(el);
+      setTimeout(() => el.classList.remove('landing'), 340);
+      g.bananas.push({ id: pid, at: placed[pid] * 100, el, taken: false });
+    });
+  }
+
+  function aimAt(frac) {
+    const m = courseMetrics();
+    if (!m) return;
+    const px = m.usable * frac + 10;
+    guide.style.left = px + 'px';
+    ghost.style.left = px + 'px';
+    layer.classList.add('aiming');
+  }
+  function fracFromPointer(e) {
+    const m = courseMetrics();
+    return m ? clampFrac((e.clientX - m.rect.left - 10) / m.usable) : null;
+  }
+  function commitBanana(frac) {
+    if (myBananaPlaced || raceStarted) return;
+    myBananaPlaced = true;
+    layer.classList.remove('aiming');
+    track.classList.remove('placing');
+    addBanana(playerId, frac, true);
+    if (roomCode) db.ref(`rooms/${roomCode}/group/round/bananas/${playerId}`).set(Number(frac.toFixed(4)));
+  }
+
+  let kbFrac = 0.5;
+  track.tabIndex = 0;
+  track.addEventListener('pointermove', e => { if (!myBananaPlaced && !raceStarted) { const f = fracFromPointer(e); if (f != null) aimAt(f); } });
+  track.addEventListener('pointerleave', () => layer.classList.remove('aiming'));
+  track.addEventListener('pointerdown', e => {
+    if (myBananaPlaced || raceStarted || (e.button != null && e.button !== 0)) return;
+    const f = fracFromPointer(e);
+    if (f != null) commitBanana(f);
+  });
+  track.addEventListener('keydown', e => {
+    if (myBananaPlaced || raceStarted) return;
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      kbFrac = clampFrac(kbFrac + (e.key === 'ArrowRight' ? 0.04 : -0.04));
+      aimAt(kbFrac);
+      e.preventDefault();
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      commitBanana(kbFrac);
+      e.preventDefault();
+    }
+  });
+
+  // Bananas already on the wire when this client rendered (a straggler joining the paint).
+  groupRaceCtl = { addBanana: (pid, at) => addBanana(pid, at, false) };
+  Object.entries(round.bananas || {}).forEach(([pid, at]) => { if (pid !== playerId) addBanana(pid, at, false); });
+
+  const RACE_PLACE_MS = 6000; // how long the field stands at the gate
+  const placeStart = performance.now();
+  let allInAt = 0;
+  (function placeFrame(ts) {
+    if (raceStarted) return;
+    const left  = Math.max(0, RACE_PLACE_MS - (ts - placeStart));
+    const secs  = Math.ceil(left / 1000);
+    const count = Object.keys(placed).length, total = round.players.length;
+    fill.style.transform = `scaleX(${(left / RACE_PLACE_MS).toFixed(3)})`;
+    barLbl.textContent = myBananaPlaced
+      ? `${count}/${total} bananas down · ${secs}s`
+      : `Tap the course to drop your banana · ${secs}s · ${count}/${total} down`;
+    // Everyone's in early? Hold a beat so the last peel lands on screen, then go.
+    if (count >= total && !allInAt) allInAt = ts;
+    if (left <= 0 || (allInAt && ts - allInAt > 800)) { startRace(); return; }
+    requestAnimationFrame(placeFrame);
+  })(placeStart);
+
+  function startRace() {
+    if (raceStarted) return;
+    raceStarted = true;
+    track.classList.remove('placing');
+    track.removeAttribute('tabindex');
+    layer.remove();
+    bar.remove();
+    last = performance.now();
+    requestAnimationFrame(frame);
+  }
+
+  function frame(ts) {
     const dt = Math.min(ts - last, 60);
     last = ts;
     let anyRunning = false;
@@ -3325,7 +3431,8 @@ function renderGroupRace(round) {
     });
     Object.keys(leadFor).forEach(pid => reportLeader(pid, leadFor[pid].hero));
     if (anyRunning) requestAnimationFrame(frame);
-  })(last);
+    else groupRaceCtl = null;
+  }
 }
 
 // ── Plinko: one shared board, every ball on every screen ──
