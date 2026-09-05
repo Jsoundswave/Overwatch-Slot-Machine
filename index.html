@@ -27,6 +27,7 @@
       --dps:     #ff4a4a;
       --supp:    #3dff8a;
       --any:     #ffd24a;
+      --race:    #ffb454;
     }
 
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -152,6 +153,7 @@
     .mode-btn.active[data-mode="normal"]    { background: rgba(255,107,43,.12); color: var(--orange); }
     .mode-btn.active[data-mode="easy"]      { background: rgba(0,216,255,.1);   color: var(--cyan);   }
     .mode-btn.active[data-mode="blackout"]  { background: rgba(255,74,74,.1);   color: var(--dps);    }
+    .mode-btn.active[data-mode="race"]      { background: rgba(255,180,84,.12); color: var(--race);   }
     .mode-btn .mode-icon { font-size: .9rem; display: block; line-height: 1; margin-bottom: 1px; }
 
     /* Role Buttons */
@@ -279,6 +281,47 @@
       pointer-events: none;
     }
 
+    /* RACE MODE */
+    #race-track {
+      display: none; flex-direction: column; gap: .4rem;
+      width: 100%; background: var(--surf); border: 2px solid var(--border2);
+      border-radius: 16px; padding: .8rem;
+    }
+    #race-track.active { display: flex; }
+    .race-lane {
+      position: relative; height: 38px; background: var(--surf2);
+      border-radius: 8px; overflow: hidden;
+    }
+    .race-lane::after {
+      content: ''; position: absolute; top: 0; right: 6px; bottom: 0; width: 3px;
+      background: repeating-linear-gradient(to bottom, #fff 0 6px, #0a0a0a 6px 12px);
+      opacity: .5;
+    }
+    .race-runner {
+      position: absolute; top: 2px; left: 2px; width: 34px; height: 34px;
+      border-radius: 50%; overflow: hidden; background: var(--surf);
+      border: 2px solid var(--border2);
+      display: flex; align-items: center; justify-content: center;
+      will-change: left; z-index: 1;
+    }
+    .race-runner img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .race-runner .rr-fallback { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; color: var(--dim); }
+    .race-runner.winner { border-color: var(--cyan); box-shadow: 0 0 14px rgba(0,216,255,.65); }
+    @keyframes horse-bob {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50%      { transform: translateY(-5px) rotate(-3deg); }
+    }
+    .race-runner.racing {
+      animation-name: horse-bob;
+      animation-timing-function: ease-in-out;
+      animation-iteration-count: infinite;
+    }
+    .race-name-tag {
+      position: absolute; left: 40px; top: 50%; transform: translateY(-50%);
+      font-size: .68rem; letter-spacing: .5px; color: var(--dim);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: calc(100% - 50px);
+    }
+
     /* BLACKOUT EXHAUSTED */
     #blackout-exhausted {
       display: none; width: 100%; padding: 1.4rem;
@@ -323,6 +366,9 @@
     /* Blackout mode — red */
     .spin-btn.mode-blackout { border-color: var(--dps); color: var(--dps); }
     .spin-btn.mode-blackout::before { background: var(--dps); }
+    /* Race mode — gold */
+    .spin-btn.mode-race { border-color: var(--race); color: var(--race); }
+    .spin-btn.mode-race::before { background: var(--race); }
 
     /* Lock-in button — shares the row */
     #lock-in-btn {
@@ -542,6 +588,7 @@
     <button class="mode-btn active" data-mode="normal"><span class="mode-icon">🎰</span>Normal</button>
     <button class="mode-btn" data-mode="easy"><span class="mode-icon">🃏</span>Easy</button>
     <button class="mode-btn" data-mode="blackout"><span class="mode-icon">🌑</span>Blackout</button>
+    <button class="mode-btn" data-mode="race"><span class="mode-icon">🐎</span>Race</button>
   </div>
 
   <p class="section-lbl">Choose Role</p>
@@ -564,6 +611,9 @@
 
     <!-- Easy mode: 3 cards -->
     <div id="easy-cards"></div>
+
+    <!-- Race mode: horse race -->
+    <div id="race-track"></div>
 
     <!-- Blackout exhausted -->
     <div id="blackout-exhausted">
@@ -734,6 +784,7 @@ const loadLbl    = document.querySelector('.load-lbl');
 const reelEl     = document.getElementById('reel');
 const slotFrame  = document.getElementById('slot-frame');
 const easyCards  = document.getElementById('easy-cards');
+const raceTrack  = document.getElementById('race-track');
 const resultName = document.getElementById('result-name');
 const resultLbl  = document.getElementById('result-role-lbl');
 const spinBtn    = document.getElementById('spin-btn');
@@ -807,7 +858,7 @@ function setGameMode(mode) {
   applyModeUI(mode);
   resetResult();
   updateBlackoutUI();
-  if (mode !== 'easy') buildInitialReel(selectedRoles);
+  if (mode !== 'easy' && mode !== 'race') buildInitialReel(selectedRoles);
 }
 
 function applyModeUI(mode) {
@@ -815,14 +866,16 @@ function applyModeUI(mode) {
   document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
 
   // Spin button label + color
-  const labels = { normal: 'SPIN', easy: 'DEAL', blackout: 'SPIN' };
+  const labels = { normal: 'SPIN', easy: 'DEAL', blackout: 'SPIN', race: 'RACE' };
   spinBtn.querySelector('span').textContent = labels[mode];
   spinBtn.className = `spin-btn${mode !== 'normal' ? ` mode-${mode}` : ''}`;
 
-  // Show/hide slot vs easy cards
+  // Show/hide slot vs easy cards vs race track
   const isEasy = mode === 'easy';
-  slotFrame.style.display  = isEasy ? 'none' : '';
+  const isRace = mode === 'race';
+  slotFrame.style.display  = (isEasy || isRace) ? 'none' : '';
   easyCards.classList.toggle('visible', false);
+  raceTrack.classList.toggle('active', false);
   blackoutExhausted.classList.toggle('visible', false);
 }
 
@@ -1001,7 +1054,7 @@ function enterRoom(name, code, role, hero, silent = false) {
   syncRoleButtons();
   applyModeUI(gameMode);
   updateBlackoutUI();
-  if (gameMode !== 'easy') buildInitialReel(selectedRoles);
+  if (gameMode !== 'easy' && gameMode !== 'race') buildInitialReel(selectedRoles);
 }
 
 // ═══════════════════════════════════════
@@ -1207,8 +1260,9 @@ document.querySelectorAll('.role-btn').forEach(btn => {
     const roleForFirebase = selectedRoles.length === 1 ? selectedRoles[0] : selectedRoles.join(',');
     if (playerRef) playerRef.update({ role: roleForFirebase, hero: null, lastSeen: Date.now() });
     saveLocalSession(playerName, roomCode, selectedRoles, null);
-    if (gameMode !== 'easy') buildInitialReel(selectedRoles);
-    else easyCards.classList.remove('visible');
+    if (gameMode === 'easy') easyCards.classList.remove('visible');
+    else if (gameMode === 'race') raceTrack.classList.remove('active');
+    else buildInitialReel(selectedRoles);
     resetResult();
     updateBlackoutUI();
   });
@@ -1257,6 +1311,8 @@ function resetResult() {
   reelEl.style.transform  = 'translateX(0)';
   easyCards.classList.remove('visible');
   easyCards.innerHTML = '';
+  raceTrack.classList.remove('active');
+  raceTrack.innerHTML = '';
 }
 
 // ═══════════════════════════════════════
@@ -1276,6 +1332,7 @@ function commitToHistory(heroName) {
 spinBtn.addEventListener('click', () => {
   if (isSpinning) return;
   if (gameMode === 'easy') dealEasy();
+  else if (gameMode === 'race') doRace();
   else doSpin();
 });
 
@@ -1389,6 +1446,158 @@ function finishSpin(winner) {
   }, 45000);
 
   // Show lock-in button for immediate commit
+  lockInBtn.classList.add('visible');
+  lockInBtn.onclick = () => {
+    clearTimeout(heroTimer);
+    heroTimer = null;
+    commitToHistory(committedHero);
+    lockInBtn.classList.remove('visible');
+  };
+
+  launchConfetti();
+}
+
+// ═══════════════════════════════════════
+// RACE MODE — heroes race to a finish line
+// ═══════════════════════════════════════
+const RACE_MAX_RACERS = 8;
+const RACE_RUNNER_PX  = 34;
+
+function buildRaceTrack(racers) {
+  raceTrack.innerHTML = '';
+  racers.forEach((hero, i) => {
+    const lane = document.createElement('div');
+    lane.className = 'race-lane';
+
+    const runner = document.createElement('div');
+    runner.className = 'race-runner';
+    runner.id = `race-runner-${i}`;
+    runner.style.left = '2px';
+    const url = portrait(hero.key);
+    if (url) {
+      const img = document.createElement('img');
+      img.src = url; img.alt = hero.name;
+      img.onerror = () => {
+        img.remove();
+        const fb = document.createElement('div');
+        fb.className = 'rr-fallback'; fb.textContent = hero.name[0];
+        runner.appendChild(fb);
+      };
+      runner.appendChild(img);
+    } else {
+      const fb = document.createElement('div');
+      fb.className = 'rr-fallback'; fb.textContent = hero.name[0];
+      runner.appendChild(fb);
+    }
+
+    const tag = document.createElement('div');
+    tag.className = 'race-name-tag';
+    tag.textContent = hero.name;
+
+    lane.appendChild(runner);
+    lane.appendChild(tag);
+    raceTrack.appendChild(lane);
+  });
+}
+
+function doRace() {
+  isSpinning = true;
+  spinBtn.disabled = true;
+
+  clearTimeout(heroTimer);
+  heroTimer = null;
+  lockInBtn.classList.remove('visible');
+  resultName.classList.remove('show');
+  resultLbl.classList.remove('show');
+  document.querySelector('.result-box').classList.remove('has-result');
+
+  // Dunce hat check (shared with slot spin)
+  const now = Date.now();
+  spinTimestamps = spinTimestamps.filter(t => now - t < 60000);
+  spinTimestamps.push(now);
+  if (spinTimestamps.length > 3 && playerRef) {
+    playerRef.update({ dunce: true });
+    setTimeout(() => { if (playerRef) playerRef.update({ dunce: false }); }, 120000);
+  }
+
+  const pool = getActivePool();
+  if (!pool.length) { isSpinning = false; spinBtn.disabled = false; return; }
+
+  const winner = pool[Math.floor(Math.random() * pool.length)];
+  let racers;
+  if (pool.length <= RACE_MAX_RACERS) {
+    racers = shuffle(pool);
+  } else {
+    const others = shuffle(pool.filter(h => h.key !== winner.key)).slice(0, RACE_MAX_RACERS - 1);
+    racers = shuffle([winner, ...others]);
+  }
+
+  if (playerRef) playerRef.update({ spinning: true, hero: null, lastSeen: Date.now() });
+
+  raceTrack.classList.add('active');
+  buildRaceTrack(racers);
+
+  const state = racers.map((hero, i) => ({
+    hero,
+    progress: 0,
+    speed: 12 + Math.random() * 6,
+    el: document.getElementById(`race-runner-${i}`),
+  }));
+  const winnerState = state.find(s => s.hero.key === winner.key);
+  winnerState.speed = 17 + Math.random() * 4; // faster on average, but not guaranteed each frame
+
+  // Independent gallop bob per runner so they don't bounce in sync
+  state.forEach(s => {
+    s.el.style.animationDuration = `${(0.22 + Math.random() * 0.14).toFixed(2)}s`;
+    s.el.style.animationDelay    = `${(Math.random() * 0.3).toFixed(2)}s`;
+    s.el.classList.add('racing');
+  });
+
+  const NON_WINNER_CAP = 96; // losers can never actually cross the line
+  let last = performance.now();
+
+  (function frame(ts) {
+    const dt = Math.min((ts - last) / 1000, 0.05);
+    last = ts;
+    state.forEach(s => {
+      const jitter = 0.4 + Math.random() * 1.2;
+      const delta  = s.speed * jitter * dt * 1.5;
+      const cap    = s === winnerState ? 100 : NON_WINNER_CAP;
+      s.progress = Math.min(cap, s.progress + delta);
+      s.el.style.left = `calc((100% - ${RACE_RUNNER_PX}px) * ${(s.progress / 100).toFixed(4)})`;
+    });
+    if (winnerState.progress >= 100) finishRace(winner, state, winnerState);
+    else requestAnimationFrame(frame);
+  })(last);
+}
+
+function finishRace(winner, state, winnerState) {
+  isSpinning = false;
+  spinBtn.disabled = false;
+  state.forEach(s => s.el.classList.remove('racing'));
+  winnerState.el.classList.add('winner');
+
+  const roleColors = { tank: 'var(--tank)', damage: 'var(--dps)', support: 'var(--supp)' };
+  const roleNames  = { tank: 'Tank', damage: 'Damage', support: 'Support' };
+
+  document.querySelector('.result-box').classList.add('has-result');
+  resultName.textContent = winner.name;
+  resultName.classList.add('show');
+  resultLbl.textContent  = roleNames[winner.role] || 'Hero';
+  resultLbl.style.color  = roleColors[winner.role] || 'var(--any)';
+  resultLbl.classList.add('show');
+
+  if (playerRef) playerRef.update({ hero: winner.name, role: winner.role, spinning: false, lastSeen: Date.now() });
+  saveLocalSession(playerName, roomCode, selectedRoles, winner.name);
+
+  // 45s commit timer (shared behavior with normal spin)
+  clearTimeout(heroTimer);
+  const committedHero = winner.name;
+  heroTimer = setTimeout(() => {
+    commitToHistory(committedHero);
+    lockInBtn.classList.remove('visible');
+  }, 45000);
+
   lockInBtn.classList.add('visible');
   lockInBtn.onclick = () => {
     clearTimeout(heroTimer);
