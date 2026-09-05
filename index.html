@@ -123,6 +123,35 @@
     .room-code-lbl { font-size: .7rem; letter-spacing: 4px; text-transform: uppercase; color: var(--dim); }
     .room-code-val { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; letter-spacing: 14px; color: var(--cyan); line-height: 1; }
     .room-code-hint { font-size: .75rem; color: var(--dim); letter-spacing: 1px; }
+    .btn-copy {
+      width: 100%; margin-top: .6rem; padding: .6rem;
+      background: transparent; border: 1.5px solid var(--border2); border-radius: 10px;
+      color: var(--cyan); font-family: 'Barlow Condensed', sans-serif;
+      font-size: .95rem; letter-spacing: 1.5px; text-transform: uppercase;
+      cursor: pointer; transition: border-color .2s, color .2s, background .2s;
+    }
+    .btn-copy:hover { border-color: var(--cyan); background: rgba(0,216,255,.08); }
+    .btn-copy.copied { border-color: var(--supp); color: var(--supp); background: rgba(61,255,138,.1); }
+    button.tag.room { font-family: 'Barlow Condensed', sans-serif; cursor: pointer; transition: border-color .2s; }
+    button.tag.room:hover { border-color: var(--cyan); }
+    button.tag.room.copied { border-color: var(--supp); color: var(--supp); }
+    #link-fallback {
+      position: fixed; left: 50%; bottom: 1.2rem; transform: translateX(-50%);
+      z-index: 700; display: flex; align-items: center; gap: .5rem; flex-wrap: wrap;
+      background: var(--surf); border: 1.5px solid var(--cyan); border-radius: 12px;
+      padding: .7rem .8rem; box-shadow: 0 6px 30px rgba(0,0,0,.6);
+      max-width: min(92vw, 420px); font-size: .82rem; color: var(--dim);
+    }
+    #link-fallback input {
+      flex: 1 1 200px; min-width: 0; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text); padding: .45rem .6rem;
+      font-family: 'Barlow Condensed', sans-serif; font-size: .9rem;
+    }
+    #link-fallback button {
+      background: var(--cyan); border: none; border-radius: 8px; color: var(--bg);
+      font-family: 'Bebas Neue', sans-serif; font-size: .95rem; letter-spacing: 1.5px;
+      padding: .45rem .9rem; cursor: pointer;
+    }
 
     /* SPIN ROOM */
     #spin-room {
@@ -741,7 +770,8 @@
   <div class="room-code-display" id="code-display">
     <div class="room-code-lbl">Your Room Code</div>
     <div class="room-code-val" id="generated-code">----</div>
-    <div class="room-code-hint">Share this with your squad then tap below</div>
+    <div class="room-code-hint">Send the link, or read out the code</div>
+    <button class="btn-copy" id="copy-link-btn">&#128279; Copy invite link</button>
     <button class="btn-create" id="enter-room-btn" style="width:100%; margin-top:.5rem;">ENTER ROOM</button>
   </div>
   <p class="lobby-hint">Create a room and share the code, or join a friend's room.</p>
@@ -750,7 +780,7 @@
 <div id="spin-room">
   <div class="top-bar">
     <button class="btn-back" id="back-btn">&#8592; Leave</button>
-    <div class="tag room">ROOM <strong id="room-tag"></strong></div>
+    <button class="tag room" id="room-invite-btn" title="Copy invite link">ROOM <strong id="room-tag"></strong></button>
     <div class="tag player" id="player-tag"></div>
     <button class="group-toggle-btn" id="group-mode-btn" title="Group Mode: ready-up together before any mode acts">&#128101;</button>
   </div>
@@ -1020,10 +1050,16 @@ document.fonts.ready.then(async () => {
   } else {
     clearLocalSession();
     lobbyEl.style.display = 'flex';
-    const p = new URLSearchParams(location.search);
-    const r = p.get('room');
-    if (r && /^\d{4}$/.test(r)) document.getElementById('code-input').value = r;
     if (savedName) document.getElementById('name-input').value = savedName;
+
+    // Arriving on an invite link: open the join panel with the code already filled in,
+    // so all that's left is a name.
+    const r = new URLSearchParams(location.search).get('room');
+    if (r && /^\d{4}$/.test(r)) {
+      document.getElementById('code-input').value = r;
+      document.getElementById('join-panel').classList.add('open');
+      document.getElementById('name-input').focus();
+    }
   }
 });
 
@@ -1178,6 +1214,7 @@ document.addEventListener('visibilitychange', () => {
     } else {
       playerRef.update({ lastSeen: Date.now() });
     }
+    touchRoomMeta(roomCode);
     touchSession();
   });
 });
@@ -1186,6 +1223,108 @@ document.addEventListener('visibilitychange', () => {
 // LOBBY
 // ═══════════════════════════════════════
 function generateCode() { return String(Math.floor(1000 + Math.random() * 9000)); }
+
+// Rooms are never reused while they're alive, and abandoned ones are swept after this.
+const ROOM_TTL_MS = 24 * 60 * 60 * 1000;
+
+// Claims a code nobody else holds. The transaction is what makes it safe: two people
+// creating a room at the same instant can't both walk away with the same number.
+async function claimUnusedCode(attempts = 12) {
+  for (let i = 0; i < attempts; i++) {
+    const code = generateCode();
+    try {
+      const res = await db.ref(`rooms/${code}/meta`).transaction(
+        cur => cur === null ? { createdAt: Date.now(), lastActive: Date.now() } : undefined
+      );
+      if (res.committed) return code;
+    } catch (e) {
+      console.warn('Code claim failed, retrying:', e);
+    }
+  }
+  return null;
+}
+
+async function roomExists(code) {
+  try {
+    const snap = await db.ref(`rooms/${code}`).once('value');
+    return snap.exists();
+  } catch (e) {
+    return true; // network hiccup shouldn't lock someone out of a room that's really there
+  }
+}
+
+function touchRoomMeta(code) {
+  if (code) db.ref(`rooms/${code}/meta`).update({ lastActive: Date.now() });
+}
+
+// Best-effort cleanup of long-abandoned rooms, so codes get recycled and the database
+// doesn't grow forever. Runs on room creation only, and never blocks the UI.
+// Add "rooms": { ".indexOn": "meta/lastActive" } to the database rules to make it cheap.
+async function sweepStaleRooms() {
+  try {
+    const cutoff = Date.now() - ROOM_TTL_MS;
+    // startAt(0) matters: rooms with no meta sort ahead of every timestamp, so without it
+    // one malformed room would be returned on every pass and the sweep would never advance.
+    const snap = await db.ref('rooms')
+      .orderByChild('meta/lastActive').startAt(0).endAt(cutoff).limitToFirst(25).once('value');
+    const dead = {};
+    snap.forEach(child => { dead[child.key] = null; });
+    if (Object.keys(dead).length) await db.ref('rooms').update(dead);
+  } catch (e) {
+    console.warn('Stale room sweep skipped:', e);
+  }
+}
+
+function inviteLink(code) {
+  return `${location.origin}${location.pathname}?room=${code}`;
+}
+
+// Clipboard needs a secure context; fall back to a hidden field where it isn't available
+// (and, failing that, show the link so it can still be copied by hand).
+async function copyInvite(code, btn, doneLabel) {
+  const link = inviteLink(code);
+  let ok = false;
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(link);
+      ok = true;
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = link;
+      ta.style.cssText = 'position:fixed;opacity:0;';
+      document.body.appendChild(ta);
+      ta.select();
+      ok = document.execCommand('copy');
+      ta.remove();
+    }
+  } catch (e) { ok = false; }
+
+  // Clipboard access can be refused (insecure context, no user gesture, locked-down
+  // webview). Show the link instead of failing silently — prompt() itself throws in
+  // some embedded browsers, so it can't be the fallback.
+  if (!ok) { showLinkFallback(link); return; }
+
+  const original = btn.innerHTML;
+  btn.innerHTML = doneLabel;
+  btn.classList.add('copied');
+  setTimeout(() => { btn.innerHTML = original; btn.classList.remove('copied'); }, 1800);
+}
+
+function showLinkFallback(link) {
+  document.getElementById('link-fallback')?.remove();
+  const bar = document.createElement('div');
+  bar.id = 'link-fallback';
+  const label = document.createElement('span');
+  label.textContent = 'Copy this link:';
+  const field = document.createElement('input');
+  field.type = 'text'; field.readOnly = true; field.value = link;
+  const close = document.createElement('button');
+  close.type = 'button'; close.textContent = 'Done';
+  close.addEventListener('click', () => bar.remove());
+  bar.append(label, field, close);
+  document.body.appendChild(bar);
+  field.focus(); field.select();
+}
 
 function showErr(msg) {
   const err = document.getElementById('join-err');
@@ -1201,14 +1340,31 @@ document.getElementById('join-toggle-btn').addEventListener('click', () => {
   if (panel.classList.contains('open')) document.getElementById('code-input').focus();
 });
 
-document.getElementById('create-btn').addEventListener('click', () => {
+document.getElementById('create-btn').addEventListener('click', async () => {
+  const btn  = document.getElementById('create-btn');
   const name = document.getElementById('name-input').value.trim();
   if (!name) { showErr('Enter your callsign first.'); return; }
   showErr('');
   document.getElementById('join-panel').classList.remove('open');
-  const code = generateCode();
+
+  btn.disabled = true;
+  btn.textContent = 'CREATING...';
+  const code = await claimUnusedCode();
+  btn.disabled = false;
+  btn.textContent = 'CREATE ROOM';
+
+  if (!code) { showErr('Could not get a free room code. Try again.'); return; }
   document.getElementById('generated-code').textContent = code;
   document.getElementById('code-display').classList.add('show');
+  sweepStaleRooms();
+});
+
+document.getElementById('copy-link-btn').addEventListener('click', function () {
+  copyInvite(document.getElementById('generated-code').textContent, this, '&#10003; Link copied');
+});
+
+document.getElementById('room-invite-btn').addEventListener('click', function () {
+  if (roomCode) copyInvite(roomCode, this, '&#10003; COPIED');
 });
 
 document.getElementById('enter-room-btn').addEventListener('click', () => {
@@ -1226,13 +1382,23 @@ document.getElementById('code-input').addEventListener('input', function () {
   this.value = this.value.replace(/\D/g, '').slice(0, 4);
 });
 
-function tryJoin() {
+async function tryJoin() {
   window.speechSynthesis.getVoices();
+  const btn  = document.getElementById('join-btn');
   const name = document.getElementById('name-input').value.trim();
   const code = document.getElementById('code-input').value.trim();
   if (!name) { showErr('Enter your callsign first.'); return; }
   if (!/^\d{4}$/.test(code)) { showErr('Enter a valid 4-digit room code.'); return; }
   showErr('');
+
+  // Without this a typo silently opens an empty room and you sit there alone.
+  btn.disabled = true;
+  btn.textContent = 'CHECKING...';
+  const exists = await roomExists(code);
+  btn.disabled = false;
+  btn.textContent = 'JOIN';
+  if (!exists) { showErr(`No room ${code}. Check the code with your squad.`); return; }
+
   enterRoom(name, code, 'any', null);
 }
 
@@ -1256,6 +1422,7 @@ function enterRoom(name, code, role, hero, silent = false) {
   playerRef.set({ name, role: roleForDB, hero: hero || null, spinning: false, dunce: false, lastSeen: Date.now() });
   playerRef.onDisconnect().update({ lastSeen: Date.now() });
 
+  touchRoomMeta(code); // keeps an in-use room clear of the stale sweep
   cleanStalePlayersFromRoom(code);
   startRoomListener(code);
   startHistoryListener(code);
