@@ -365,6 +365,51 @@
       z-index: 2;
     }
     .race-runner { transition: box-shadow .18s ease, border-color .18s ease; }
+
+    /* ── Bananas ── */
+    .race-banana {
+      position: absolute; bottom: 2px; width: 20px; height: 20px;
+      font-size: 15px; line-height: 20px; text-align: center;
+      pointer-events: none; z-index: 1;
+      filter: drop-shadow(0 1px 3px rgba(0,0,0,.8));
+      transition: opacity .2s ease, transform .2s ease;
+    }
+    .race-banana.squashed { opacity: 0; transform: scale(1.9) rotate(35deg); }
+    /* The slip has to carry its own transform: the gallop bob animates transform too,
+       and an animation always beats a static one on the same element. */
+    @keyframes horse-slip {
+      0%   { transform: rotate(0deg) scale(1); }
+      35%  { transform: rotate(240deg) scale(.86); }
+      70%  { transform: rotate(430deg) scale(.92); }
+      100% { transform: rotate(360deg) scale(1); }
+    }
+    .race-runner.slipped {
+      animation-name: horse-slip !important;
+      animation-duration: .75s !important;
+      animation-iteration-count: 1 !important;
+      animation-timing-function: ease-out !important;
+      border-color: var(--any);
+      box-shadow: 0 0 16px rgba(255,210,74,.85);
+    }
+
+    /* Placing a banana before a group race */
+    .gs-course {
+      position: relative; width: 100%; height: 34px; margin-top: .2rem;
+      background: var(--surf2); border: 1px solid var(--border2); border-radius: 8px;
+      cursor: pointer; touch-action: none; overflow: hidden;
+    }
+    .gs-course-line {
+      position: absolute; left: 6px; right: 6px; top: 50%; height: 2px;
+      background: repeating-linear-gradient(90deg, var(--border2) 0 8px, transparent 8px 16px);
+      transform: translateY(-50%);
+    }
+    .gs-course-marker {
+      position: absolute; top: 50%; width: 22px; height: 22px; margin-top: -11px;
+      font-size: 16px; line-height: 22px; text-align: center; pointer-events: none;
+      filter: drop-shadow(0 0 6px rgba(255,210,74,.7));
+    }
+    .gs-course.disabled { opacity: .45; pointer-events: none; }
+    .gs-banana-hint { font-size: .62rem; letter-spacing: 1.5px; text-transform: uppercase; text-align: center; color: var(--dim); }
     @keyframes horse-bob {
       0%, 100% { transform: translateY(0) rotate(0deg); }
       50%      { transform: translateY(-5px) rotate(-3deg); }
@@ -2216,16 +2261,18 @@ function finishRace(winner, state, winnerState) {
 const PLINKO_MAX_SLOTS = 9;
 
 let plinkoDropX    = 0.5; // last drop position the player picked, 0..1
+let raceBananaX    = 0.5; // where this player drops their banana on the race course, 0..1
 let plinkoDragging = false;
 window.addEventListener('pointerup', () => { plinkoDragging = false; });
 
-function setupPlinkoRail(railEl, markerEl) {
+// Shared tap/drag rail: Plinko aims a drop with it, Race places a banana with it.
+function setupDropRail(railEl, markerEl, markerPx, onPick) {
   const update = (clientX) => {
     const rect = railEl.getBoundingClientRect();
     let frac = rect.width ? (clientX - rect.left) / rect.width : 0.5;
     frac = Math.min(1, Math.max(0, frac));
-    plinkoDropX = frac;
-    markerEl.style.left = `calc((100% - 18px) * ${frac})`;
+    markerEl.style.left = `calc((100% - ${markerPx}px) * ${frac})`;
+    onPick(frac);
   };
   railEl.addEventListener('pointerdown', e => {
     if (isSpinning) return;
@@ -2233,6 +2280,10 @@ function setupPlinkoRail(railEl, markerEl) {
     update(e.clientX);
   });
   railEl.addEventListener('pointermove', e => { if (plinkoDragging && !isSpinning) update(e.clientX); });
+}
+
+function setupPlinkoRail(railEl, markerEl) {
+  setupDropRail(railEl, markerEl, 18, frac => { plinkoDropX = frac; });
 }
 
 const PLINKO_PEG_R  = 4;  // px radius used for both rendering and collision
@@ -2598,6 +2649,10 @@ function buildGroupRound(mode, parts, seed, fireAt) {
       const racers = rngSample(pool, Math.min(K, pool.length), rng).map(heroPayload);
       round.race[p.pid] = { racers, winner: racers.length ? rngPick(racers, rng).key : null };
     });
+    // Everyone's banana goes on the course, laid across every player's lanes.
+    round.bananas = parts
+      .map(p => ({ by: p.pid, at: Math.min(0.92, Math.max(0.10, p.aim)) }))
+      .sort((a, b) => a.at - b.at);
   } else if (mode === 'plinko') {
     round.slots = buildSharedPlinkoSlots(parts, seed);
   } else {
@@ -2775,7 +2830,10 @@ function readyUpGroup() {
 
   const roleForDB = selectedRoles.length === 1 ? selectedRoles[0] : selectedRoles.join(',');
   if (playerRef) playerRef.update({ role: roleForDB, spinning: true, hero: null, lastSeen: Date.now() });
-  const payload = gameMode === 'plinko' ? plinkoDropX : true;
+  // Plinko sends the aim, Race sends where the banana went; other modes just say "ready".
+  const payload = gameMode === 'plinko' ? plinkoDropX
+                : gameMode === 'race'   ? raceBananaX
+                : true;
   db.ref(`rooms/${roomCode}/group/ready/${playerId}`).set(payload);
 }
 
@@ -2835,11 +2893,36 @@ function renderGroupIdle(force) {
     delete groupStage.dataset.round;
     groupStage.dataset.view = 'idle';
     groupStage.innerHTML = '';
+    if (gameMode === 'race') { renderRaceBananaPicker(); return; }
     const note = document.createElement('div');
     note.className = 'gs-note';
     note.textContent = 'Group Mode: everyone plays this round together. Ready up when you\'re set.';
     groupStage.appendChild(note);
   }
+}
+
+// Before a group race everyone drops one banana somewhere on the course. It can't change
+// who wins — the losers' curves stop short of the line no matter what — but it genuinely
+// stalls whoever hits it, so it reshuffles the running order and can hold up the eventual
+// winner long enough to make the finish look lost.
+function renderRaceBananaPicker() {
+  const note = document.createElement('div');
+  note.className = 'gs-note';
+  note.textContent = 'Everyone races together. Drop a banana on the course, then ready up.';
+
+  const hint = document.createElement('div');
+  hint.className = 'gs-banana-hint';
+  hint.textContent = 'Tap or drag to place your banana';
+
+  const course = document.createElement('div');
+  course.className = 'gs-course'; course.id = 'gs-course';
+  const line = document.createElement('div'); line.className = 'gs-course-line';
+  const marker = document.createElement('div'); marker.className = 'gs-course-marker'; marker.textContent = '🍌';
+  marker.style.left = `calc((100% - 22px) * ${raceBananaX})`;
+  course.append(line, marker);
+
+  groupStage.append(note, hint, course);
+  setupDropRail(course, marker, 22, frac => { raceBananaX = frac; });
 }
 
 function maybeRefreshPlinkoPreview() {
@@ -3169,35 +3252,72 @@ function renderGroupRace(round) {
       group.appendChild(el);
       state.push({ pid: p.pid, hero: laneScript.hero, el, lane: i, lanes, progress: 0,
                    script: laneScript, isWinner: laneScript.isWinner,
+                   t: 0, stallUntil: 0, eaten: new Set(),
                    nextSwap: performance.now() + 800 + Math.random() * 1200 });
+    });
+
+    // Each player's lanes get their own copy of every banana, so one peel can catch one
+    // racer per player rather than being used up by whoever happens to reach it first.
+    groups[p.pid].bananas = (round.bananas || []).map((b, bi) => {
+      const el = document.createElement('div');
+      el.className = 'race-banana';
+      el.textContent = '🍌';
+      el.style.left = `calc((100% - var(--gate) - 20px) * ${b.at})`;
+      el.style.bottom = '2px';
+      group.appendChild(el);
+      return { id: bi, at: b.at * 100, el, taken: false };
     });
   });
 
-  const RACE_MS = 7200; // longer than solo, so a full table can watch it play out
-  const t0 = performance.now();
+  const RACE_MS  = 7200; // longer than solo, so a full table can watch it play out
+  const STALL_MS = 750;  // how long a banana holds someone up
+  let last = performance.now();
   (function frame(ts) {
-    const u = Math.min((ts - t0) / RACE_MS, 1);
+    const dt = Math.min(ts - last, 60);
+    last = ts;
     let anyRunning = false;
     const leadFor = {}; // each player has their own race toward their own gate
     state.forEach(s => {
       const g = groups[s.pid];
       if (g.done) return;
       anyRunning = true;
+
+      // A racer's own clock only advances while they're on their feet
+      const stalled = ts < s.stallUntil;
+      if (!stalled) {
+        if (s.el.classList.contains('slipped')) s.el.classList.remove('slipped');
+        s.t = Math.min(s.t + dt, RACE_MS);
+      }
+      const u = s.t / RACE_MS;
       s.progress = racePosAt(s.script, u);
+
+      // Banana check: first racer of this player's group to reach one takes it
+      if (!stalled) {
+        (g.bananas || []).forEach(b => {
+          if (b.taken || s.eaten.has(b.id) || s.progress < b.at) return;
+          b.taken = true;
+          s.eaten.add(b.id);
+          s.stallUntil = ts + STALL_MS;
+          b.el.classList.add('squashed');
+          s.el.classList.remove('surging');
+          s.el.classList.add('slipped');
+        });
+      }
+
       if (!leadFor[s.pid] || s.progress > leadFor[s.pid].progress) leadFor[s.pid] = s;
       s.el.style.left = `calc((100% - var(--gate) - ${RACE_RUNNER_PX}px) * ${(s.progress / 100).toFixed(4)})`;
-      s.el.classList.toggle('surging', s.script.speedAt(u) > 1.35);
-      if (ts > s.nextSwap && s.lanes > 1 && u < 0.82) {
+      s.el.classList.toggle('surging', !stalled && s.script.speedAt(u) > 1.35);
+      if (ts > s.nextSwap && s.lanes > 1 && u < 0.82 && !stalled) {
         s.nextSwap = ts + 900 + Math.random() * 1400;
         if (Math.random() < 0.45) {
           let l; do { l = Math.floor(Math.random() * s.lanes); } while (l === s.lane);
           s.lane = l; s.el.style.top = (l * LANE_H + 1) + 'px';
         }
       }
-      if (s.isWinner && u >= 1) {
+      if (s.isWinner && s.t >= RACE_MS) {
         g.done = true;
         g.gate.classList.add('arrived');
-        state.filter(x => x.pid === s.pid).forEach(x => { x.el.classList.remove('racing', 'surging'); });
+        state.filter(x => x.pid === s.pid).forEach(x => { x.el.classList.remove('racing', 'surging', 'slipped'); });
         s.el.classList.add('winner');
         setLegendHero(s.pid, s.hero.name);
         if (s.pid === playerId) finishGroupResult(s.hero, false);
@@ -3205,7 +3325,7 @@ function renderGroupRace(round) {
     });
     Object.keys(leadFor).forEach(pid => reportLeader(pid, leadFor[pid].hero));
     if (anyRunning) requestAnimationFrame(frame);
-  })(t0);
+  })(last);
 }
 
 // ── Plinko: one shared board, every ball on every screen ──
