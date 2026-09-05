@@ -1543,7 +1543,14 @@ function showWimpToast(name) {
 // Live "someone else is spinning" preview — a rapid portrait flicker in their party
 // card, driven purely by the existing spinning/hero fields (no extra broadcast needed).
 // So everyone in the room sees everyone else's result unfold live, not just appear.
-const flickerIntervals = {};
+// ── Live leader: whoever is actually in front for each player, right now ──
+// The party card shows the hero currently winning that player's spin/race/drop and
+// changes only when the lead really changes, rather than cycling at random.
+// In Group Mode every player's animation runs on every device, so this is all local;
+// for a solo spin the acting client publishes a throttled `leading` key instead.
+const liveLeader     = {};   // pid -> hero
+const partyPortraits = {};   // pid -> <img> in that player's card
+const leaderPaintAt  = {};   // pid -> last repaint time, to cap churn on a fast reel
 
 // First-letter fallback tile, built as nodes so a name is never parsed as markup.
 function initialPlaceholder(label) {
@@ -1556,21 +1563,75 @@ function initialPlaceholder(label) {
   return box;
 }
 
-function stopFlicker(pid) {
-  if (flickerIntervals[pid]) { clearInterval(flickerIntervals[pid]); delete flickerIntervals[pid]; }
+function heroByKey(key) {
+  for (const role of Object.keys(HEROES)) {
+    const h = HEROES[role].find(x => x.key === key);
+    if (h) return { ...h, role };
+  }
+  return null;
 }
 
-function startFlicker(imgEl, pid) {
-  stopFlicker(pid);
-  const allHeroes = getPool('any');
-  if (!allHeroes.length) return;
-  const tick = () => {
-    const h = allHeroes[Math.floor(Math.random() * allHeroes.length)];
-    const url = portrait(h.key);
-    if (url) imgEl.src = url;
-  };
-  tick();
-  flickerIntervals[pid] = setInterval(tick, 100);
+function paintLeader(pid) {
+  const img  = partyPortraits[pid];
+  const hero = liveLeader[pid];
+  if (!img || !hero) return;
+  const url = portrait(hero.key);
+  if (!url) return;
+  if (img.src !== url) { img.src = url; img.alt = hero.name; }
+  if (img.style.display === 'none') {
+    // First leader for a card that started with the name placeholder — swap them over.
+    img.style.display = '';
+    img.parentNode?.querySelector('.portrait-placeholder')?.remove();
+  }
+}
+
+const leaderPending = {};
+function setLiveLeader(pid, hero) {
+  if (!hero || !hero.key) return;
+  if (liveLeader[pid] && liveLeader[pid].key === hero.key) return; // only on a real change
+  liveLeader[pid] = hero;
+
+  // A reel early in its spin changes faster than is worth drawing, so cap the repaint
+  // rate — but always land the newest value, or the card can freeze a frame short of
+  // where the spin actually stopped.
+  const now = performance.now();
+  if (now - (leaderPaintAt[pid] || 0) < 45) {
+    if (!leaderPending[pid]) {
+      leaderPending[pid] = setTimeout(() => {
+        delete leaderPending[pid];
+        leaderPaintAt[pid] = performance.now();
+        paintLeader(pid);
+      }, 45);
+    }
+    return;
+  }
+  leaderPaintAt[pid] = now;
+  paintLeader(pid);
+}
+
+function clearLiveLeader(pid) {
+  delete liveLeader[pid];
+  delete leaderPaintAt[pid];
+  if (leaderPending[pid]) { clearTimeout(leaderPending[pid]); delete leaderPending[pid]; }
+}
+
+// Solo spins only: other players have no local copy of the animation to read from.
+let lastLeadingWrite = 0;
+function broadcastLeading(hero) {
+  if (groupMode || !playerRef || !hero || !hero.key) return;
+  const now = Date.now();
+  if (now - lastLeadingWrite < 150) return;
+  lastLeadingWrite = now;
+  playerRef.update({ leading: hero.key });
+}
+function clearBroadcastLeading() {
+  if (playerRef) playerRef.update({ leading: null });
+}
+
+// Reports the leader locally and, when solo, over the wire in one call.
+function reportLeader(pid, hero) {
+  setLiveLeader(pid, hero);
+  if (pid === playerId) broadcastLeading(hero);
 }
 
 function renderParty(players) {
@@ -1579,9 +1640,10 @@ function renderParty(players) {
   const count = keys.length;
   partyCount.textContent = count === 1 ? '1 player' : `${count} players`;
 
-  Object.keys(flickerIntervals).forEach(pid => {
-    if (!players[pid] || !players[pid].spinning) stopFlicker(pid);
+  Object.keys(liveLeader).forEach(pid => {
+    if (!players[pid] || !players[pid].spinning) clearLiveLeader(pid);
   });
+  Object.keys(partyPortraits).forEach(pid => { if (!players[pid]) delete partyPortraits[pid]; });
   maybeRefreshPlinkoPreview();
 
   if (count === 0) {
@@ -1610,10 +1672,24 @@ function renderParty(players) {
 
     if (p.spinning) {
       pbox.classList.add('flickering');
-      const flickerImg = document.createElement('img');
-      flickerImg.alt = String(p.name || '');
-      pbox.appendChild(flickerImg);
-      startFlicker(flickerImg, k);
+      // Prefer the leader we can see locally; fall back to what a solo spinner published.
+      const lead = liveLeader[k] || (p.leading ? heroByKey(p.leading) : null);
+      if (lead) liveLeader[k] = lead;
+      const url = lead ? portrait(lead.key) : null;
+      if (url) {
+        const img = document.createElement('img');
+        img.src = url;
+        img.alt = lead.name;
+        pbox.appendChild(img);
+        partyPortraits[k] = img;
+      } else {
+        // Nothing in front yet (or a mode with no leader, like a face-down deal)
+        const img = document.createElement('img');
+        img.alt = String(p.name || '');
+        img.style.display = 'none';
+        pbox.append(initialPlaceholder(p.name), img);
+        partyPortraits[k] = img;
+      }
     } else if (p.hero) {
       const hKey = heroKeyByName(p.hero);
       const url  = hKey ? portrait(hKey) : null;
@@ -1843,6 +1919,10 @@ function doSpin() {
       : fastEndX + (targetX - fastEndX) * easeOut((t - 0.65) / 0.35);
     reelEl.style.transform = `translateX(${x}px)`;
     applyScales(x);
+    // Whichever tile is currently under the window is the one "in front". The frame is
+    // two tiles wide while spinning, so its centre sits frameW into the reel; round, not
+    // floor, because the resting position lands exactly on a tile boundary.
+    reportLeader(playerId, allTiles[Math.round((-x + frameW / 2) / frameW)]);
     t < 1 ? requestAnimationFrame(animate) : finishSpin(winner);
   })(t0);
 }
@@ -1874,7 +1954,7 @@ function finishSpin(winner) {
   resultLbl.style.color  = roleColors[winner.role] || 'var(--any)';
   resultLbl.classList.add('show');
 
-  if (playerRef) playerRef.update({ hero: winner.name, role: winner.role, spinning: false, lastSeen: Date.now() });
+  if (playerRef) playerRef.update({ hero: winner.name, role: winner.role, spinning: false, leading: null, lastSeen: Date.now() });
   saveLocalSession(playerName, roomCode, selectedRoles, winner.name);
 
   // 45s commit timer
@@ -1999,13 +2079,16 @@ function doRace() {
   (function frame(ts) {
     const dt = Math.min((ts - last) / 1000, 0.05);
     last = ts;
+    let lead = state[0];
     state.forEach(s => {
       const jitter = 0.4 + Math.random() * 1.2;
       const delta  = s.speed * jitter * dt * 1.5;
       const cap    = s === winnerState ? 100 : NON_WINNER_CAP;
       s.progress = Math.min(cap, s.progress + delta);
       s.el.style.left = `calc((100% - ${RACE_RUNNER_PX}px) * ${(s.progress / 100).toFixed(4)})`;
+      if (s.progress > lead.progress) lead = s;
     });
+    reportLeader(playerId, lead.hero); // whoever is out front right now
     if (winnerState.progress >= 100) finishRace(winner, state, winnerState);
     else requestAnimationFrame(frame);
   })(last);
@@ -2029,7 +2112,7 @@ function finishRace(winner, state, winnerState) {
   resultLbl.style.color  = roleColors[winner.role] || 'var(--any)';
   resultLbl.classList.add('show');
 
-  if (playerRef) playerRef.update({ hero: winner.name, role: winner.role, spinning: false, lastSeen: Date.now() });
+  if (playerRef) playerRef.update({ hero: winner.name, role: winner.role, spinning: false, leading: null, lastSeen: Date.now() });
   saveLocalSession(playerName, roomCode, selectedRoles, winner.name);
 
   // 45s commit timer (shared behavior with normal spin)
@@ -2303,6 +2386,7 @@ function runPlinkoPhysics(pegsEl, pegs, slotCount, startFrac, onLand, opts = {})
 
     chip.style.left = `${ball.x - PLINKO_BALL_R}px`;
     chip.style.top  = `${ball.y - PLINKO_BALL_R}px`;
+    if (opts.onColumn) opts.onColumn(colAt(ball.x)); // slot the ball is currently over
 
     if (bounced) {
       hitPegs.forEach(p => {
@@ -2465,6 +2549,16 @@ function setGroupPresence(present) {
     ref.remove();
   }
 }
+
+// onDisconnect clears the presence flag when the connection drops, and nothing used to
+// put it back — so a brief blip (phone changing network, laptop sleeping) silently took a
+// player out of Group Mode while their screen still showed it on: they could still hit
+// Ready, but the round fired without them and they never got a hero. Re-assert on every
+// reconnect. (.info/connected is client connection state, not stored data, so it needs no
+// read rule.)
+db.ref('.info/connected').on('value', snap => {
+  if (snap.val() === true && groupMode && roomCode) setGroupPresence(true);
+});
 
 // In Group Mode the mode itself is shared by the room — everyone plays the same game.
 function publishGroupMode() {
@@ -2632,7 +2726,7 @@ function finishGroupResult(winner, commitNow) {
   resultLbl.style.color  = roleColors[winner.role] || 'var(--any)';
   resultLbl.classList.add('show');
 
-  if (playerRef) playerRef.update({ hero: winner.name, spinning: false, lastSeen: Date.now() });
+  if (playerRef) playerRef.update({ hero: winner.name, spinning: false, leading: null, lastSeen: Date.now() });
   saveLocalSession(playerName, roomCode, selectedRoles, winner.name);
 
   clearTimeout(heroTimer);
@@ -2808,7 +2902,7 @@ function applyRoundUpdates(round) {
 }
 
 // ── Normal / Blackout: one reel per player, side by side ──
-function animateMiniReel(reelEl, frameEl, pool, winner, T, onDone) {
+function animateMiniReel(reelEl, frameEl, pool, winner, T, pid, onDone) {
   const N = Math.max(pool.length, 1);
   const rep = shuffle(pool.filter(h => h.key !== winner.key));
   const winnerSlot = Math.min(Math.max(1, Math.floor(N / 2)), rep.length);
@@ -2825,6 +2919,7 @@ function animateMiniReel(reelEl, frameEl, pool, winner, T, onDone) {
     const t = Math.min((ts - t0) / DURATION, 1);
     const x = t < 0.65 ? fastEndX * (t / 0.65) : fastEndX + (targetX - fastEndX) * easeOut((t - 0.65) / 0.35);
     reelEl.style.transform = `translateX(${x}px)`;
+    reportLeader(pid, tiles[Math.round(-x / T)]); // this frame is exactly one tile wide
     if (t < 1) requestAnimationFrame(animate);
     else { frameEl.classList.remove('spinning'); onDone(); }
   })(t0);
@@ -2846,7 +2941,7 @@ function renderGroupReels(round) {
     const reel  = document.createElement('div'); reel.className = 'gs-reel';
     frame.appendChild(reel); sec.body.appendChild(frame);
     const pool = participantPool({ pid: p.pid, roles: p.roles }, round.mode);
-    animateMiniReel(reel, frame, pool.length ? pool : [info.winner], info.winner, T, () => {
+    animateMiniReel(reel, frame, pool.length ? pool : [info.winner], info.winner, T, p.pid, () => {
       frame.classList.add('done');
       sec.result.textContent = info.winner.name;
       if (p.pid === playerId) finishGroupResult(info.winner, false);
@@ -3008,10 +3103,12 @@ function renderGroupRace(round) {
     const dt = Math.min((ts - last) / 1000, 0.05);
     last = ts;
     let anyRunning = false;
+    const leadFor = {}; // each player has their own race toward their own gate
     state.forEach(s => {
       const g = groups[s.pid];
       if (g.done) return;
       anyRunning = true;
+      if (!leadFor[s.pid] || s.progress > leadFor[s.pid].progress) leadFor[s.pid] = s;
       const jitter = 0.4 + Math.random() * 1.2;
       const cap = s.isWinner ? 100 : NON_WINNER_CAP;
       s.progress = Math.min(cap, s.progress + s.speed * jitter * dt * SPEED_MULT);
@@ -3032,6 +3129,7 @@ function renderGroupRace(round) {
         if (s.pid === playerId) finishGroupResult(s.hero, false);
       }
     });
+    Object.keys(leadFor).forEach(pid => reportLeader(pid, leadFor[pid].hero));
     if (anyRunning) requestAnimationFrame(frame);
   })(last);
 }
@@ -3045,7 +3143,7 @@ function colorizeChip(chip, hue, label) {
 
 // Another player's ball: falls row by row from their aim, drifting randomly until we hear
 // where their real physics landed, then steers into that slot.
-function startRemoteBall(pegsEl, rows, slotCount, p) {
+function startRemoteBall(pegsEl, rows, slotCount, p, slots) {
   const R = PLINKO_BALL_R;
   const chip = createPlinkoChip(pegsEl, p.aim);
   chip.removeAttribute('id');
@@ -3061,7 +3159,9 @@ function startRemoteBall(pegsEl, rows, slotCount, p) {
     const sx = parseFloat(chip.style.left) + R, sy = parseFloat(chip.style.top) + R, t0 = performance.now();
     (function f(ts) {
       const t = Math.min((ts - t0) / dur, 1);
-      place(sx + (tx - sx) * Math.min(1, t * 1.1), sy + (ty - sy) * t * t);
+      const nx = sx + (tx - sx) * Math.min(1, t * 1.1);
+      place(nx, sy + (ty - sy) * t * t);
+      if (slots) setLiveLeader(p.pid, slots[Math.max(0, Math.min(slotCount - 1, Math.floor(nx / colW)))]);
       if (t < 1) requestAnimationFrame(f); else done();
     })(t0);
   }
@@ -3108,7 +3208,7 @@ function renderGroupPlinko(round) {
 
   round.players.forEach(p => {
     if (p.pid === playerId) return;
-    groupRemoteBalls[p.pid] = startRemoteBall(pegsEl, rows, slots.length, p);
+    groupRemoteBalls[p.pid] = startRemoteBall(pegsEl, rows, slots.length, p, slots);
   });
 
   if (me) {
@@ -3121,7 +3221,7 @@ function renderGroupPlinko(round) {
       setLegendHero(playerId, slots[slotIndex].name);
       if (roomCode) db.ref(`rooms/${roomCode}/group/round/results/${playerId}`).set(slotIndex);
       finishGroupResult(slots[slotIndex], false);
-    }, { chip, allowed });
+    }, { chip, allowed, onColumn: col => reportLeader(playerId, slots[col]) });
   }
   applyRoundUpdates(round);
 }
@@ -3159,7 +3259,7 @@ function executeLocalPlinkoDrop(dropFrac) {
 
   runPlinkoPhysics(pegsEl, pegs, slotCount, dropFrac, (slotIndex) => {
     finishPlinko(slotHeroes[slotIndex], slotIndex);
-  });
+  }, { onColumn: col => reportLeader(playerId, slotHeroes[col]) });
 }
 
 function finishPlinko(winner, winnerSlot) {
@@ -3183,7 +3283,7 @@ function finishPlinko(winner, winnerSlot) {
   resultLbl.style.color  = roleColors[winner.role] || 'var(--any)';
   resultLbl.classList.add('show');
 
-  if (playerRef) playerRef.update({ hero: winner.name, role: winner.role, spinning: false, lastSeen: Date.now() });
+  if (playerRef) playerRef.update({ hero: winner.name, role: winner.role, spinning: false, leading: null, lastSeen: Date.now() });
   saveLocalSession(playerName, roomCode, selectedRoles, winner.name);
 
   clearTimeout(heroTimer);
@@ -3321,7 +3421,7 @@ function pickEasyHero(hero, allPicks, chosenCard) {
   resultLbl.style.color  = roleColors[hero.role] || 'var(--any)';
   resultLbl.classList.add('show');
 
-  if (playerRef) playerRef.update({ hero: hero.name, role: hero.role, spinning: false, lastSeen: Date.now() });
+  if (playerRef) playerRef.update({ hero: hero.name, role: hero.role, spinning: false, leading: null, lastSeen: Date.now() });
   saveLocalSession(playerName, roomCode, selectedRoles, hero.name);
 
   // Easy mode commits immediately — no 45s wait
