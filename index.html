@@ -200,6 +200,24 @@
     .mode-btn.active[data-mode="plinko"]    { background: rgba(179,136,255,.12); color: var(--plinko); }
     .mode-btn .mode-icon { font-size: .9rem; display: block; line-height: 1; margin-bottom: 1px; }
 
+    /* Group Mode pins the whole room to one game, so the picker locks while it's on. */
+    .mode-toggle.locked { border-color: var(--plinko); box-shadow: 0 0 0 1px rgba(179,136,255,.18); }
+    .mode-toggle.locked .mode-btn { cursor: not-allowed; opacity: .45; }
+    .mode-toggle.locked .mode-btn.active { opacity: 1; }
+    .mode-lock-note {
+      display: none; width: 100%; margin: .3rem 0 0;
+      font-size: .6rem; letter-spacing: 1.2px; text-transform: uppercase;
+      color: var(--dim); text-align: center;
+    }
+    .mode-lock-note.show { display: block; }
+    @keyframes mode-nudge {
+      0%, 100% { transform: translateX(0); }
+      25%      { transform: translateX(-4px); }
+      75%      { transform: translateX(4px); }
+    }
+    .mode-toggle.nudge { animation: mode-nudge .28s ease; }
+    .mode-lock-note.nudge { animation: mode-nudge .28s ease; color: var(--plinko); }
+
     /* Role Buttons */
     .roles { display: grid; grid-template-columns: repeat(4, 1fr); gap: .5rem; width: 100%; }
     .role-btn {
@@ -891,6 +909,7 @@
     <button class="mode-btn" data-mode="race"><span class="mode-icon">🐎</span>Race</button>
     <button class="mode-btn" data-mode="plinko"><span class="mode-icon">🟣</span>Plinko</button>
   </div>
+  <p class="mode-lock-note" id="mode-lock-note">&#128274; Mode locked to the room &mdash; turn off Group Mode to change it</p>
 
   <p class="section-lbl">Choose Role</p>
   <div class="roles">
@@ -1167,9 +1186,22 @@ document.fonts.ready.then(async () => {
 document.querySelectorAll('.mode-btn').forEach(btn => {
   btn.addEventListener('click', function () {
     if (isSpinning) return;
+    // Locked while Group Mode is on, so nobody can pull the room onto a different game
+    // half way through. Say so rather than just ignoring the tap.
+    if (groupMode) { nudgeModeLock(); return; }
     setGameMode(this.dataset.mode);
   });
 });
+
+function nudgeModeLock() {
+  [document.querySelector('.mode-toggle'), document.getElementById('mode-lock-note')].forEach(el => {
+    if (!el) return;
+    el.classList.remove('nudge');
+    void el.offsetWidth;
+    el.classList.add('nudge');
+    setTimeout(() => el.classList.remove('nudge'), 320);
+  });
+}
 
 const groupModeBtn = document.getElementById('group-mode-btn');
 groupModeBtn.addEventListener('click', () => {
@@ -1203,14 +1235,27 @@ function setGroupMode(on) {
   localStorage.setItem('owrr_group', on ? '1' : '0');
   groupModeBtn.classList.toggle('active', on);
   updateSpinBtnLabel();
-  setGroupPresence(on);
   if (on) {
     // Solo finishes overwrite the stored role with the winner's; re-publish the real pick
     const roleForDB = selectedRoles.length === 1 ? selectedRoles[0] : selectedRoles.join(',');
     if (playerRef) playerRef.update({ role: roleForDB, lastSeen: Date.now() });
-    if (groupState.mode && groupState.mode !== gameMode) { applyRoomMode(groupState.mode); return; }
+    // Switching Group Mode on is what sets the room's game — that's the only way to change
+    // it once it's locked: drop out, pick, come back in, and the room follows you. The one
+    // exception is a room that's already committed, where a late arrival falls in line
+    // instead of dragging everyone sideways.
+    //
+    // Claim the mode BEFORE announcing presence. Writing presence fires the room listener
+    // right back at us with the mode still on its old value, which would drag us onto it
+    // and then publish that instead of the mode we just picked.
+    const committed = !!groupState.fireAt || Object.keys(groupState.ready || {}).length > 0;
+    if (committed && groupState.mode && groupState.mode !== gameMode) {
+      setGroupPresence(true);
+      applyRoomMode(groupState.mode);
+      return;
+    }
     publishGroupMode();
   }
+  setGroupPresence(on);
   applyModeUI(gameMode);
   resetResult();
   rebuildIdleUI();
@@ -1227,6 +1272,18 @@ function updateSpinBtnLabel() {
 function applyModeUI(mode) {
   // Toggle buttons
   document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+
+  const toggle = document.querySelector('.mode-toggle');
+  const note   = document.getElementById('mode-lock-note');
+  if (toggle) toggle.classList.toggle('locked', groupMode);
+  if (note) {
+    note.classList.toggle('show', groupMode);
+    note.setAttribute('aria-hidden', groupMode ? 'false' : 'true');
+  }
+  document.querySelectorAll('.mode-btn').forEach(b => {
+    b.setAttribute('aria-disabled', groupMode ? 'true' : 'false');
+    b.title = groupMode ? 'Mode is locked while Group Mode is on' : '';
+  });
 
   // Spin button label + color — Group Mode overrides both regardless of the active mode
   updateSpinBtnLabel();
