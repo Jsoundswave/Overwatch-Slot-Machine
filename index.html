@@ -413,6 +413,32 @@
     }
     .gs-place-ghost { width: 20px; height: 20px; font-size: 15px; line-height: 20px; text-align: center; }
     .gs-race.placing { cursor: crosshair; touch-action: none; }
+
+    /* Walls players string between two pegs: solid for the whole round, never consumed. */
+    .plinko-wall {
+      position: absolute; border-radius: 4px; z-index: 2; pointer-events: none;
+      background: linear-gradient(180deg, #ffd24a, #e8901d);
+      box-shadow: 0 0 8px rgba(255,210,74,.55);
+    }
+    .plinko-wall.mine { box-shadow: 0 0 12px rgba(255,210,74,.95); }
+    .plinko-wall.hit  { animation: wall-whack .18s ease-out; }
+    @keyframes wall-whack {
+      0%   { filter: brightness(1); }
+      40%  { filter: brightness(2.1); }
+      100% { filter: brightness(1); }
+    }
+    @keyframes wall-raise {
+      0%   { opacity: 0; }
+      100% { opacity: 1; }
+    }
+    .plinko-wall.landing { animation: wall-raise .3s ease-out; }
+    .plinko-wall.ghost {
+      opacity: 0; transition: opacity .12s ease; z-index: 3;
+      background: rgba(255,210,74,.55); box-shadow: none;
+    }
+    .plinko-pegs.aiming .plinko-wall.ghost { opacity: .8; }
+    .plinko-pegs.placing { cursor: crosshair; touch-action: none; }
+    .plinko-pegs.placing:focus-visible { outline: 2px solid var(--any); outline-offset: 2px; }
     .gs-race.placing:focus-visible { outline: 2px solid var(--any); outline-offset: 3px; }
     .gs-place-bar {
       display: flex; align-items: center; flex-wrap: wrap; gap: .35rem .6rem; width: 100%;
@@ -2347,6 +2373,7 @@ function setupPlinkoRail(railEl, markerEl) {
 
 const PLINKO_PEG_R  = 4;  // px radius used for both rendering and collision
 const PLINKO_BALL_R = 10; // px radius (matches the 20px chip)
+const PLINKO_WALL_HALF = 3.5; // half-thickness of a player-placed wall, for collision and render
 
 // Builds a real pixel-coordinate zigzag peg grid (classic Galton board lattice) and
 // renders dots at those exact coordinates, so the same positions drive collision physics.
@@ -2364,7 +2391,7 @@ function buildPlinkoPegs(pegsEl, rows, slotCount) {
     const count = evenRow ? slotCount - 1 : slotCount;
     for (let k = 0; k < count; k++) {
       const x = evenRow ? (k + 1) * colW : (k + 0.5) * colW;
-      const peg = { x, y, el: document.createElement('div') };
+      const peg = { x, y, row: r, k, el: document.createElement('div') };
       peg.el.className = 'plinko-peg';
       peg.el.style.left = `${x - PLINKO_PEG_R}px`;
       peg.el.style.top  = `${y - PLINKO_PEG_R}px`;
@@ -2481,6 +2508,8 @@ function runPlinkoPhysics(pegsEl, pegs, slotCount, startFrac, onLand, opts = {})
     vy: 0,
   };
 
+  const walls = opts.walls || [];
+
   const GRAVITY      = 1300;  // px/s^2 (lower = more hang-time between bounces)
   const BASE_REST    = 0.68;
   const WALL_REST    = 0.65;
@@ -2553,6 +2582,51 @@ function runPlinkoPhysics(pegsEl, pegs, slotCount, startFrac, onLand, opts = {})
         }
       }
 
+      // Walls players strung between two pegs. Solid for the whole round, so every ball
+      // meets the same board — a ball can't pass one, only run along it and off an end.
+      for (const w of walls) {
+        const ex = w.bx - w.ax, ey = w.by - w.ay;
+        const L2 = ex * ex + ey * ey;
+        const t = L2 > 0 ? Math.max(0, Math.min(1, ((ball.x - w.ax) * ex + (ball.y - w.ay) * ey) / L2)) : 0;
+        const dx = ball.x - (w.ax + ex * t), dy = ball.y - (w.ay + ey * t);
+        const dist = Math.hypot(dx, dy);
+        const minDist = PLINKO_BALL_R + PLINKO_WALL_HALF;
+        if (dist > 0 && dist < minDist) {
+          const nx = dx / dist, ny = dy / dist;
+          const dot = ball.vx * nx + ball.vy * ny;
+          if (dot < 0) {
+            ball.vx -= (1 + restitution) * dot * nx;
+            ball.vy -= (1 + restitution) * dot * ny;
+            const outDot = ball.vx * nx + ball.vy * ny;
+            if (outDot < minBounce) {
+              const boost = minBounce - outDot;
+              ball.vx += boost * nx;
+              ball.vy += boost * ny;
+            }
+            // Without a guaranteed slide a ball can sit balanced on a flat wall, bouncing
+            // straight up and down until the timeout. Keep it moving along the face.
+            const tx = -ny, ty = nx;
+            const tv = ball.vx * tx + ball.vy * ty;
+            const minTan = 130 * energyScale;
+            if (Math.abs(tv) < minTan) {
+              const dir = tv !== 0 ? Math.sign(tv) : (Math.random() < 0.5 ? -1 : 1);
+              const add = (minTan - Math.abs(tv)) * dir;
+              ball.vx += add * tx;
+              ball.vy += add * ty;
+            }
+            ball.vx = Math.max(-MAX_VX, Math.min(MAX_VX, ball.vx));
+            if (w.el) {
+              w.el.classList.remove('hit');
+              void w.el.offsetWidth;
+              w.el.classList.add('hit');
+            }
+          }
+          ball.x += nx * (minDist - dist);
+          ball.y += ny * (minDist - dist);
+          bounced = true;
+        }
+      }
+
       if (allowedSet) {
         const col  = colAt(ball.x);
         const capY = boardH - CAP_H;
@@ -2616,6 +2690,7 @@ let groupIdleTimer      = null;
 let groupHoldUntil      = 0;      // keep finished results on screen briefly before the next preview
 let groupRemoteBalls    = {};     // pid -> controller for other players' plinko balls
 let groupRaceCtl        = null;   // accepts other players' bananas while a race is on screen
+let groupPlinkoCtl      = null;   // same, for the shared plinko board
 let groupEasyTimer      = null;
 
 const PLAYER_HUES = [195, 28, 140, 285, 55, 335, 100, 0];
@@ -2861,6 +2936,7 @@ function stopGroupRoundListener(code) {
   groupState = {};
   groupRemoteBalls = {};
   groupRaceCtl = null;
+  groupPlinkoCtl = null;
   groupPlinkoRail = null;
   groupPreviewKey = null;
 }
@@ -2947,6 +3023,7 @@ function renderGroupIdle(force) {
   if (!groupMode) return;
   groupRemoteBalls = {};
   groupRaceCtl = null;
+  groupPlinkoCtl = null;
   groupPlinkoRail = null;
   if (gameMode === 'plinko') { groupPreviewKey = null; maybeRefreshPlinkoPreview(); return; }
   if (force || !groupStage.dataset.round) {
@@ -3049,6 +3126,7 @@ function renderGroupRound(round) {
   clearTimeout(groupEasyTimer);
   groupRemoteBalls = {};
   groupRaceCtl = null;
+  groupPlinkoCtl = null;
   groupPlinkoRail = null;
   groupStage.dataset.round = round.id;
   groupStage.dataset.view  = round.mode;
@@ -3101,6 +3179,12 @@ function applyRoundUpdates(round) {
     });
     if (round.gate) groupRaceCtl.openGate(round.gate);
   } else if (round.mode === 'plinko') {
+    if (groupPlinkoCtl) {
+      Object.entries(round.walls || {}).forEach(([by, raw]) => {
+        if (by !== playerId) groupPlinkoCtl.addWall(by, raw);
+      });
+      if (round.gate) groupPlinkoCtl.openGate(round.gate);
+    }
     Object.entries(round.results || {}).forEach(([pid, slotIndex]) => {
       if (pid === playerId) return;
       const ctrl = groupRemoteBalls[pid];
@@ -3580,7 +3664,7 @@ function colorizeChip(chip, hue, label) {
 
 // Another player's ball: falls row by row from their aim, drifting randomly until we hear
 // where their real physics landed, then steers into that slot.
-function startRemoteBall(pegsEl, rows, slotCount, p, slots) {
+function startRemoteBall(pegsEl, rows, slotCount, p, slots, defer) {
   const R = PLINKO_BALL_R;
   const chip = createPlinkoChip(pegsEl, p.aim);
   chip.removeAttribute('id');
@@ -3621,8 +3705,11 @@ function startRemoteBall(pegsEl, rows, slotCount, p, slots) {
     animateTo(nx, rowY(row), 300 + Math.random() * 80, () => { x = nx; bounce(); step(); });
   }
   place(x, R);
-  setTimeout(step, 150 + Math.random() * 250);
+  let started = false;
+  const begin = () => { if (started) return; started = true; setTimeout(step, 150 + Math.random() * 250); };
+  if (!defer) begin();
   return {
+    start: begin,
     land(slotIndex) {
       if (landed || target !== null) return;
       target = slotIndex;
@@ -3634,32 +3721,204 @@ function startRemoteBall(pegsEl, rows, slotCount, p, slots) {
 function renderGroupPlinko(round) {
   const slots = round.slots || [];
   const me = round.players.find(p => p.pid === playerId);
+  const bar    = document.createElement('div'); bar.className = 'gs-place-bar';
+  const barLbl = document.createElement('span'); barLbl.className = 'gs-place-count';
+  const meter  = document.createElement('div'); meter.className = 'gs-place-meter';
+  const fill   = document.createElement('div'); fill.className = 'gs-place-fill';
+  meter.appendChild(fill); bar.append(barLbl, meter);
   const { pegs: pegsEl, slots: slotsEl, legend } = buildPlinkoStage(false);
+  groupStage.insertBefore(bar, groupStage.firstChild);
   renderLegend(legend, round.players);
-  if (!slots.length) { if (me) groupModeActionCompleted(); return; }
+  if (!slots.length) { bar.remove(); if (me) groupModeActionCompleted(); return; }
 
   const rows = Math.max(slots.length - 1, 1);
   const pegs = buildPlinkoPegs(pegsEl, rows, slots.length);
   buildPlinkoSlots(slotsEl, slots);
   const allowed = applyBlockers(slotsEl, pegsEl, slots, me);
 
+  // Chips sit at the top of the board through the placement window, so you can see who
+  // aimed where before deciding whose line to ruin.
   round.players.forEach(p => {
     if (p.pid === playerId) return;
-    groupRemoteBalls[p.pid] = startRemoteBall(pegsEl, rows, slots.length, p, slots);
+    groupRemoteBalls[p.pid] = startRemoteBall(pegsEl, rows, slots.length, p, slots, true);
+  });
+  let myChip = null;
+  if (me) {
+    myChip = createPlinkoChip(pegsEl, me.aim);
+    myChip.removeAttribute('id');
+    colorizeChip(myChip, me.hue, 'YOU');
+  }
+
+  // ── Wall placement window ────────────────────────────────────────────────
+  // One board for the whole room, so any wall you string up is in everybody's way, yours
+  // included. Walls are identified by the two pegs they join, not by pixels, so every
+  // screen size resolves the same board.
+  const colW = pegsEl.clientWidth / slots.length;
+  // Every pair of neighbouring pegs: along a row, or diagonally across the zigzag. The
+  // bottom row is left out so the final approach to the slots can't be sealed off.
+  const segs = [];
+  for (let i = 0; i < pegs.length; i++) {
+    for (let j = i + 1; j < pegs.length; j++) {
+      const a = pegs[i], b = pegs[j];
+      if (a.row >= rows - 1 || b.row >= rows - 1) continue;
+      const sameRow = a.row === b.row && Math.abs(a.k - b.k) === 1;
+      const diagonal = Math.abs(a.row - b.row) === 1 && Math.abs(a.x - b.x) < colW * 0.75;
+      if (sameRow || diagonal) segs.push({ i, j });
+    }
+  }
+
+  const ghost = document.createElement('div'); ghost.className = 'plinko-wall ghost';
+  pegsEl.appendChild(ghost);
+  const placed = {};
+  let myWallPlaced = false, dropped = false, placeTimer = null;
+
+  function segCoords(s) {
+    const a = pegs[s.i], b = pegs[s.j];
+    return { ax: a.x, ay: a.y, bx: b.x, by: b.y };
+  }
+  function placeWallEl(el, s) {
+    const { ax, ay, bx, by } = segCoords(s);
+    el.style.left = ax + 'px';
+    el.style.top  = (ay - PLINKO_WALL_HALF) + 'px';
+    el.style.width  = Math.hypot(bx - ax, by - ay) + 'px';
+    el.style.height = (PLINKO_WALL_HALF * 2) + 'px';
+    el.style.transformOrigin = `0 ${PLINKO_WALL_HALF}px`;
+    el.style.transform = `rotate(${Math.atan2(by - ay, bx - ax)}rad)`;
+  }
+  function drawWall(s, mine, animate) {
+    const el = document.createElement('div');
+    el.className = 'plinko-wall' + (mine ? ' mine' : '') + (animate ? ' landing' : '');
+    placeWallEl(el, s);
+    pegsEl.appendChild(el);
+    if (animate) setTimeout(() => el.classList.remove('landing'), 320);
+    return el;
+  }
+  function readSeg(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    const i = Math.floor(Number(raw.a)), j = Math.floor(Number(raw.b));
+    if (!pegs[i] || !pegs[j]) return null;
+    return segs.find(s => (s.i === i && s.j === j) || (s.i === j && s.j === i)) || null;
+  }
+  function addWall(by, raw, mine) {
+    if (dropped || placed[by]) return;
+    const s = readSeg(raw);
+    if (!s) return;
+    placed[by] = s;
+    s.el = drawWall(s, mine, true);
+  }
+  // Nearest segment to the pointer, measured to the segment itself rather than its
+  // midpoint, so long diagonals are as easy to grab as short horizontals.
+  function segFromPointer(e) {
+    const r = pegsEl.getBoundingClientRect();
+    const px = e.clientX - r.left, py = e.clientY - r.top;
+    let best = null, bd = Infinity;
+    for (const s of segs) {
+      const { ax, ay, bx, by } = segCoords(s);
+      const ex = bx - ax, ey = by - ay, L2 = ex * ex + ey * ey;
+      const t = L2 > 0 ? Math.max(0, Math.min(1, ((px - ax) * ex + (py - ay) * ey) / L2)) : 0;
+      const d = Math.hypot(px - (ax + ex * t), py - (ay + ey * t));
+      if (d < bd) { bd = d; best = s; }
+    }
+    return best;
+  }
+  function aimAt(s) {
+    if (!s) return;
+    placeWallEl(ghost, s);
+    pegsEl.classList.add('aiming');
+  }
+  function commitWall(s) {
+    if (myWallPlaced || dropped || !s) return;
+    myWallPlaced = true;
+    pegsEl.classList.remove('aiming', 'placing');
+    addWall(playerId, { a: s.i, b: s.j }, true);
+    if (roomCode) db.ref(`rooms/${roomCode}/group/round/walls/${playerId}`).set({ a: s.i, b: s.j });
+  }
+
+  let kbIdx = Math.floor(segs.length / 2);
+  pegsEl.classList.add('placing');
+  pegsEl.tabIndex = 0;
+  pegsEl.addEventListener('pointermove', e => { if (!myWallPlaced && !dropped) aimAt(segFromPointer(e)); });
+  pegsEl.addEventListener('pointerleave', () => pegsEl.classList.remove('aiming'));
+  pegsEl.addEventListener('pointerdown', e => {
+    if (myWallPlaced || dropped || (e.button != null && e.button !== 0)) return;
+    commitWall(segFromPointer(e));
+  });
+  pegsEl.addEventListener('keydown', e => {
+    if (myWallPlaced || dropped || !segs.length) return;
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp')        kbIdx = (kbIdx + segs.length - 1) % segs.length;
+    else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') kbIdx = (kbIdx + 1) % segs.length;
+    else if (e.key === 'Enter' || e.key === ' ') { commitWall(segs[kbIdx]); e.preventDefault(); return; }
+    else return;
+    aimAt(segs[kbIdx]);
+    e.preventDefault();
   });
 
-  if (me) {
-    const chip = createPlinkoChip(pegsEl, me.aim);
-    chip.removeAttribute('id');
-    colorizeChip(chip, me.hue, 'YOU');
-    runPlinkoPhysics(pegsEl, pegs, slots.length, me.aim, (slotIndex) => {
-      const slotEl = slotsEl.children[slotIndex];
-      if (slotEl) slotEl.classList.add('winner');
-      setLegendHero(playerId, slots[slotIndex].name);
-      if (roomCode) db.ref(`rooms/${roomCode}/group/round/results/${playerId}`).set(slotIndex);
-      finishGroupResult(slots[slotIndex], false);
-    }, { chip, allowed, onColumn: col => reportLeader(playerId, slots[col]) });
+  groupPlinkoCtl = { addWall: (by, raw) => addWall(by, raw, false), openGate };
+  Object.entries(round.walls || {}).forEach(([by, raw]) => { if (by !== playerId) addWall(by, raw, false); });
+
+  const PLACE_MS = 6000;
+  const placeStart = performance.now();
+  let allInAt = 0, gateAsked = false;
+  // A two-slot board has a single peg row and nothing to wall between — don't sit through
+  // a placement window that can't accept anything.
+  if (!segs.length) { gateAsked = true; askForGate(); }
+  (function placeFrame(ts) {
+    if (dropped) return;
+    const left  = Math.max(0, PLACE_MS - (ts - placeStart));
+    const secs  = Math.ceil(left / 1000);
+    const count = Object.keys(placed).length, total = round.players.length;
+    fill.style.transform = `scaleX(${(left / PLACE_MS).toFixed(3)})`;
+    barLbl.textContent = gateAsked ? 'Dropping…'
+      : myWallPlaced ? `${count}/${total} walls up · ${secs}s`
+      : `Tap between two pegs to wall them off · ${secs}s · ${count}/${total} up`;
+    if (count >= total && !allInAt) allInAt = ts;
+    if (!gateAsked && (left <= 0 || (allInAt && ts - allInAt > 800))) { gateAsked = true; askForGate(); }
+    requestAnimationFrame(placeFrame);
+  })(placeStart);
+  placeTimer = setTimeout(() => { if (!gateAsked && !dropped) { gateAsked = true; askForGate(); } }, PLACE_MS + 120);
+
+  function askForGate() {
+    const snapshot = {};
+    Object.entries(placed).forEach(([by, s]) => { snapshot[by] = { a: s.i, b: s.j }; });
+    if (!roomCode) { openGate({ at: Date.now(), walls: snapshot }); return; }
+    db.ref(`rooms/${roomCode}/group/round/gate`).transaction(cur => cur || { at: Date.now(), walls: snapshot });
   }
+
+  function openGate(gate) {
+    if (dropped) return;
+    dropped = true;
+    clearTimeout(placeTimer);
+    pegsEl.classList.remove('placing', 'aiming');
+    pegsEl.removeAttribute('tabindex');
+    ghost.remove();
+    bar.remove();
+
+    // Re-lay the board from the committed list so nobody drops onto a board of their own.
+    pegsEl.querySelectorAll('.plinko-wall').forEach(el => el.remove());
+    const live = [];
+    Object.entries(gate.walls || {}).forEach(([by, raw]) => {
+      const s = readSeg(raw);
+      if (!s) return;
+      const el = drawWall(s, by === playerId, false);
+      live.push({ ...segCoords(s), el });
+    });
+
+    Object.values(groupRemoteBalls).forEach(ctrl => ctrl && ctrl.start && ctrl.start());
+    if (me && myChip) {
+      runPlinkoPhysics(pegsEl, pegs, slots.length, me.aim, (slotIndex) => {
+        const slotEl = slotsEl.children[slotIndex];
+        if (slotEl) slotEl.classList.add('winner');
+        setLegendHero(playerId, slots[slotIndex].name);
+        if (roomCode) db.ref(`rooms/${roomCode}/group/round/results/${playerId}`).set(slotIndex);
+        finishGroupResult(slots[slotIndex], false);
+        groupPlinkoCtl = null;
+      }, { chip: myChip, allowed, walls: live, onColumn: col => reportLeader(playerId, slots[col]) });
+    } else {
+      groupPlinkoCtl = null;
+    }
+  }
+
+  if (round.gate) openGate(round.gate);
   applyRoundUpdates(round);
 }
 
