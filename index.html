@@ -329,6 +329,13 @@
       color: var(--dim); text-align: left; opacity: .75;
     }
     .mode-note.show { display: block; }
+    @keyframes mode-nudge {
+      0%, 100% { transform: translateX(0); }
+      25%      { transform: translateX(-4px); }
+      75%      { transform: translateX(4px); }
+    }
+    .group-toggle-btn.nudge, .mode-note.nudge { animation: mode-nudge .28s ease; }
+    .mode-note.nudge { color: var(--plinko); opacity: 1; }
 
     /* Role Buttons */
     .roles { display: grid; grid-template-columns: repeat(4, 1fr); gap: .5rem; width: 100%; }
@@ -1296,6 +1303,15 @@ document.fonts.ready.then(async () => {
   const savedLastSeen  = parseInt(localStorage.getItem('owrr_lastseen') || '0');
   const sessionExpired = Date.now() - savedLastSeen > IDLE_TIMEOUT_MS;
 
+  // The two settings are stored separately, so a session saved back when Race could be
+  // played alone would come back as solo Race — a screen with no countdown and no
+  // bananas. Reconcile before anything renders.
+  if (isGroupOnlyMode(gameMode) && !groupMode) {
+    groupMode = true;
+    localStorage.setItem('owrr_group', '1');
+    groupModeBtn.classList.add('active');
+    updateSpinBtnLabel();
+  }
   applyModeUI(gameMode);
 
   if (savedName && savedRoom && !sessionExpired) {
@@ -1342,8 +1358,21 @@ document.getElementById('back-to-lobby').addEventListener('click', () => {
 const groupModeBtn = document.getElementById('group-mode-btn');
 groupModeBtn.addEventListener('click', () => {
   if (isSpinning) return;
+  // Race and Plinko have no solo form — the countdown, the bananas and the walls all
+  // live in the shared round. Say so instead of quietly dropping you out of it.
+  if (isGroupOnlyMode(gameMode)) { nudgeGroupLock(); return; }
   setGroupMode(!groupMode);
 });
+
+function nudgeGroupLock() {
+  [groupModeBtn, document.getElementById('mode-note')].forEach(n => {
+    if (!n) return;
+    n.classList.remove('nudge');
+    void n.offsetWidth;
+    n.classList.add('nudge');
+    setTimeout(() => n.classList.remove('nudge'), 320);
+  });
+}
 
 function setGameMode(mode) {
   const wasGroupOnly = isGroupOnlyMode(gameMode);
