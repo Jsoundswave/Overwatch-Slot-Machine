@@ -160,6 +160,109 @@
       width: 100%; max-width: 460px; padding-top: 1rem; padding-bottom: 5rem;
     }
     .top-bar { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: .4rem; }
+
+    /* ── Room lobby ───────────────────────────────────────────────────────
+       Joining a room lands you here, not on the board: who's in, what role each of
+       them took, which game the room is on. The shared widgets are the same DOM nodes
+       as the game page, moved between the two, so nothing is rendered twice. */
+    #room-lobby {
+      position: relative; z-index: 1; display: none; flex-direction: column;
+      align-items: center; gap: 1.1rem;
+      width: 100%; max-width: 460px; padding-top: 1rem; padding-bottom: 5rem;
+    }
+        #lobby-top, #lobby-body, #lobby-foot, #game-top, #game-body {
+      width: 100%; display: flex; flex-direction: column; align-items: center; gap: 1.1rem;
+    }
+    #room-lobby .party-list { flex-wrap: wrap; overflow: visible; }
+    #room-lobby .party-card { max-width: 84px; flex: 0 1 84px; }
+    #room-lobby #hero-section-lbl, #room-lobby .result-box { display: none; }
+    /* ── Screen identity ──────────────────────────────────────────────────
+       The lobby and the board were built from the same parts and read as the same
+       place. Each screen now names itself and carries its own accent: purple for the
+       lobby, the game's own colour once you're on the board. */
+    #room-lobby { --screen: var(--plinko); }
+    #spin-room  { --screen: var(--orange); }
+    #spin-room[data-game="easy"]     { --screen: var(--cyan); }
+    #spin-room[data-game="blackout"] { --screen: var(--dps); }
+    #spin-room[data-game="race"]     { --screen: var(--race); }
+    #spin-room[data-game="plinko"]   { --screen: var(--plinko); }
+
+    .screen-head {
+      width: 100%; display: flex; flex-direction: column; gap: .15rem;
+      padding: .55rem 0 .6rem .8rem; position: relative;
+    }
+    .screen-head::before {
+      content: ''; position: absolute; left: 0; top: .3rem; bottom: .3rem; width: 3px;
+      border-radius: 2px; background: var(--screen); box-shadow: 0 0 10px var(--screen);
+    }
+    .screen-line { display: flex; align-items: baseline; gap: .5rem; flex-wrap: wrap; }
+    .screen-kicker {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: .58rem; letter-spacing: 3px; text-transform: uppercase; color: var(--dim);
+    }
+    .screen-name {
+      margin: 0; font-family: 'Bebas Neue', sans-serif; font-weight: 400;
+      font-size: 1.75rem; line-height: 1; letter-spacing: 3px;
+      color: var(--screen); text-transform: uppercase;
+    }
+    .screen-sub {
+      margin: 0; font-family: 'Barlow Condensed', sans-serif;
+      font-size: .72rem; letter-spacing: .5px; color: var(--dim);
+    }
+    .screen-sub strong { color: var(--text); }
+
+    /* ── Type scale ───────────────────────────────────────────────────────
+       Three levels where there used to be one, so a panel header, a section label and
+       a hint stop competing at the same volume. */
+    .section-lbl {
+      font-size: .64rem; letter-spacing: 3px; text-transform: uppercase;
+      color: var(--dim); width: 100%; text-align: left; margin: 0; opacity: .85;
+    }
+    .party-title, .history-title {
+      font-size: .6rem; letter-spacing: 2.5px; text-transform: uppercase; color: var(--dim);
+    }
+    .party-empty, .history-empty { font-size: .7rem; letter-spacing: 1px; opacity: .55; padding: 1rem; }
+
+    /* The roster is the subject of the lobby, so it gets the emphasis and everything
+       else steps back to being a setting. */
+    #room-lobby .party-panel { border-color: var(--border2); }
+    #room-lobby .party-header { padding: .5rem .9rem; }
+    #room-lobby .roles { gap: .4rem; }
+    #room-lobby .role-btn { padding: .5rem 0; font-size: .8rem; }
+    #room-lobby .role-btn .ri { font-size: .95rem; }
+    #room-lobby .mode-btn { padding: .45rem 0; font-size: .88rem; }
+    /* History is reference, not part of the flow: fold it away by default. */
+    #room-lobby .history-panel { opacity: .75; }
+    /* In the lobby this is a caption telling you what happens next, not a panel that
+       deserves as much room as the roster. */
+    #room-lobby .gs-note {
+      padding: 0; background: none; border: none;
+      font-size: .68rem; letter-spacing: .5px; text-align: left; opacity: .8;
+    }
+    #lobby-foot { gap: .6rem; }
+    #ad-toggle-wrap { padding: .4rem 0 0; opacity: .4; transition: opacity .2s; }
+    #ad-toggle-wrap:hover { opacity: 1; }
+
+    /* The board is the subject of the game page; nothing else may crowd it. */
+    #spin-room .slot-outer { gap: .35rem; }
+    #spin-room #hero-section-lbl { display: none; }
+    .back-to-lobby {
+      background: none; border: none; color: var(--dim); padding: 0;
+      font-family: 'Barlow Condensed', sans-serif; font-size: .68rem; letter-spacing: 2px;
+      text-transform: uppercase; cursor: pointer; transition: color .2s;
+    }
+    .back-to-lobby:hover { color: var(--screen); }
+
+    .lobby-go-btn {
+      width: 100%; padding: .9rem; background: transparent;
+      border: 2.5px solid var(--plinko); border-radius: 12px;
+      font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; letter-spacing: 4px;
+      color: var(--plinko); cursor: pointer; transition: background .2s, box-shadow .2s, opacity .2s;
+    }
+    .lobby-go-btn:hover:not(:disabled) { background: rgba(179,136,255,.12); box-shadow: 0 0 18px rgba(179,136,255,.35); }
+    .lobby-go-btn:disabled { opacity: .5; cursor: default; }
+    .lobby-go-btn.solo { border-color: var(--orange); color: var(--orange); }
+    .lobby-go-btn.solo:hover:not(:disabled) { background: rgba(255,107,43,.12); box-shadow: 0 0 18px rgba(255,107,43,.35); }
     .tag { background: var(--surf); border: 1px solid var(--border); border-radius: 8px; padding: .35rem .85rem; font-size: .78rem; letter-spacing: 1px; }
     .tag.room { color: var(--dim); flex-shrink: 0; }
     .tag.room strong { color: var(--cyan); font-family: 'Bebas Neue', sans-serif; font-size: .95rem; letter-spacing: 5px; margin-left: 4px; }
@@ -167,10 +270,17 @@
       font-weight: 700; font-size: .9rem; color: var(--orange);
       min-width: 0; flex-shrink: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
+    /* An unlabelled emoji was carrying the single biggest behaviour switch in the app. */
     .group-toggle-btn {
-      flex-shrink: 0; background: var(--surf); border: 1.5px solid var(--border); border-radius: 8px;
-      padding: .3rem .55rem; font-size: 1rem; line-height: 1; cursor: pointer;
+      flex-shrink: 0; display: flex; align-items: center; gap: .3rem;
+      background: var(--surf); border: 1.5px solid var(--border); border-radius: 8px;
+      padding: .3rem .5rem; line-height: 1; cursor: pointer;
       color: var(--dim); transition: all .15s;
+    }
+    .group-toggle-btn .gt-icon { font-size: .8rem; }
+    .group-toggle-btn .gt-lbl {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: .62rem; letter-spacing: 1.5px; text-transform: uppercase;
     }
     .group-toggle-btn:hover { border-color: var(--plinko); }
     .group-toggle-btn.active {
@@ -179,7 +289,6 @@
     }
     .btn-back { flex-shrink: 0; background: none; border: none; color: var(--dim); font-family: 'Barlow Condensed', sans-serif; font-size: .85rem; letter-spacing: 1px; cursor: pointer; transition: color .2s; }
     .btn-back:hover { color: var(--orange); }
-    .section-lbl { font-size: .7rem; letter-spacing: 4px; text-transform: uppercase; color: var(--dim); width: 100%; text-align: center; }
 
     /* MODE TOGGLE */
     .mode-toggle {
@@ -200,58 +309,26 @@
     .mode-btn.active[data-mode="plinko"]    { background: rgba(179,136,255,.12); color: var(--plinko); }
     .mode-btn .mode-icon { font-size: .9rem; display: block; line-height: 1; margin-bottom: 1px; }
 
-    /* Group Mode pins the whole room to one game, so the picker locks while it's on. */
-    .mode-toggle.locked { border-color: var(--plinko); box-shadow: 0 0 0 1px rgba(179,136,255,.18); }
-    .mode-toggle.locked .mode-btn { cursor: not-allowed; opacity: .45; }
-    .mode-toggle.locked .mode-btn.active { opacity: 1; }
-    /* The room's game changes by a vote, not by one person tapping a mode. */
-    .mode-vote-btn {
-      display: none; margin: .35rem auto 0; padding: .3rem .8rem;
-      background: transparent; border: 1px solid var(--border2); border-radius: 999px;
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: .62rem; letter-spacing: 1.4px; text-transform: uppercase;
-      color: var(--dim); cursor: pointer; transition: color .2s, border-color .2s;
-    }
-    .mode-vote-btn.show { display: block; }
-    .mode-vote-btn:hover:not(:disabled) { color: var(--plinko); border-color: var(--plinko); }
-    .mode-vote-btn:disabled { opacity: .5; cursor: default; }
-    @keyframes mode-nudge {
-      0%, 100% { transform: translateX(0); }
-      25%      { transform: translateX(-4px); }
-      75%      { transform: translateX(4px); }
-    }
-    .mode-toggle.nudge { animation: mode-nudge .28s ease; }
-    .mode-vote-btn.nudge { animation: mode-nudge .28s ease; color: var(--plinko); border-color: var(--plinko); }
 
-    /* Ballot: the room picks the next game together */
-    .gs-ballot { display: flex; flex-direction: column; gap: .5rem; width: 100%; }
-    .gs-ballot-head {
-      display: flex; align-items: center; flex-wrap: wrap; gap: .35rem .6rem;
-      font-size: .62rem; letter-spacing: 1.4px; text-transform: uppercase; color: var(--dim);
+    /* A dot per player under the game they picked, so the room can watch itself split up
+       or converge without anybody having to announce anything. */
+    .mode-dots {
+      display: flex; gap: 3px; justify-content: center; align-items: center;
+      min-height: 8px; margin-top: 3px;
     }
-    .gs-ballot-head strong { color: var(--plinko); }
-    .gs-ballot-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: .4rem; }
-    .gs-ballot-card {
-      display: flex; flex-direction: column; align-items: center; gap: .25rem;
-      padding: .5rem .3rem; min-height: 74px;
-      background: var(--surf2); border: 1.5px solid var(--border); border-radius: 12px;
-      cursor: pointer; transition: border-color .18s, background .18s, transform .12s;
-      font-family: 'Bebas Neue', sans-serif; letter-spacing: 1.5px;
-      font-size: .82rem; color: var(--dim);
+    .mode-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: hsl(var(--ph) 80% 60%); box-shadow: 0 0 5px hsl(var(--ph) 80% 60% / .8);
     }
-    .gs-ballot-card:hover { transform: translateY(-2px); border-color: var(--border2); }
-    .gs-ballot-card .bi { font-size: 1.1rem; line-height: 1; }
-    .gs-ballot-card.mine { border-color: var(--plinko); background: rgba(179,136,255,.12); color: var(--text); }
-    .gs-ballot-card.leading { box-shadow: 0 0 12px rgba(179,136,255,.28); }
-    .gs-ballot-card.won { border-color: var(--cyan); background: rgba(0,216,255,.14); color: var(--text); }
-    .gs-ballot-card.lost { opacity: .3; }
-    .gs-ballot-voters { display: flex; flex-wrap: wrap; gap: 2px; justify-content: center; min-height: 14px; }
-    .gs-vote-dot {
-      width: 14px; height: 14px; border-radius: 50%;
-      background: hsl(var(--ph) 80% 58%); color: #06080d;
-      font-family: 'Barlow Condensed', sans-serif; font-size: .55rem; line-height: 14px;
-      text-align: center; font-weight: 700;
+    .mode-dot.me { width: 8px; height: 8px; box-shadow: 0 0 7px hsl(var(--ph) 85% 65%); }
+    /* Race and Plinko carry Group Mode with them, so the toggle shows as fixed there. */
+    .group-toggle-btn.forced { border-color: var(--plinko); color: var(--plinko); cursor: default; opacity: .85; }
+    .mode-note {
+      display: none; width: 100%; margin: 0;
+      font-size: .58rem; letter-spacing: 1.2px; text-transform: uppercase;
+      color: var(--dim); text-align: left; opacity: .75;
     }
+    .mode-note.show { display: block; }
 
     /* Role Buttons */
     .roles { display: grid; grid-template-columns: repeat(4, 1fr); gap: .5rem; width: 100%; }
@@ -928,15 +1005,39 @@
   <p class="lobby-hint">Create a room and share the code, or join a friend's room.</p>
 </div>
 
+<div id="room-lobby">
+  <div id="lobby-top"></div>
+  <div class="screen-head">
+    <div class="screen-line">
+      <span class="screen-kicker">Room</span>
+      <h2 class="screen-name">Lobby</h2>
+    </div>
+    <p class="screen-sub" id="lobby-sub">Pick your role and your game</p>
+  </div>
+  <div id="lobby-body"></div>
+  <button class="lobby-go-btn" id="lobby-go-btn"><span>PLAY</span></button>
+  <div id="lobby-foot"></div>
+</div>
+
 <div id="spin-room">
+  <div id="game-top"></div>
+  <div class="screen-head">
+    <div class="screen-line">
+      <button class="back-to-lobby" id="back-to-lobby">&#8592; Lobby</button>
+      <h2 class="screen-name" id="game-name">Race</h2>
+    </div>
+    <p class="screen-sub" id="game-sub"></p>
+  </div>
+  <div id="game-body"></div>
   <div class="top-bar">
     <button class="btn-back" id="back-btn">&#8592; Leave</button>
     <button class="tag room" id="room-invite-btn" title="Copy invite link">ROOM <strong id="room-tag"></strong></button>
     <div class="tag player" id="player-tag"></div>
-    <button class="group-toggle-btn" id="group-mode-btn" title="Group Mode: ready-up together before any mode acts">&#128101;</button>
+    <button class="group-toggle-btn" id="group-mode-btn" title="Group Mode: ready up together before anyone acts"><span class="gt-icon">&#128101;</span><span class="gt-lbl" id="group-mode-lbl">Solo</span></button>
   </div>
 
   <!-- MODE TOGGLE -->
+  <p class="section-lbl lobby-lbl lbl-game">The Game</p>
   <div class="mode-toggle">
     <button class="mode-btn active" data-mode="normal"><span class="mode-icon">🎰</span>Normal</button>
     <button class="mode-btn" data-mode="easy"><span class="mode-icon">🃏</span>Easy</button>
@@ -944,9 +1045,9 @@
     <button class="mode-btn" data-mode="race"><span class="mode-icon">🐎</span>Race</button>
     <button class="mode-btn" data-mode="plinko"><span class="mode-icon">🟣</span>Plinko</button>
   </div>
-  <button class="mode-vote-btn" id="mode-vote-btn">&#128499;&#65039; Change game</button>
+  <p class="mode-note" id="mode-note"></p>
 
-  <p class="section-lbl">Choose Role</p>
+  <p class="section-lbl lbl-roles">Choose Role</p>
   <div class="roles">
     <button class="role-btn active" data-role="any"><span class="ri">🎲</span>Any</button>
     <button class="role-btn" data-role="tank"><span class="ri">🛡️</span>Tank</button>
@@ -1221,26 +1322,21 @@ document.fonts.ready.then(async () => {
 document.querySelectorAll('.mode-btn').forEach(btn => {
   btn.addEventListener('click', function () {
     if (isSpinning) return;
-    // Locked while Group Mode is on, so nobody can pull the room onto a different game
-    // half way through. Say so rather than just ignoring the tap.
-    if (groupMode) { nudgeModeLock(); return; }
     setGameMode(this.dataset.mode);
   });
 });
 
-function nudgeModeLock() {
-  [document.querySelector('.mode-toggle'), document.getElementById('mode-vote-btn')].forEach(el => {
-    if (!el) return;
-    el.classList.remove('nudge');
-    void el.offsetWidth;
-    el.classList.add('nudge');
-    setTimeout(() => el.classList.remove('nudge'), 320);
-  });
-}
+document.getElementById('lobby-go-btn').addEventListener('click', () => {
+  // Solo walks straight through to the board. In a group you ready up and stay put, so
+  // you can watch the room fill in; the round itself is what moves everyone across.
+  if (!groupMode) { showGamePage(); return; }
+  readyUpGroup();
+  updateLobbyGo();
+});
 
-document.getElementById('mode-vote-btn').addEventListener('click', () => {
+document.getElementById('back-to-lobby').addEventListener('click', () => {
   if (isSpinning) return;
-  callModeVote();
+  showRoomLobby();
 });
 
 const groupModeBtn = document.getElementById('group-mode-btn');
@@ -1250,13 +1346,23 @@ groupModeBtn.addEventListener('click', () => {
 });
 
 function setGameMode(mode) {
+  const wasGroupOnly = isGroupOnlyMode(gameMode);
+  const prevRef = roomCode && groupMode ? groupRoomRef() : null;
   gameMode = mode;
   localStorage.setItem('owrr_mode', mode);
+
+  // A race or a drop is only worth watching together, so those two carry Group Mode with
+  // them. Stepping back to a solo game hands the choice back to you.
+  if (isGroupOnlyMode(mode) && !groupMode) { setGroupMode(true, prevRef); return; }
+  if (!isGroupOnlyMode(mode) && wasGroupOnly && groupMode) { setGroupMode(false, prevRef); return; }
+
+  if (prevRef) leaveGroupRoom(prevRef);
   applyModeUI(mode);
   resetResult();
   updateBlackoutUI();
-  rebuildIdleUI();
   publishGroupMode();
+  if (groupMode) joinGroupRoom();
+  rebuildIdleUI();
 }
 
 // Rebuilds whatever should be showing while nothing is in progress: the shared Group
@@ -1267,29 +1373,24 @@ function rebuildIdleUI() {
   else if (gameMode !== 'easy' && gameMode !== 'race') buildInitialReel(selectedRoles);
 }
 
-// Group Mode is a site-wide toggle. When it's on, the mode is shared by the whole room
-// (everyone plays the same game together), everyone readies up, and one shared round is
-// rendered on every screen — see GROUP MODE — SHARED ROUNDS below.
-function setGroupMode(on) {
+// Group Mode gathers everyone who picked the same game into one shared round. It's a
+// per-game thing now: you group with the other people on Race, not with the whole room.
+function setGroupMode(on, prevRef) {
+  const leaving = prevRef || (roomCode && groupMode ? groupRoomRef() : null);
   groupMode = on;
   localStorage.setItem('owrr_group', on ? '1' : '0');
   groupModeBtn.classList.toggle('active', on);
   updateSpinBtnLabel();
+  if (leaving) leaveGroupRoom(leaving);
   if (on) {
     // Solo finishes overwrite the stored role with the winner's; re-publish the real pick
     const roleForDB = selectedRoles.length === 1 ? selectedRoles[0] : selectedRoles.join(',');
     if (playerRef) playerRef.update({ role: roleForDB, lastSeen: Date.now() });
-    // Joining never changes the room's game — that's what the vote is for. Only a room
-    // with no game yet takes it from whoever switches Group Mode on first.
-    if (groupState.mode && groupState.mode !== gameMode) {
-      setGroupPresence(true);
-      applyRoomMode(groupState.mode);
-      return;
-    }
     publishGroupMode();
+    joinGroupRoom();
   }
-  setGroupPresence(on);
   applyModeUI(gameMode);
+  updateBlackoutUI();
   resetResult();
   rebuildIdleUI();
 }
@@ -1306,16 +1407,24 @@ function applyModeUI(mode) {
   // Toggle buttons
   document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
 
-  const toggle  = document.querySelector('.mode-toggle');
-  const voteBtn = document.getElementById('mode-vote-btn');
-  if (toggle) toggle.classList.toggle('locked', groupMode);
-  if (voteBtn) voteBtn.classList.toggle('show', groupMode);
-  document.querySelectorAll('.mode-btn').forEach(b => {
-    b.setAttribute('aria-disabled', groupMode ? 'true' : 'false');
-    b.title = groupMode ? 'The room votes on the game — use Change game' : '';
-  });
-  updateVoteBtn();
+  // Race and Plinko always play as a group, so the toggle reads as fixed rather than
+  // pretending to be a choice you could still make.
+  const forced = isGroupOnlyMode(mode);
+  groupModeBtn.classList.toggle('forced', forced);
+  const gtLbl = document.getElementById('group-mode-lbl');
+  if (gtLbl) gtLbl.textContent = groupMode ? 'Group' : 'Solo';
+  groupModeBtn.title = forced
+    ? 'Race and Plinko always play as a group'
+    : 'Group Mode: ready up together before anyone acts';
+  const note = document.getElementById('mode-note');
+  if (note) {
+    note.classList.toggle('show', forced);
+    note.textContent = forced ? 'Race and Plinko always play as a group' : '';
+  }
+  renderModeDots(latestPlayers);
   updateStageLabel();
+  updateLobbyGo();
+  updateScreenChrome();
 
   // Spin button label + color — Group Mode overrides both regardless of the active mode
   updateSpinBtnLabel();
@@ -1396,7 +1505,7 @@ document.addEventListener('visibilitychange', () => {
       const savedRole = localStorage.getItem('owrr_role') || 'any';
       const savedHero = localStorage.getItem('owrr_hero') || null;
       playerRef = db.ref(`rooms/${roomCode}/players/${playerId}`);
-      playerRef.set({ name: playerName, role: savedRole, hero: savedHero, spinning: false, dunce: false, lastSeen: Date.now() });
+      playerRef.set({ name: playerName, role: savedRole, hero: savedHero, spinning: false, dunce: false, mode: gameMode, lastSeen: Date.now() });
       playerRef.onDisconnect().update({ lastSeen: Date.now() });
     } else {
       playerRef.update({ lastSeen: Date.now() });
@@ -1606,7 +1715,7 @@ function enterRoom(name, code, role, hero, silent = false) {
 
   playerRef = db.ref(`rooms/${code}/players/${playerId}`);
   const roleForDB = selectedRoles.length === 1 ? selectedRoles[0] : selectedRoles.join(',');
-  playerRef.set({ name, role: roleForDB, hero: hero || null, spinning: false, dunce: false, lastSeen: Date.now() });
+  playerRef.set({ name, role: roleForDB, hero: hero || null, spinning: false, dunce: false, mode: gameMode, lastSeen: Date.now() });
   playerRef.onDisconnect().update({ lastSeen: Date.now() });
 
   touchRoomMeta(code); // keeps an in-use room clear of the stale sweep
@@ -1621,8 +1730,8 @@ function enterRoom(name, code, role, hero, silent = false) {
   document.getElementById('room-tag').textContent   = code;
   document.getElementById('player-tag').textContent = name;
 
-  lobbyEl.style.display    = 'none';
-  spinRoomEl.style.display = 'flex';
+  lobbyEl.style.display = 'none';
+  showRoomLobby();
 
   if (hero) {
     const roleColors = { tank: 'var(--tank)', damage: 'var(--dps)', support: 'var(--supp)' };
@@ -1677,9 +1786,9 @@ function leaveRoom() {
     historyListener = null;
   }
   stopAdListener(roomCode);
-  if (roomCode) db.ref(`rooms/${roomCode}/group/ready/${playerId}`).remove();
+  if (roomCode) db.ref(`${groupRoomRef()}/ready/${playerId}`).remove();
   setGroupPresence(false);
-  stopGroupRoundListener(roomCode);
+  stopGroupRoundListener(groupListenerPath);
   isSpinning = false;
   spinBtn.disabled = false;
   roomCode = null;
@@ -1687,6 +1796,10 @@ function leaveRoom() {
   myHistory = [];
   clearLocalSession();
   resetResult();
+  // Both room screens have to go, or leaving leaves the lobby stranded next to the
+  // join panel — which is exactly what it looked like.
+  roomScreen = null;
+  el('room-lobby').style.display = 'none';
   spinRoomEl.style.display = 'none';
   lobbyEl.style.display    = 'flex';
   history.pushState({}, '', location.pathname);
@@ -1823,6 +1936,8 @@ function reportLeader(pid, hero) {
 
 function renderParty(players) {
   latestPlayers = players;
+  renderModeDots(players);
+  updateScreenChrome();
   const keys  = Object.keys(players);
   const count = keys.length;
   partyCount.textContent = count === 1 ? '1 player' : `${count} players`;
@@ -2767,6 +2882,7 @@ function runPlinkoPhysics(pegsEl, pegs, slotCount, startFrac, onLand, opts = {})
 // so nobody ever gets a hero outside what they picked — but everyone watches it all happen.
 // ═══════════════════════════════════════
 let groupRoundListener  = null;
+let groupListenerPath   = null;   // which game's group room we're subscribed to
 let groupLastFireAt     = null;
 let groupRoundRendered  = null;
 let groupReadyStatusEl  = null;
@@ -2895,7 +3011,7 @@ function buildGroupRound(mode, parts, seed, fireAt) {
 // connection can't leave a round hanging either.
 function setGroupPresence(present) {
   if (!roomCode) return;
-  const ref = db.ref(`rooms/${roomCode}/group/present/${playerId}`);
+  const ref = db.ref(`${groupRoomRef()}/present/${playerId}`);
   if (present) {
     ref.set(true);
     ref.onDisconnect().remove();
@@ -2915,186 +3031,171 @@ db.ref('.info/connected').on('value', snap => {
   if (snap.val() === true && groupMode && roomCode) setGroupPresence(true);
 });
 
-// ── Mode vote ───────────────────────────────────────────────────────────────
-// The room's game is settled by a vote rather than by whoever taps a mode first. Anyone
-// can call one while the room is idle; everybody present picks, and the tally decides.
-const VOTE_MS = 25000;   // nobody waits on an absent player forever
-const MODE_META = {
-  normal:   { icon: '🎰', label: 'Normal' },
-  easy:     { icon: '🃏', label: 'Easy' },
-  blackout: { icon: '🌑', label: 'Blackout' },
-  race:     { icon: '🐎', label: 'Race' },
-  plinko:   { icon: '🟣', label: 'Plinko' },
-};
-let voteTimer = null, ballotFor = null, voteResolvedAt = null;
+// ── Per-player modes ────────────────────────────────────────────────────────
+// Everyone picks their own game and the room can see the split, so the dots under the
+// mode buttons show who has gone where. Race and Plinko only make sense as a shared
+// round, so choosing either puts you in Group Mode automatically.
+const GROUP_ONLY_MODES = ['race', 'plinko'];
+function isGroupOnlyMode(m) { return GROUP_ONLY_MODES.indexOf(m) !== -1; }
 
-function roomIsCommitted() {
-  if (!groupState) return false;
-  return !!groupState.fireAt || Object.keys(groupState.ready || {}).length > 0;
+function publishGroupMode() {
+  if (roomCode && playerRef) playerRef.update({ mode: gameMode, lastSeen: Date.now() });
 }
 
-function callModeVote() {
-  if (!groupMode || !roomCode || groupState.vote) return;
-  // Mid-round is the one time the game can't be changed out from under people.
-  if (roomIsCommitted()) { nudgeModeLock(); return; }
-  db.ref(`rooms/${roomCode}/group/vote`).transaction(cur =>
-    cur || { openedAt: Date.now(), openedBy: playerId, picks: { [playerId]: gameMode } });
+// One group room per game, so the Race players share a round without dragging in whoever
+// is off spinning the reel on their own.
+function groupRoomRef(mode, code) {
+  return `rooms/${code || roomCode}/groups/${mode || gameMode}`;
 }
 
-function castVote(mode) {
-  if (!roomCode || !groupState.vote || !MODE_META[mode]) return;
-  db.ref(`rooms/${roomCode}/group/vote/picks/${playerId}`).set(mode);
+function joinGroupRoom() {
+  if (!roomCode || !groupMode) return;
+  startGroupRoundListener(roomCode);
+  setGroupPresence(true);
+}
+
+function leaveGroupRoom(path) {
+  if (!path) return;
+  stopGroupRoundListener(path);
+  const ref = db.ref(`${path}/present/${playerId}`);
+  ref.onDisconnect().cancel();
+  ref.remove();
+  db.ref(`${path}/ready/${playerId}`).remove();
+}
+
+// ── Room lobby / game page ──────────────────────────────────────────────────
+// A room has two screens. The lobby is where you land and where the group settles who's
+// playing what; the game page is the board. The widgets they share — the top bar, the
+// roster, the stage — are one set of nodes moved between the two mounts, so every
+// listener and every bit of live state survives the trip and nothing renders twice.
+let roomScreen = null;
+const el = id => document.getElementById(id);
+function movePieces(mount, nodes) { nodes.forEach(n => { if (n) mount.appendChild(n); }); }
+
+function showRoomLobby() {
+  roomScreen = 'lobby';
+  movePieces(el('lobby-top'), [document.querySelector('.top-bar')]);
+  movePieces(el('lobby-body'), [
+    document.querySelector('.party-panel'),
+    document.querySelector('.lbl-roles'),
+    document.querySelector('.roles'),
+    document.querySelector('.lbl-game'),
+    document.querySelector('.mode-toggle'),
+    el('mode-note'),
+    document.querySelector('.slot-outer'),
+    el('blackout-remaining'),
+    el('group-ready-status'),
+  ]);
+  movePieces(el('lobby-foot'), [el('history-panel'), el('ad-toggle-wrap')]);
+  el('room-lobby').style.display = 'flex';
+  spinRoomEl.style.display = 'none';
+  updateLobbyGo();
+  updateScreenChrome();
+  rebuildIdleUI();
+}
+
+function showGamePage() {
+  roomScreen = 'game';
+  movePieces(el('game-top'), [document.querySelector('.top-bar')]);
+  // The result goes above the board, not below it. Under a three-player race the stage
+  // is tall enough to push the payoff off a phone screen entirely, which is backwards
+  // for the one line everybody is waiting on. It collapses to nothing until there is one.
+  movePieces(el('game-body'), [
+    document.querySelector('.result-box'),
+    document.querySelector('.slot-outer'),
+    el('blackout-remaining'),
+    el('group-ready-status'),
+    document.querySelector('.action-row'),
+    el('dup-warning'),
+  ]);
+  // The party panel stays behind in the lobby: on the board it repeated the legend
+  // sitting directly above it.
+  movePieces(el('lobby-body'), [document.querySelector('.party-panel')]);
+  movePieces(el('lobby-foot'), [el('history-panel'), el('ad-toggle-wrap')]);
+  el('room-lobby').style.display = 'none';
+  spinRoomEl.style.display = 'flex';
+  updateScreenChrome();
+}
+
+const GAME_LABEL = { normal: 'Normal', easy: 'Easy', blackout: 'Blackout', race: 'Race', plinko: 'Plinko' };
+
+// Each screen says where you are: the lobby in group purple, the board in its own game's
+// colour, with a line underneath telling you what the screen wants from you next.
+function updateScreenChrome() {
+  spinRoomEl.dataset.game = gameMode;
+  const name = el('game-name');
+  if (name) name.textContent = GAME_LABEL[gameMode] || gameMode;
+
+  const sub = el('game-sub');
+  if (sub) {
+    sub.textContent = groupMode
+      ? (groupState && groupState.fireAt ? 'Playing as a group' : 'Ready up to start the round')
+      : 'Playing on your own';
+  }
+
+  const lsub = el('lobby-sub');
+  if (lsub) {
+    const n = Object.keys(latestPlayers || {}).length;
+    const here = n === 1 ? '1 player here' : `${n} players here`;
+    lsub.textContent = groupMode
+      ? `${here} · you're on ${GAME_LABEL[gameMode] || gameMode} with the group`
+      : `${here} · you're on ${GAME_LABEL[gameMode] || gameMode} on your own`;
+  }
+}
+
+function updateLobbyGo() {
+  const btn = el('lobby-go-btn');
+  if (!btn) return;
+  const span = btn.querySelector('span');
+  btn.classList.toggle('solo', !groupMode);
+  if (!groupMode) { span.textContent = 'PLAY'; btn.disabled = false; return; }
+  const iAmReady = !!(groupState && groupState.ready && groupState.ready[playerId]);
+  span.textContent = iAmReady ? 'WAITING FOR THE ROOM…' : 'READY';
+  btn.disabled = iAmReady;
 }
 
 // The stage stops being "your hero" the moment it's showing the whole room.
 function updateStageLabel() {
-  const el = document.getElementById('hero-section-lbl');
-  if (!el) return;
-  el.textContent = !groupMode ? 'Your Hero'
-    : (groupState && groupState.vote) ? 'Room Vote'
-    : 'The Room';
+  const lbl = el('hero-section-lbl');
+  if (lbl) lbl.textContent = groupMode ? 'The Room' : 'Your Hero';
 }
 
-function updateVoteBtn() {
-  const btn = document.getElementById('mode-vote-btn');
-  if (!btn) return;
-  const open = !!(groupState && groupState.vote);
-  btn.disabled = open || roomIsCommitted();
-  btn.innerHTML = open ? 'Vote in progress&hellip;' : '&#128499;&#65039; Change game';
-}
-
-// Whoever notices first closes the vote; the transaction makes sure it happens once.
-function maybeResolveVote(data) {
-  const vote = data.vote;
-  if (!vote || !roomCode) return;
-  const present = Object.keys(data.present || {});
-  const picks = vote.picks || {};
-  const allIn = present.length > 0 && present.every(pid => picks[pid]);
-  const expired = Date.now() - (vote.openedAt || 0) > VOTE_MS;
-  if (!allIn && !expired) return;
-  db.ref(`rooms/${roomCode}/group`).transaction(cur => {
-    if (!cur || !cur.vote || cur.vote.openedAt !== vote.openedAt) return;
-    const tally = {};
-    Object.values(cur.vote.picks || {}).forEach(m => { if (MODE_META[m]) tally[m] = (tally[m] || 0) + 1; });
-    const counts = Object.values(tally);
-    const top = counts.length ? Math.max(...counts) : 0;
-    const leaders = Object.keys(tally).filter(m => tally[m] === top).sort();
-    let winner = cur.mode || 'normal';
-    // Staying put on a tie stops a room ping-ponging between two games on repeat 1-1 votes.
-    if (leaders.length && !leaders.includes(winner)) {
-      const rng = makeRng('vote', cur.vote.openedAt, leaders.join(','));
-      winner = leaders[Math.floor(rng() * leaders.length)];
-    }
-    const next = { ...cur, mode: winner };
-    delete next.vote;
-    return next;
+// A dot per player under the game they're on, so the room can watch itself converge.
+function renderModeDots(players) {
+  const byMode = {};
+  Object.keys(players || {}).sort().forEach((pid, i) => {
+    const m = players[pid].mode || 'normal';
+    (byMode[m] = byMode[m] || []).push({ pid, hue: PLAYER_HUES[i % PLAYER_HUES.length], p: players[pid] });
   });
-}
-
-// Ticks the ballot countdown once a second, and closes the vote if the room ends up
-// waiting on somebody who walked away. Deliberately narrow: re-running the whole round
-// handler on a timer replays stale state and stamps on things like the ready button.
-function tickVote() {
-  if (!groupMode || !groupState || !groupState.vote || groupState.fireAt) return;
-  renderModeBallot(groupState.vote, groupState.present || {});
-  maybeResolveVote(groupState);
-  voteTimer = setTimeout(tickVote, 1000);
-}
-
-function renderModeBallot(vote, present) {
-  const picks = vote.picks || {};
-  const hues = {};
-  Object.keys(present).sort().forEach((pid, i) => { hues[pid] = PLAYER_HUES[i % PLAYER_HUES.length]; });
-
-  if (ballotFor !== vote.openedAt) {
-    ballotFor = vote.openedAt;
-    groupStage.innerHTML = '';
-    delete groupStage.dataset.round;
-    groupStage.dataset.view = 'ballot';
-    const wrap = document.createElement('div'); wrap.className = 'gs-ballot';
-    const head = document.createElement('div'); head.className = 'gs-ballot-head'; head.id = 'gs-ballot-head';
-    const grid = document.createElement('div'); grid.className = 'gs-ballot-grid';
-    Object.keys(MODE_META).forEach(mode => {
-      const card = document.createElement('button');
-      card.className = 'gs-ballot-card';
-      card.dataset.mode = mode;
-      const ic = document.createElement('span'); ic.className = 'bi'; ic.textContent = MODE_META[mode].icon;
-      const nm = document.createElement('span'); nm.textContent = MODE_META[mode].label;
-      const vs = document.createElement('span'); vs.className = 'gs-ballot-voters';
-      card.append(ic, nm, vs);
-      card.addEventListener('click', () => castVote(mode));
-      grid.appendChild(card);
-    });
-    wrap.append(head, grid);
-    groupStage.appendChild(wrap);
-  }
-
-  const tally = {};
-  Object.values(picks).forEach(m => { if (MODE_META[m]) tally[m] = (tally[m] || 0) + 1; });
-  const top = Math.max(0, ...Object.values(tally));
-  const voted = Object.keys(present).filter(pid => picks[pid]).length;
-  const left = Math.max(0, Math.ceil((VOTE_MS - (Date.now() - (vote.openedAt || 0))) / 1000));
-  const head = document.getElementById('gs-ballot-head');
-  if (head) {
-    head.textContent = '';
-    const a = document.createElement('span'); a.textContent = 'Pick the next game';
-    const b = document.createElement('span'); b.innerHTML = `<strong>${voted}</strong> / ${Object.keys(present).length} voted &middot; ${left}s`;
-    head.append(a, b);
-  }
-  groupStage.querySelectorAll('.gs-ballot-card').forEach(card => {
-    const mode = card.dataset.mode;
-    card.classList.toggle('mine', picks[playerId] === mode);
-    card.classList.toggle('leading', top > 0 && tally[mode] === top);
-    const vs = card.querySelector('.gs-ballot-voters');
-    vs.textContent = '';
-    Object.keys(picks).filter(pid => picks[pid] === mode).sort().forEach(pid => {
-      const dot = document.createElement('span');
-      dot.className = 'gs-vote-dot';
-      dot.style.setProperty('--ph', hues[pid] != null ? hues[pid] : 0);
-      dot.textContent = ((latestPlayers[pid] || {}).name || '?')[0].toUpperCase();
-      vs.appendChild(dot);
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    let row = btn.querySelector('.mode-dots');
+    if (!row) { row = document.createElement('span'); row.className = 'mode-dots'; btn.appendChild(row); }
+    row.textContent = '';
+    (byMode[btn.dataset.mode] || []).forEach(({ pid, hue, p }) => {
+      const dot = document.createElement('i');
+      dot.className = 'mode-dot' + (pid === playerId ? ' me' : '');
+      dot.style.setProperty('--ph', hue);
+      dot.title = p.name || '?';
+      row.appendChild(dot);
     });
   });
-}
-
-// A short beat on the winning card, so the room sees what it just chose.
-function showVoteOutcome(mode) {
-  const cards = groupStage.querySelectorAll('.gs-ballot-card');
-  if (!cards.length) return false;
-  cards.forEach(c => c.classList.add(c.dataset.mode === mode ? 'won' : 'lost'));
-  const head = document.getElementById('gs-ballot-head');
-  if (head) head.textContent = `${MODE_META[mode] ? MODE_META[mode].label : mode} wins`;
-  return true;
-}
-
-// In Group Mode the mode itself is shared by the room — everyone plays the same game.
-function publishGroupMode() {
-  if (groupMode && roomCode) db.ref(`rooms/${roomCode}/group/mode`).set(gameMode);
-}
-function applyRoomMode(mode) {
-  gameMode = mode;
-  localStorage.setItem('owrr_mode', mode);
-  applyModeUI(mode);
-  resetResult();
-  updateBlackoutUI();
-  rebuildIdleUI();
 }
 
 // Once everyone present has readied up, one client wins this transaction and writes the
 // fire signal AND the generated round atomically, so everyone renders the same thing.
 function maybeTriggerGroupFire(data) {
-  if (data.vote) return; // settle the game first
   const present = data.present || {}, ready = data.ready || {};
   const pids = Object.keys(present);
   if (!pidsEvery(ready, pids) || !pids.every(pid => latestPlayers[pid])) return;
-  db.ref(`rooms/${roomCode}/group`).transaction(current => {
+  db.ref(`${groupRoomRef()}`).transaction(current => {
     if (!current || current.fireAt) return;
     const cp = current.present || {}, cr = current.ready || {};
     if (!pidsEvery(cr, Object.keys(cp))) return;
     const parts = groupParticipants(cp, cr);
     if (!parts.length) return;
     const fireAt = Date.now();
-    return { ...current, fireAt, round: buildGroupRound(current.mode || gameMode, parts, current.seed || 1, fireAt) };
+    // The game is the group room we're in, so it needs no separate record.
+    return { ...current, fireAt, round: buildGroupRound(gameMode, parts, current.seed || 1, fireAt) };
   });
 }
 
@@ -3103,11 +3204,9 @@ function maybeTriggerGroupFire(data) {
 function maybeResetGroupRound(data) {
   const present = data.present || {}, done = data.done || {}, fireAt = data.fireAt;
   if (!fireAt || !pidsEvery(done, Object.keys(present))) return;
-  db.ref(`rooms/${roomCode}/group`).transaction(current => {
+  db.ref(`${groupRoomRef()}`).transaction(current => {
     if (!current || current.fireAt !== fireAt) return;
-    const next = { present: current.present || {}, seed: Math.floor(Math.random() * 1e9) };
-    if (current.mode) next.mode = current.mode;
-    return next;
+    return { present: current.present || {}, seed: Math.floor(Math.random() * 1e9) };
   });
 }
 
@@ -3126,47 +3225,20 @@ function updateGroupReadyUI(ready, present, fireAt) {
 }
 
 function handleGroupRoundUpdate(data) {
-  const hadVote = !!(groupState && groupState.vote);
   groupState = data;
   const fireAt = data.fireAt || null;
 
-  // A vote just closed: hold the result on the ballot for a beat before the stage returns,
-  // so the room actually sees what it picked rather than the screen just changing.
-  if (hadVote && !data.vote && groupMode && !fireAt) {
-    clearTimeout(voteTimer);
-    if (showVoteOutcome(data.mode)) {
-      voteResolvedAt = Date.now();
-      ballotFor = null;
-      voteTimer = setTimeout(() => {
-        voteResolvedAt = null;
-        if (groupMode && !groupState.fireAt && !groupState.vote) rebuildIdleUI();
-      }, 1400);
-    } else {
-      ballotFor = null;
-    }
-  }
-
-  if (groupMode && data.mode && data.mode !== gameMode && !isSpinning) applyRoomMode(data.mode);
-
-  if (groupMode && data.vote && !fireAt) {
-    renderModeBallot(data.vote, data.present || {});
-    clearTimeout(voteTimer);
-    voteTimer = setTimeout(tickVote, 1000);
-    maybeResolveVote(data);
-  }
-  updateVoteBtn();
   updateStageLabel();
-  // Read the live state, not this call's snapshot: resolving a vote writes to Firebase,
-  // which re-enters this handler synchronously, so by the time we get here `data` can be
-  // a round older than the truth and would re-disable a button the nested call just freed.
-  if (groupMode && !isSpinning) spinBtn.disabled = !!(groupState && groupState.vote);
+  updateLobbyGo();
 
   if (fireAt && data.round && data.round.id === fireAt) {
     if (groupRoundRendered !== fireAt) {
       groupRoundRendered = fireAt;
       groupLastFireAt = fireAt;
       clearTimeout(groupIdleTimer);
-      if (groupMode) renderGroupRound(data.round);
+      // Cross to the board first: the stage measures pegs and lanes off real geometry,
+      // and a hidden screen measures zero.
+      if (groupMode) { showGamePage(); renderGroupRound(data.round); }
     } else if (groupMode) {
       applyRoundUpdates(data.round); // other players' picks / landings arriving
     }
@@ -3189,23 +3261,25 @@ function handleGroupRoundUpdate(data) {
   else maybeResetGroupRound(data);
 }
 
+// The listener follows whichever game you're on, so switching game moves you to that
+// game's group room rather than leaving you subscribed to the one you just left.
 function startGroupRoundListener(code) {
-  groupRoundListener = db.ref(`rooms/${code}/group`).on('value', snap => {
+  if (groupRoundListener) stopGroupRoundListener(groupListenerPath);
+  groupListenerPath = groupRoomRef(gameMode, code);
+  groupRoundListener = db.ref(groupListenerPath).on('value', snap => {
     handleGroupRoundUpdate(snap.val() || {});
   });
   if (groupMode) setGroupPresence(true);
 }
 
-function stopGroupRoundListener(code) {
-  if (groupRoundListener && code) {
-    db.ref(`rooms/${code}/group`).off('value', groupRoundListener);
+function stopGroupRoundListener(path) {
+  if (groupRoundListener && path) {
+    db.ref(path).off('value', groupRoundListener);
     groupRoundListener = null;
+    groupListenerPath = null;
   }
   clearTimeout(groupIdleTimer);
   clearTimeout(groupEasyTimer);
-  clearTimeout(voteTimer);
-  ballotFor = null;
-  voteResolvedAt = null;
   groupLastFireAt = null;
   groupRoundRendered = null;
   groupState = {};
@@ -3229,7 +3303,6 @@ function runCurrentModeAction() {
 // nothing fires until everyone currently in Group Mode has also readied up.
 function readyUpGroup() {
   if (isSpinning || !roomCode) return;
-  if (groupState.vote) { nudgeModeLock(); return; } // can't ready into a game still being picked
 
   isSpinning = true;
   spinBtn.disabled = true;
@@ -3245,7 +3318,7 @@ function readyUpGroup() {
   if (playerRef) playerRef.update({ role: roleForDB, spinning: true, hero: null, lastSeen: Date.now() });
   // Plinko sends the aim it locked in; every other mode just says "ready".
   const payload = gameMode === 'plinko' ? plinkoDropX : true;
-  db.ref(`rooms/${roomCode}/group/ready/${playerId}`).set(payload);
+  db.ref(`${groupRoomRef()}/ready/${playerId}`).set(payload);
 }
 
 // Called from each mode's own "finish" point. Returns true (and keeps the button locked +
@@ -3255,7 +3328,7 @@ function groupModeActionCompleted() {
   if (!groupMode) return false;
   isSpinning = true;
   spinBtn.disabled = true;
-  if (roomCode) db.ref(`rooms/${roomCode}/group/done/${playerId}`).set(true);
+  if (roomCode) db.ref(`${groupRoomRef()}/done/${playerId}`).set(true);
   return true;
 }
 
@@ -3297,8 +3370,6 @@ function finishGroupResult(winner, commitNow) {
 // ── Stage: idle / preview ──
 function renderGroupIdle(force) {
   if (!groupMode) return;
-  // While a vote is open (or its result is still on screen) the ballot owns the stage.
-  if ((groupState && groupState.vote) || voteResolvedAt) return;
   groupRemoteBalls = {};
   groupRaceCtl = null;
   groupPlinkoCtl = null;
@@ -3319,7 +3390,6 @@ function renderGroupIdle(force) {
 
 function maybeRefreshPlinkoPreview() {
   if (!groupMode || gameMode !== 'plinko' || isSpinning || groupState.fireAt) return;
-  if (groupState.vote || voteResolvedAt) return; // don't paint over an open ballot
   if (Date.now() < groupHoldUntil) return;
   const parts = groupParticipants(groupState.present, groupState.ready);
   const key = (groupState.seed || 1) + '|' + parts.map(p => p.pid + ':' + p.roles.join('+')).join(',');
@@ -3605,7 +3675,7 @@ function groupPickCard(hero) {
     const sec = hand.closest('.gs-player');
     if (sec) sec.querySelector('.gs-player-result').textContent = hero.name;
   }
-  if (roomCode) db.ref(`rooms/${roomCode}/group/round/picks/${playerId}`).set(hero.key);
+  if (roomCode) db.ref(`${groupRoomRef()}/round/picks/${playerId}`).set(hero.key);
   finishGroupResult(hero, true);
 }
 
@@ -3763,7 +3833,7 @@ function renderGroupRace(round) {
     track.classList.remove('aiming', 'placing');
     addBanana(playerId, spot, true);
     if (roomCode) {
-      db.ref(`rooms/${roomCode}/group/round/bananas/${playerId}`)
+      db.ref(`${groupRoomRef()}/round/bananas/${playerId}`)
         .set({ pid: spot.pid, lane: spot.lane, at: Number(spot.at.toFixed(4)) });
     }
   }
@@ -3835,7 +3905,7 @@ function renderGroupRace(round) {
     const snapshot = {};
     Object.entries(placed).forEach(([by, s]) => { snapshot[by] = { pid: s.pid, lane: s.lane, at: s.at }; });
     if (!roomCode) { openGate({ at: Date.now(), bananas: snapshot }); return; }
-    db.ref(`rooms/${roomCode}/group/round/gate`).transaction(cur => cur || { at: Date.now(), bananas: snapshot });
+    db.ref(`${groupRoomRef()}/round/gate`).transaction(cur => cur || { at: Date.now(), bananas: snapshot });
   }
 
   function openGate(gate) {
@@ -3924,7 +3994,7 @@ function renderGroupRace(round) {
       setLegendHero(pid, won.hero.name);
       if (pid === playerId) {
         finishGroupResult(won.hero, false);
-        if (roomCode) db.ref(`rooms/${roomCode}/group/round/results/${playerId}`).set(won.hero.key);
+        if (roomCode) db.ref(`${groupRoomRef()}/round/results/${playerId}`).set(won.hero.key);
       }
     });
 
@@ -4110,7 +4180,7 @@ function renderGroupPlinko(round) {
     myWallPlaced = true;
     pegsEl.classList.remove('aiming', 'placing');
     addWall(playerId, { a: s.i, b: s.j }, true);
-    if (roomCode) db.ref(`rooms/${roomCode}/group/round/walls/${playerId}`).set({ a: s.i, b: s.j });
+    if (roomCode) db.ref(`${groupRoomRef()}/round/walls/${playerId}`).set({ a: s.i, b: s.j });
   }
 
   let kbIdx = Math.floor(segs.length / 2);
@@ -4160,7 +4230,7 @@ function renderGroupPlinko(round) {
     const snapshot = {};
     Object.entries(placed).forEach(([by, s]) => { snapshot[by] = { a: s.i, b: s.j }; });
     if (!roomCode) { openGate({ at: Date.now(), walls: snapshot }); return; }
-    db.ref(`rooms/${roomCode}/group/round/gate`).transaction(cur => cur || { at: Date.now(), walls: snapshot });
+    db.ref(`${groupRoomRef()}/round/gate`).transaction(cur => cur || { at: Date.now(), walls: snapshot });
   }
 
   function openGate(gate) {
@@ -4188,7 +4258,7 @@ function renderGroupPlinko(round) {
         const slotEl = slotsEl.children[slotIndex];
         if (slotEl) slotEl.classList.add('winner');
         setLegendHero(playerId, slots[slotIndex].name);
-        if (roomCode) db.ref(`rooms/${roomCode}/group/round/results/${playerId}`).set(slotIndex);
+        if (roomCode) db.ref(`${groupRoomRef()}/round/results/${playerId}`).set(slotIndex);
         finishGroupResult(slots[slotIndex], false);
         groupPlinkoCtl = null;
       }, { chip: myChip, allowed, walls: live, onColumn: col => reportLeader(playerId, slots[col]) });
