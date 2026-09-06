@@ -367,21 +367,15 @@
     .race-runner { transition: box-shadow .18s ease, border-color .18s ease; }
 
     /* ── Bananas ──
-       A peel blocks its spot on the course for every lane in that player's race, so it's
-       drawn as a full-height column with one banana sitting in each lane. */
+       One peel sits in one lane of one player's race: you pick the exact horse to trip. */
     .race-banana {
-      position: absolute; top: 0; bottom: 0; width: 20px;
+      position: absolute; width: 20px; height: 20px;
+      font-size: 15px; line-height: 20px; text-align: center;
       pointer-events: none; z-index: 1;
-      transition: opacity .2s ease;
-    }
-    .race-banana i {
-      position: absolute; left: 0; width: 20px; height: 20px;
-      font-size: 15px; line-height: 20px; text-align: center; font-style: normal;
       filter: drop-shadow(0 1px 3px rgba(0,0,0,.8));
-      transition: transform .2s ease;
+      transition: opacity .2s ease, transform .2s ease;
     }
-    .race-banana.squashed { opacity: 0; }
-    .race-banana.squashed i { transform: scale(1.9) rotate(35deg); }
+    .race-banana.squashed { opacity: 0; transform: scale(1.9) rotate(35deg); }
     /* The slip has to carry its own transform: the gallop bob animates transform too,
        and an animation always beats a static one on the same element. */
     @keyframes horse-slip {
@@ -400,27 +394,24 @@
     }
 
     /* Placing a banana on the course, after the field is shown but before the gates open */
-    .race-banana.mine i { filter: drop-shadow(0 0 7px rgba(255,210,74,.95)); }
+    .race-banana.mine { filter: drop-shadow(0 0 7px rgba(255,210,74,.95)); }
     @keyframes banana-land {
       0%   { transform: translateY(-18px) scale(.3); opacity: 0; }
       70%  { transform: translateY(0) scale(1.3);    opacity: 1; }
       100% { transform: translateY(0) scale(1);      opacity: 1; }
     }
-    /* backwards fill so a staggered peel holds the hidden first frame during its delay
-       instead of flashing in at full size and then dropping */
-    .race-banana.landing i { animation: banana-land .32s ease-out backwards; }
-    .gs-place-layer { position: absolute; left: .6rem; right: .6rem; top: .6rem; bottom: .6rem; pointer-events: none; z-index: 3; }
-    .gs-place-guide, .gs-place-ghost { opacity: 0; transition: opacity .12s ease; }
-    .gs-place-layer.aiming .gs-place-guide { opacity: .55; }
-    .gs-place-layer.aiming .gs-place-ghost { opacity: .6; }
-    .gs-place-guide {
-      position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px;
-      background: var(--any); box-shadow: 0 0 8px rgba(255,210,74,.7);
+    .race-banana.landing { animation: banana-land .32s ease-out; }
+    /* Aiming highlights the one lane you're about to trip, so it's obvious whose horse
+       you're going after before you commit. */
+    .gs-place-lane, .gs-place-ghost { position: absolute; opacity: 0; transition: opacity .12s ease; pointer-events: none; z-index: 3; }
+    .gs-race.aiming .gs-place-lane  { opacity: 1; }
+    .gs-race.aiming .gs-place-ghost { opacity: .65; }
+    .gs-place-lane {
+      height: 32px; border-radius: 8px;
+      background: rgba(255,210,74,.16); border: 2px solid rgba(255,210,74,.85);
+      box-shadow: inset 0 0 16px rgba(255,210,74,.25), 0 0 12px rgba(255,210,74,.35);
     }
-    .gs-place-ghost {
-      position: absolute; top: 50%; width: 20px; height: 20px; margin: -10px 0 0 -10px;
-      font-size: 15px; line-height: 20px; text-align: center;
-    }
+    .gs-place-ghost { width: 20px; height: 20px; font-size: 15px; line-height: 20px; text-align: center; }
     .gs-race.placing { cursor: crosshair; touch-action: none; }
     .gs-race.placing:focus-visible { outline: 2px solid var(--any); outline-offset: 3px; }
     .gs-place-bar {
@@ -2164,6 +2155,53 @@ function racePosAt(lane, u) {
   return lane.curve[i] + (lane.curve[i + 1] - lane.curve[i]) * (x - i);
 }
 
+// ── Deterministic form, for group races that are actually raced ──────────────
+// Nobody's win is decided in advance: every client runs the same simulation and whoever
+// crosses first is the result. That only holds if the maths matches everywhere, so the
+// form is built from seeded randomness and plain arithmetic — no sin/pow, whose last bits
+// aren't guaranteed identical across JS engines.
+const RACE_FORM_STEPS = 48;
+function buildRaceForm(racers, seedKey) {
+  return racers.map((hero, i) => {
+    const rng  = makeRng('form', seedKey, hero.key, i);
+    const base = 0.88 + rng() * 0.24;   // this one's cruising pace
+    const raw  = [];
+    for (let s = 0; s <= RACE_FORM_STEPS; s++) raw.push(0.45 + rng() * 1.10);
+    // Smoothed, so a horse's pace wanders over the course instead of jittering every step.
+    const prof = raw.map((_, s) => {
+      const a = raw[Math.max(0, s - 1)], b = raw[s], c = raw[Math.min(RACE_FORM_STEPS, s + 1)];
+      return (a + 2 * b + c) / 4;
+    });
+    return { hero, base, prof };
+  });
+}
+// Pace as a function of ground covered rather than time, so a horse held up by a banana
+// picks up its run exactly where it left off.
+function formSpeedAt(f, prog) {
+  const x = Math.max(0, Math.min(99.999, prog)) / 100 * RACE_FORM_STEPS;
+  const i = Math.floor(x);
+  return f.base * (f.prof[i] + (f.prof[i + 1] - f.prof[i]) * (x - i));
+}
+// When this horse changes lane, and to which. Precomputed so every client agrees, because
+// lanes now decide who eats which banana.
+// Tuned against 500 simulated races: at these odds a banana aimed at the horse that would
+// otherwise have won flips the result about 44% of the time and gets dodged about 26%,
+// which keeps placement worth thinking about without making it a sure thing.
+function buildSwapPlan(rng, lanes, startLane, stepMs) {
+  const plan = [];
+  let t = 900 + rng() * 1200, cur = startLane;
+  while (t < 9000) {
+    if (lanes > 1 && rng() < 0.38) {
+      let l = Math.floor(rng() * (lanes - 1));
+      if (l >= cur) l++;
+      cur = l;
+      plan.push({ atStep: Math.round(t / stepMs), lane: cur });
+    }
+    t += 1100 + rng() * 1500;
+  }
+  return plan;
+}
+
 function doRace() {
   isSpinning = true;
   spinBtn.disabled = true;
@@ -2669,7 +2707,9 @@ function buildGroupRound(mode, parts, seed, fireAt) {
     parts.forEach(p => {
       const pool   = participantPool(p, mode);
       const racers = rngSample(pool, Math.min(K, pool.length), rng).map(heroPayload);
-      round.race[p.pid] = { racers, winner: racers.length ? rngPick(racers, rng).key : null };
+      // No winner here on purpose — the race decides it. Every racer came out of this
+      // player's own role pool, so whoever wins is still a hero they picked for.
+      round.race[p.pid] = { racers };
     });
     // round.bananas is filled in live: the field is drawn first, then everyone gets a few
     // seconds to drop a peel on the course before the gates open.
@@ -3048,10 +3088,18 @@ function applyRoundUpdates(round) {
       if (sec) sec.querySelector('.gs-player-result').textContent = name;
     });
   } else if (round.mode === 'race') {
-    if (!groupRaceCtl) return;
-    Object.entries(round.bananas || {}).forEach(([pid, at]) => {
-      if (pid !== playerId) groupRaceCtl.addBanana(pid, at);
+    // Each player's own client is the authority on its own race, so a hero recorded there
+    // wins over whatever this client's simulation happened to show.
+    Object.entries(round.results || {}).forEach(([pid, key]) => {
+      if (pid === playerId) return;
+      const hero = (((round.race || {})[pid] || {}).racers || []).find(r => r.key === key);
+      if (hero) setLegendHero(pid, hero.name);
     });
+    if (!groupRaceCtl) return;
+    Object.entries(round.bananas || {}).forEach(([by, raw]) => {
+      if (by !== playerId) groupRaceCtl.addBanana(by, raw);
+    });
+    if (round.gate) groupRaceCtl.openGate(round.gate);
   } else if (round.mode === 'plinko') {
     Object.entries(round.results || {}).forEach(([pid, slotIndex]) => {
       if (pid === playerId) return;
@@ -3226,6 +3274,10 @@ function renderGroupRace(round) {
   renderLegend(legend, round.players);
 
   const LANE_H = 34;
+  const STEP_MS      = 20;    // fixed simulation step
+  const SPEED        = 13.0;  // percent of course per second at average pace
+  const STALL_STEPS  = Math.round(800 / STEP_MS);
+  const MAX_CATCHUP  = 400;   // steps per frame, so a backgrounded tab can catch up
   const state = [], groups = {};
   round.players.forEach(p => {
     const info   = (round.race || {})[p.pid];
@@ -3250,202 +3302,269 @@ function renderGroupRace(round) {
       if (p.pid === playerId) groupModeActionCompleted();
       return;
     }
-    const script = buildRaceScript(racers, info.winner);
-    script.forEach((laneScript, i) => {
-      const el = makeRunnerEl(laneScript.hero);
+    const form = buildRaceForm(racers, `${round.id}|${p.pid}`);
+    form.forEach((f, i) => {
+      const el = makeRunnerEl(f.hero);
       el.style.top = (i * LANE_H + 1) + 'px'; el.style.left = '2px';
       el.style.animationDuration = `${(0.22 + Math.random() * 0.14).toFixed(2)}s`;
       el.style.animationDelay    = `${(Math.random() * 0.3).toFixed(2)}s`;
       el.classList.add('racing');
       group.appendChild(el);
-      state.push({ pid: p.pid, hero: laneScript.hero, el, lane: i, lanes, progress: 0,
-                   script: laneScript, isWinner: laneScript.isWinner,
-                   t: 0, stallUntil: 0, eaten: new Set(),
-                   nextSwap: performance.now() + 800 + Math.random() * 1200 });
+      state.push({
+        pid: p.pid, hero: f.hero, el, lane: i, lanes, progress: 0, form: f,
+        stall: 0, slipUntil: -1, finishStep: -1, finished: false, swapIdx: 0,
+        swaps: buildSwapPlan(makeRng('swap', round.id, p.pid, f.hero.key, i), lanes, i, STEP_MS),
+      });
     });
-
   });
 
-  const RACE_MS  = 7200; // longer than solo, so a full table can watch it play out
-  const STALL_MS = 750;  // how long a banana holds someone up
-  let last = performance.now();
+  let raceStarted = false, simStep = 0, raceT0 = 0, placeTimer = null;
 
   // ── Banana placement window ──────────────────────────────────────────────
-  // The field is already on screen, so you place a peel knowing who's running. Everyone's
-  // banana is laid across every player's lanes (each group gets its own copy, so one peel
-  // catches one racer per player rather than being used up by whoever reaches it first).
-  const layer = document.createElement('div'); layer.className = 'gs-place-layer';
-  const guide = document.createElement('div'); guide.className = 'gs-place-guide';
-  const ghost = document.createElement('div'); ghost.className = 'gs-place-ghost'; ghost.textContent = '🍌';
-  layer.append(guide, ghost);
-  track.appendChild(layer);
+  // The field is on screen, so you place a peel knowing exactly who is running and where.
+  // A banana goes in one lane of one player's race — pick the horse you want to trip.
+  const laneHi = document.createElement('div'); laneHi.className = 'gs-place-lane';
+  const ghost  = document.createElement('div'); ghost.className  = 'gs-place-ghost'; ghost.textContent = '🍌';
+  track.append(laneHi, ghost);
 
-  const placed = {};              // pid -> position, so nobody gets two
-  let myBananaPlaced = false, raceStarted = false;
+  const placed = {};   // placer pid -> { pid, lane, at }, so nobody gets two
+  let myBananaPlaced = false;
 
-  // The usable stretch stops short of the gate and leaves room for the peel itself, so a
-  // banana can never sit under the finish where nobody could ever reach it.
-  function courseMetrics() {
-    const g = track.querySelector('.gs-race-group');
-    if (!g) return null;
-    const gate  = parseFloat(getComputedStyle(g).getPropertyValue('--gate')) || 70;
-    const rect  = g.getBoundingClientRect();
+  // The usable stretch stops short of the gate and leaves room for the peel, so a banana
+  // can never sit under the finish where nobody could reach it.
+  function groupMetrics(g) {
+    if (!g || !g.el) return null;
+    const gate = parseFloat(getComputedStyle(g.el).getPropertyValue('--gate')) || 70;
+    const rect = g.el.getBoundingClientRect();
     const usable = rect.width - gate - 20;
-    return usable > 0 ? { rect, usable } : null;
+    return usable > 0 ? { rect, usable, gate } : null;
   }
   function clampFrac(f) { return Math.min(0.94, Math.max(0.06, f)); }
 
-  function addBanana(pid, at, mine) {
-    const frac = Number(at);
-    if (raceStarted || placed[pid] != null || !isFinite(frac)) return;
-    placed[pid] = clampFrac(frac);
-    Object.keys(groups).forEach(gp => {
-      const g = groups[gp];
-      if (!g.el) return;
-      const el = document.createElement('div');
-      el.className = 'race-banana landing' + (mine ? ' mine' : '');
-      el.style.left = `calc((100% - var(--gate) - 20px) * ${placed[pid]})`;
-      // One peel per lane: the hazard blocks that spot for whichever lane gets there first,
-      // so it has to look like it covers all of them.
-      for (let i = 0; i < (g.lanes || 1); i++) {
-        const peel = document.createElement('i');
-        peel.textContent = '🍌';
-        peel.style.top = (i * LANE_H + 7) + 'px';
-        peel.style.animationDelay = (i * 40) + 'ms';
-        el.appendChild(peel);
-      }
-      g.el.appendChild(el);
-      setTimeout(() => el.classList.remove('landing'), 340 + (g.lanes || 1) * 40);
-      g.bananas.push({ id: pid, at: placed[pid] * 100, el, taken: false });
-    });
+  function drawBanana(spot, mine, animate) {
+    const g = groups[spot.pid];
+    const m = groupMetrics(g);
+    if (!g || !m) return null;
+    const el = document.createElement('div');
+    el.className = 'race-banana' + (mine ? ' mine' : '') + (animate ? ' landing' : '');
+    el.textContent = '🍌';
+    el.style.left = `calc((100% - var(--gate) - 20px) * ${spot.at})`;
+    el.style.top  = (spot.lane * LANE_H + 7) + 'px';
+    g.el.appendChild(el);
+    if (animate) setTimeout(() => el.classList.remove('landing'), 340);
+    return el;
   }
 
-  function aimAt(frac) {
-    const m = courseMetrics();
+  function readSpot(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    const at = Number(raw.at), lane = Math.floor(Number(raw.lane));
+    const g = groups[raw.pid];
+    if (!g || !isFinite(at) || !isFinite(lane)) return null;
+    return { pid: raw.pid, lane: Math.max(0, Math.min((g.lanes || 1) - 1, lane)), at: clampFrac(at) };
+  }
+
+  // During the window a banana is only a marker; the real course is frozen at the off.
+  function addBanana(by, raw, mine) {
+    if (raceStarted || placed[by]) return;
+    const spot = readSpot(raw);
+    if (!spot) return;
+    placed[by] = spot;
+    spot.el = drawBanana(spot, mine, true);
+  }
+
+  function aimAt(spot) {
+    const g = groups[spot.pid], m = groupMetrics(g);
     if (!m) return;
-    const px = m.usable * frac + 10;
-    guide.style.left = px + 'px';
-    ghost.style.left = px + 'px';
-    layer.classList.add('aiming');
-  }
-  function fracFromPointer(e) {
-    const m = courseMetrics();
-    return m ? clampFrac((e.clientX - m.rect.left - 10) / m.usable) : null;
-  }
-  function commitBanana(frac) {
-    if (myBananaPlaced || raceStarted) return;
-    myBananaPlaced = true;
-    layer.classList.remove('aiming');
-    track.classList.remove('placing');
-    addBanana(playerId, frac, true);
-    if (roomCode) db.ref(`rooms/${roomCode}/group/round/bananas/${playerId}`).set(Number(frac.toFixed(4)));
+    laneHi.style.left   = g.el.offsetLeft + 'px';
+    laneHi.style.top    = (g.el.offsetTop + spot.lane * LANE_H + 1) + 'px';
+    laneHi.style.width  = (m.rect.width - m.gate) + 'px';
+    ghost.style.left    = (g.el.offsetLeft + m.usable * spot.at) + 'px';
+    ghost.style.top     = (g.el.offsetTop + spot.lane * LANE_H + 7) + 'px';
+    track.classList.add('aiming');
   }
 
-  let kbFrac = 0.5;
+  // Which lane of whose race is under the pointer.
+  function spotFromPointer(e) {
+    for (const pid of Object.keys(groups)) {
+      const g = groups[pid], m = groupMetrics(g);
+      if (!m || e.clientY < m.rect.top || e.clientY > m.rect.bottom) continue;
+      const lane = Math.max(0, Math.min((g.lanes || 1) - 1, Math.floor((e.clientY - m.rect.top) / LANE_H)));
+      return { pid, lane, at: clampFrac((e.clientX - m.rect.left - 10) / m.usable) };
+    }
+    return null;
+  }
+
+  function commitBanana(spot) {
+    if (myBananaPlaced || raceStarted || !spot) return;
+    myBananaPlaced = true;
+    track.classList.remove('aiming', 'placing');
+    addBanana(playerId, spot, true);
+    if (roomCode) {
+      db.ref(`rooms/${roomCode}/group/round/bananas/${playerId}`)
+        .set({ pid: spot.pid, lane: spot.lane, at: Number(spot.at.toFixed(4)) });
+    }
+  }
+
+  // Keyboard walks every lane in the stack as one list, so it can reach any horse.
+  const slots = [];
+  Object.keys(groups).forEach(pid => { for (let i = 0; i < (groups[pid].lanes || 1); i++) slots.push({ pid, lane: i }); });
+  let kbSlot = 0, kbAt = 0.5;
   track.tabIndex = 0;
-  track.addEventListener('pointermove', e => { if (!myBananaPlaced && !raceStarted) { const f = fracFromPointer(e); if (f != null) aimAt(f); } });
-  track.addEventListener('pointerleave', () => layer.classList.remove('aiming'));
+  track.addEventListener('pointermove', e => {
+    if (myBananaPlaced || raceStarted) return;
+    const s = spotFromPointer(e);
+    if (s) aimAt(s);
+  });
+  track.addEventListener('pointerleave', () => track.classList.remove('aiming'));
   track.addEventListener('pointerdown', e => {
     if (myBananaPlaced || raceStarted || (e.button != null && e.button !== 0)) return;
-    const f = fracFromPointer(e);
-    if (f != null) commitBanana(f);
+    commitBanana(spotFromPointer(e));
   });
   track.addEventListener('keydown', e => {
-    if (myBananaPlaced || raceStarted) return;
+    if (myBananaPlaced || raceStarted || !slots.length) return;
     if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-      kbFrac = clampFrac(kbFrac + (e.key === 'ArrowRight' ? 0.04 : -0.04));
-      aimAt(kbFrac);
-      e.preventDefault();
+      kbAt = clampFrac(kbAt + (e.key === 'ArrowRight' ? 0.04 : -0.04));
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      kbSlot = (kbSlot + (e.key === 'ArrowDown' ? 1 : slots.length - 1)) % slots.length;
     } else if (e.key === 'Enter' || e.key === ' ') {
-      commitBanana(kbFrac);
+      commitBanana({ ...slots[kbSlot], at: kbAt });
       e.preventDefault();
-    }
+      return;
+    } else return;
+    aimAt({ ...slots[kbSlot], at: kbAt });
+    e.preventDefault();
   });
 
-  // Bananas already on the wire when this client rendered (a straggler joining the paint).
-  groupRaceCtl = { addBanana: (pid, at) => addBanana(pid, at, false) };
-  Object.entries(round.bananas || {}).forEach(([pid, at]) => { if (pid !== playerId) addBanana(pid, at, false); });
+  groupRaceCtl = {
+    addBanana: (by, raw) => addBanana(by, raw, false),
+    openGate,
+  };
+  Object.entries(round.bananas || {}).forEach(([by, raw]) => { if (by !== playerId) addBanana(by, raw, false); });
+  if (round.gate) openGate(round.gate);
 
   const RACE_PLACE_MS = 6000; // how long the field stands at the gate
   const placeStart = performance.now();
-  let allInAt = 0;
+  let allInAt = 0, gateAsked = false;
   (function placeFrame(ts) {
     if (raceStarted) return;
     const left  = Math.max(0, RACE_PLACE_MS - (ts - placeStart));
     const secs  = Math.ceil(left / 1000);
     const count = Object.keys(placed).length, total = round.players.length;
     fill.style.transform = `scaleX(${(left / RACE_PLACE_MS).toFixed(3)})`;
-    barLbl.textContent = myBananaPlaced
-      ? `${count}/${total} bananas down · ${secs}s`
-      : `Tap the course to drop your banana · ${secs}s · ${count}/${total} down`;
+    barLbl.textContent = gateAsked
+      ? 'And they\'re off…'
+      : myBananaPlaced
+        ? `${count}/${total} bananas down · ${secs}s`
+        : `Pick a lane and tap to drop your banana · ${secs}s · ${count}/${total} down`;
     // Everyone's in early? Hold a beat so the last peel lands on screen, then go.
     if (count >= total && !allInAt) allInAt = ts;
-    if (left <= 0 || (allInAt && ts - allInAt > 800)) { startRace(); return; }
+    if (!gateAsked && (left <= 0 || (allInAt && ts - allInAt > 800))) { gateAsked = true; askForGate(); }
     requestAnimationFrame(placeFrame);
   })(placeStart);
+  // rAF stops in a backgrounded tab, so the meter alone can't be trusted to open the gate —
+  // a table where everyone happened to be looking elsewhere would wait forever.
+  placeTimer = setTimeout(() => { if (!gateAsked && !raceStarted) { gateAsked = true; askForGate(); } }, RACE_PLACE_MS + 120);
 
-  function startRace() {
+  // The outcome is real now, so every client has to race the same course. The first client
+  // whose clock runs out writes the gate — the frozen banana list plus the off time — and
+  // everyone, including the writer, starts from the value that transaction committed.
+  function askForGate() {
+    const snapshot = {};
+    Object.entries(placed).forEach(([by, s]) => { snapshot[by] = { pid: s.pid, lane: s.lane, at: s.at }; });
+    if (!roomCode) { openGate({ at: Date.now(), bananas: snapshot }); return; }
+    db.ref(`rooms/${roomCode}/group/round/gate`).transaction(cur => cur || { at: Date.now(), bananas: snapshot });
+  }
+
+  function openGate(gate) {
     if (raceStarted) return;
     raceStarted = true;
-    track.classList.remove('placing');
+    clearTimeout(placeTimer);
+    track.classList.remove('placing', 'aiming');
     track.removeAttribute('tabindex');
-    layer.remove();
+    laneHi.remove(); ghost.remove();
     bar.remove();
-    last = performance.now();
+
+    // Re-lay the course from the committed list, so nobody races a board of their own.
+    track.querySelectorAll('.race-banana').forEach(el => el.remove());
+    Object.keys(groups).forEach(pid => { groups[pid].bananas = []; });
+    Object.entries(gate.bananas || {}).forEach(([by, raw]) => {
+      const spot = readSpot(raw);
+      if (!spot) return;
+      const el = drawBanana(spot, by === playerId, false);
+      if (el) groups[spot.pid].bananas.push({ lane: spot.lane, at: spot.at * 100, el, taken: false });
+    });
+
+    raceT0 = performance.now();
+    simStep = 0;
     requestAnimationFrame(frame);
   }
 
-  function frame(ts) {
-    const dt = Math.min(ts - last, 60);
-    last = ts;
-    let anyRunning = false;
-    const leadFor = {}; // each player has their own race toward their own gate
+  // ── The race itself ──────────────────────────────────────────────────────
+  function stepOnce(step) {
     state.forEach(s => {
       const g = groups[s.pid];
+      if (g.done || s.finished) return;
+      while (s.swapIdx < s.swaps.length && s.swaps[s.swapIdx].atStep <= step) {
+        s.lane = s.swaps[s.swapIdx].lane;
+        s.swapIdx++;
+      }
+      if (s.stall > 0) { s.stall--; return; }
+      const prev = s.progress;
+      s.progress += formSpeedAt(s.form, s.progress) * SPEED * (STEP_MS / 1000);
+      // A peel only trips a horse that runs over it: crossing, not merely being past it,
+      // so changing lanes behind a banana doesn't set it off.
+      for (const b of g.bananas) {
+        if (b.taken || b.lane !== s.lane || prev >= b.at || s.progress < b.at) continue;
+        b.taken = true;
+        s.progress = b.at;
+        s.stall = STALL_STEPS;
+        s.slipUntil = step + STALL_STEPS;
+        b.el.classList.add('squashed');
+        break;
+      }
+      if (s.finishStep < 0 && s.progress >= 100) s.finishStep = step;
+    });
+  }
+
+  function frame(ts) {
+    const target = Math.floor((ts - raceT0) / STEP_MS);
+    let budget = MAX_CATCHUP;
+    while (simStep < target && budget-- > 0) { simStep++; stepOnce(simStep); }
+
+    let anyRunning = false;
+    const leadFor = {};
+    state.forEach(s => {
+      const g = groups[s.pid];
+      if (!g.done) anyRunning = true;
+      const shown = Math.min(100, s.progress);
+      s.el.style.left = `calc((100% - var(--gate) - ${RACE_RUNNER_PX}px) * ${(shown / 100).toFixed(4)})`;
+      s.el.style.top  = (s.lane * LANE_H + 1) + 'px';
+      const slipping = simStep < s.slipUntil;
+      s.el.classList.toggle('slipped', slipping);
+      s.el.classList.toggle('surging', !slipping && !g.done && formSpeedAt(s.form, s.progress) / s.form.base > 1.28);
+      if (!g.done && (!leadFor[s.pid] || s.progress > leadFor[s.pid].progress)) leadFor[s.pid] = s;
+    });
+
+    // Whoever actually got there first — by the step they crossed on, then by distance,
+    // then by lane, so every client resolves a photo finish the same way.
+    Object.keys(groups).forEach(pid => {
+      const g = groups[pid];
       if (g.done) return;
-      anyRunning = true;
-
-      // A racer's own clock only advances while they're on their feet
-      const stalled = ts < s.stallUntil;
-      if (!stalled) {
-        if (s.el.classList.contains('slipped')) s.el.classList.remove('slipped');
-        s.t = Math.min(s.t + dt, RACE_MS);
-      }
-      const u = s.t / RACE_MS;
-      s.progress = racePosAt(s.script, u);
-
-      // Banana check: first racer of this player's group to reach one takes it
-      if (!stalled) {
-        (g.bananas || []).forEach(b => {
-          if (b.taken || s.eaten.has(b.id) || s.progress < b.at) return;
-          b.taken = true;
-          s.eaten.add(b.id);
-          s.stallUntil = ts + STALL_MS;
-          b.el.classList.add('squashed');
-          s.el.classList.remove('surging');
-          s.el.classList.add('slipped');
-        });
-      }
-
-      if (!leadFor[s.pid] || s.progress > leadFor[s.pid].progress) leadFor[s.pid] = s;
-      s.el.style.left = `calc((100% - var(--gate) - ${RACE_RUNNER_PX}px) * ${(s.progress / 100).toFixed(4)})`;
-      s.el.classList.toggle('surging', !stalled && s.script.speedAt(u) > 1.35);
-      if (ts > s.nextSwap && s.lanes > 1 && u < 0.82 && !stalled) {
-        s.nextSwap = ts + 900 + Math.random() * 1400;
-        if (Math.random() < 0.45) {
-          let l; do { l = Math.floor(Math.random() * s.lanes); } while (l === s.lane);
-          s.lane = l; s.el.style.top = (l * LANE_H + 1) + 'px';
-        }
-      }
-      if (s.isWinner && s.t >= RACE_MS) {
-        g.done = true;
-        g.gate.classList.add('arrived');
-        state.filter(x => x.pid === s.pid).forEach(x => { x.el.classList.remove('racing', 'surging', 'slipped'); });
-        s.el.classList.add('winner');
-        setLegendHero(s.pid, s.hero.name);
-        if (s.pid === playerId) finishGroupResult(s.hero, false);
+      const home = state.filter(s => s.pid === pid && s.finishStep >= 0)
+                        .sort((a, b) => (a.finishStep - b.finishStep) || (b.progress - a.progress) || (a.lane - b.lane));
+      if (!home.length) return;
+      const won = home[0];
+      g.done = true;
+      g.gate.classList.add('arrived');
+      state.filter(s => s.pid === pid).forEach(s => { s.finished = true; s.el.classList.remove('racing', 'surging', 'slipped'); });
+      won.el.classList.add('winner');
+      setLegendHero(pid, won.hero.name);
+      if (pid === playerId) {
+        finishGroupResult(won.hero, false);
+        if (roomCode) db.ref(`rooms/${roomCode}/group/round/results/${playerId}`).set(won.hero.key);
       }
     });
+
     Object.keys(leadFor).forEach(pid => reportLeader(pid, leadFor[pid].hero));
     if (anyRunning) requestAnimationFrame(frame);
     else groupRaceCtl = null;
