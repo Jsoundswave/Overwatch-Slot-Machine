@@ -1426,7 +1426,10 @@ document.fonts.ready.then(async () => {
 // ═══════════════════════════════════════
 document.querySelectorAll('.mode-btn').forEach(btn => {
   btn.addEventListener('click', function () {
-    if (isSpinning) return;
+    // Guarded on a board being up, not on isSpinning: isSpinning is deliberately held
+    // true after your own race until every player reports in, and gating on it meant an
+    // unfinished round locked you into that game with no way out and no explanation.
+    if (isSpinning && roundBoardUp()) return;
     setGameMode(this.dataset.mode);
   });
 });
@@ -3258,12 +3261,23 @@ function openRound() {
   // Nothing may leave the page dimmed indefinitely. A player who drops, or a tab the
   // browser stopped animating, would otherwise strand everyone else's screen.
   roundWatchdog = setTimeout(() => {
-    if (roundStage === 'live') closeRound(0);
+    if (roundStage !== 'live') return;
+    abandonRound();
   }, ROUND_MAX_MS);
 }
 
 // The board holds for a beat so the finish registers, then folds away and the page comes
 // back — you don't have to go anywhere to be rid of it.
+// A round that never finished. Put the screen back AND let go of the controls: leaving
+// isSpinning true here is what locked people into whichever game they were on.
+function abandonRound() {
+  isSpinning = false;
+  spinBtn.disabled = false;
+  if (groupPlinkoRail) groupPlinkoRail.classList.remove('disabled');
+  if (roomCode) db.ref(`${groupRoomRef()}/done/${playerId}`).set(true);
+  closeRound(0);
+}
+
 function closeRound(hold) {
   if (roundStage === 'idle') return;
   clearTimeout(roundCloseTimer);
@@ -3482,7 +3496,11 @@ function readyUpGroup() {
 function fireGroupRound() {
   if (!roomCode) return;
   db.ref(`${groupRoomRef()}`).transaction(current => {
-    if (!current || current.fireAt) return;
+    if (!current) return;
+    // Someone dropping mid-round used to leave fireAt set forever, and every later press
+    // bounced off it — the whole room stuck on one game.
+    const stale = current.fireAt && Date.now() - current.fireAt > ROUND_MAX_MS;
+    if (current.fireAt && !stale) return;
     const parts = groupParticipants(current.present || {});
     if (!parts.length) return;
     const fireAt = Date.now();
