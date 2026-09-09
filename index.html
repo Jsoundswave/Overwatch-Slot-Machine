@@ -29,6 +29,24 @@
       --any:     #ffd24a;
       --race:    #ffb454;
       --plinko:  #b388ff;
+
+      /* ── Design tokens ────────────────────────────────────────────────
+         Before this the sheet held 12 distinct corner radii, 5 border weights and
+         13 tracking values, all picked one at a time. Everything below draws from
+         a scale, which is what makes separate screens read as one product. */
+      --r-xs: 4px;    /* chips, badges, tiny controls */
+      --r-sm: 8px;    /* buttons, tags */
+      --r-md: 12px;   /* cards, tiles */
+      --r-lg: 16px;   /* panels, stages */
+      --bw-hair: 1px; /* dividers and quiet edges */
+      --bw-edge: 2px; /* a real object's outline */
+      --bw-loud: 3px; /* the one thing that's selected or live */
+      --tr-tight: .5px;
+      --tr-mid:   1.5px;
+      --tr-wide:  3px;
+      --tr-caps:  4px;
+      --sp-1: .25rem; --sp-2: .4rem;  --sp-3: .6rem;
+      --sp-4: .9rem;  --sp-5: 1.3rem; --sp-6: 2rem;
     }
 
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -64,10 +82,10 @@
     }
     .spinner {
       width: 40px; height: 40px;
-      border: 3px solid var(--border); border-top-color: var(--orange);
+      border: var(--bw-loud) solid var(--border); border-top-color: var(--orange);
       border-radius: 50%; animation: rot .7s linear infinite;
     }
-    .load-lbl { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 5px; color: var(--dim); }
+    .load-lbl { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: var(--tr-caps); color: var(--dim); }
     @keyframes rot { to { transform: rotate(360deg); } }
 
     /* LOBBY */
@@ -79,18 +97,22 @@
     .logo-block { text-align: center; }
     .logo-icon { display: block; margin: 0 auto .6rem; width: 110px; height: 110px; object-fit: contain; }
     .logo-title {
-      font-family: 'Bebas Neue', sans-serif; font-size: 3.8rem; letter-spacing: 6px; line-height: 1;
+      font-family: 'Bebas Neue', sans-serif; font-size: 3.8rem; letter-spacing: var(--tr-caps); line-height: 1;
       background: linear-gradient(135deg, var(--orange) 0%, #ffaa66 45%, var(--cyan) 100%);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     }
-    .logo-sub { font-size: .78rem; letter-spacing: 5px; text-transform: uppercase; color: var(--dim); margin-top: .4rem; }
-    .card { background: var(--surf); border: 1px solid var(--border); border-radius: 16px; padding: 1.8rem; width: 100%; }
+    .logo-sub { font-size: .78rem; letter-spacing: var(--tr-caps); text-transform: uppercase; color: var(--dim); margin-top: .4rem; }
+    .card { background: var(--surf); border: var(--bw-hair) solid var(--border); border-radius: var(--r-lg); padding: 1.8rem; width: 100%; }
     .field { margin-bottom: 1.3rem; }
     .field:last-of-type { margin-bottom: 0; }
-    .field label { display: block; font-size: .72rem; letter-spacing: 3px; text-transform: uppercase; color: var(--dim); margin-bottom: .45rem; }
+    .field label {
+      display: block; font-size: .62rem; letter-spacing: var(--tr-wide); text-transform: uppercase;
+      color: var(--dim); opacity: .9; margin-bottom: var(--sp-2);
+      padding-bottom: var(--sp-1); border-bottom: var(--bw-hair) solid var(--border);
+    }
     .field input {
-      width: 100%; background: var(--bg); border: 1.5px solid var(--border);
-      border-radius: 10px; color: var(--text); font-family: 'Barlow Condensed', sans-serif;
+      width: 100%; background: var(--bg); border: var(--bw-edge) solid var(--border);
+      border-radius: var(--r-md); color: var(--text); font-family: 'Barlow Condensed', sans-serif;
       font-size: 1.1rem; font-weight: 600; padding: .7rem 1rem;
       outline: none; transition: border-color .2s, box-shadow .2s;
     }
@@ -99,35 +121,48 @@
     .err { color: var(--dps); font-size: .85rem; text-align: center; margin-top: .8rem; display: none; }
     .lobby-actions { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; width: 100%; margin-top: 1.3rem; }
     .btn-create {
-      display: block; padding: .9rem; background: var(--orange); border: none; border-radius: 10px;
-      color: #fff; font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: 2px;
+      display: block; padding: .9rem; background: var(--orange); border: none; border-radius: var(--r-md);
+      color: #fff; font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: var(--tr-wide);
       cursor: pointer; transition: box-shadow .2s, transform .1s;
     }
     .btn-create:hover { box-shadow: 0 4px 28px rgba(255,107,43,.5); transform: translateY(-1px); }
     .btn-create:active { transform: none; }
     .btn-join {
-      display: block; padding: .9rem; background: transparent; border: 2px solid var(--orange);
-      border-radius: 10px; color: var(--orange); font-family: 'Bebas Neue', sans-serif;
-      font-size: 1.2rem; letter-spacing: 2px; cursor: pointer; transition: background .2s, color .2s, transform .1s;
+      display: block; padding: .9rem; background: transparent; border: var(--bw-edge) solid var(--orange);
+      border-radius: var(--r-md); color: var(--orange); font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.2rem; letter-spacing: var(--tr-wide); cursor: pointer; transition: background .2s, color .2s, transform .1s;
     }
     .btn-join:hover { background: var(--orange); color: #fff; transform: translateY(-1px); }
     .btn-join:active { transform: none; }
     #join-panel { width: 100%; overflow: hidden; max-height: 0; opacity: 0; transition: max-height .3s ease, opacity .25s ease; }
     #join-panel.open { max-height: 200px; opacity: 1; }
-    .lobby-hint { font-size: .8rem; color: var(--dim); text-align: center; letter-spacing: 1px; }
+    .lobby-hint { font-size: .78rem; color: var(--dim); text-align: center; letter-spacing: var(--tr-mid); opacity: .7; }
+    .field-code { margin-top: var(--sp-4); margin-bottom: 0; }
+    #join-btn { margin-top: var(--sp-3); width: 100%; }
+    #enter-room-btn { width: 100%; margin-top: var(--sp-3); }
+    .card { padding: var(--sp-5); }
+    #lobby { gap: var(--sp-5); }
+    .lobby-actions { gap: var(--sp-3); margin-top: var(--sp-5); }
+    .field { margin-bottom: var(--sp-5); }
     .room-code-display {
-      display: none; flex-direction: column; align-items: center; gap: .4rem;
-      padding: 1rem; background: var(--surf2); border: 1px solid var(--border); border-radius: 12px; width: 100%;
+      display: none; flex-direction: column; align-items: flex-start; gap: var(--sp-1);
+      padding: var(--sp-4) var(--sp-4) var(--sp-4) var(--sp-4); width: 100%;
+      background: var(--surf); border: var(--bw-hair) solid var(--border);
+      border-radius: var(--r-lg); position: relative; overflow: hidden;
+    }
+    .room-code-display::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: var(--bw-loud);
+      background: var(--cyan); box-shadow: 0 0 12px var(--cyan);
     }
     .room-code-display.show { display: flex; }
-    .room-code-lbl { font-size: .7rem; letter-spacing: 4px; text-transform: uppercase; color: var(--dim); }
-    .room-code-val { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; letter-spacing: 14px; color: var(--cyan); line-height: 1; }
-    .room-code-hint { font-size: .75rem; color: var(--dim); letter-spacing: 1px; }
+    .room-code-lbl { font-size: .7rem; letter-spacing: var(--tr-caps); text-transform: uppercase; color: var(--dim); }
+    .room-code-val { font-family: 'Bebas Neue', sans-serif; font-size: 2.6rem; letter-spacing: 10px; color: var(--cyan); line-height: 1.05; }
+    .room-code-hint { font-size: .75rem; color: var(--dim); letter-spacing: var(--tr-mid); }
     .btn-copy {
       width: 100%; margin-top: .6rem; padding: .6rem;
-      background: transparent; border: 1.5px solid var(--border2); border-radius: 10px;
+      background: transparent; border: var(--bw-edge) solid var(--border2); border-radius: var(--r-md);
       color: var(--cyan); font-family: 'Barlow Condensed', sans-serif;
-      font-size: .95rem; letter-spacing: 1.5px; text-transform: uppercase;
+      font-size: .95rem; letter-spacing: var(--tr-mid); text-transform: uppercase;
       cursor: pointer; transition: border-color .2s, color .2s, background .2s;
     }
     .btn-copy:hover { border-color: var(--cyan); background: rgba(0,216,255,.08); }
@@ -138,18 +173,18 @@
     #link-fallback {
       position: fixed; left: 50%; bottom: 1.2rem; transform: translateX(-50%);
       z-index: 700; display: flex; align-items: center; gap: .5rem; flex-wrap: wrap;
-      background: var(--surf); border: 1.5px solid var(--cyan); border-radius: 12px;
+      background: var(--surf); border: var(--bw-edge) solid var(--cyan); border-radius: var(--r-md);
       padding: .7rem .8rem; box-shadow: 0 6px 30px rgba(0,0,0,.6);
       max-width: min(92vw, 420px); font-size: .82rem; color: var(--dim);
     }
     #link-fallback input {
-      flex: 1 1 200px; min-width: 0; background: var(--bg); border: 1px solid var(--border);
-      border-radius: 8px; color: var(--text); padding: .45rem .6rem;
+      flex: 1 1 200px; min-width: 0; background: var(--bg); border: var(--bw-hair) solid var(--border);
+      border-radius: var(--r-sm); color: var(--text); padding: .45rem .6rem;
       font-family: 'Barlow Condensed', sans-serif; font-size: .9rem;
     }
     #link-fallback button {
-      background: var(--cyan); border: none; border-radius: 8px; color: var(--bg);
-      font-family: 'Bebas Neue', sans-serif; font-size: .95rem; letter-spacing: 1.5px;
+      background: var(--cyan); border: none; border-radius: var(--r-sm); color: var(--bg);
+      font-family: 'Bebas Neue', sans-serif; font-size: .95rem; letter-spacing: var(--tr-mid);
       padding: .45rem .9rem; cursor: pointer;
     }
 
@@ -162,110 +197,173 @@
     .top-bar { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: .4rem; }
 
     /* ── Room lobby ───────────────────────────────────────────────────────
-       Joining a room lands you here, not on the board: who's in, what role each of
-       them took, which game the room is on. The shared widgets are the same DOM nodes
-       as the game page, moved between the two, so nothing is rendered twice. */
-    #room-lobby {
-      position: relative; z-index: 1; display: none; flex-direction: column;
-      align-items: center; gap: 1.1rem;
-      width: 100%; max-width: 460px; padding-top: 1rem; padding-bottom: 5rem;
+       The room is one screen: roster on top, board underneath. */
+    #room-top, #room-body, #room-foot {
+      width: 100%; display: flex; flex-direction: column; align-items: center; gap: var(--sp-5);
     }
-        #lobby-top, #lobby-body, #lobby-foot, #game-top, #game-body {
-      width: 100%; display: flex; flex-direction: column; align-items: center; gap: 1.1rem;
-    }
-    #room-lobby .party-list { flex-wrap: wrap; overflow: visible; }
-    #room-lobby .party-card { max-width: 84px; flex: 0 1 84px; }
-    #room-lobby #hero-section-lbl, #room-lobby .result-box { display: none; }
-    /* ── Screen identity ──────────────────────────────────────────────────
-       The lobby and the board were built from the same parts and read as the same
-       place. Each screen now names itself and carries its own accent: purple for the
-       lobby, the game's own colour once you're on the board. */
-    #room-lobby { --screen: var(--plinko); }
+    #spin-room .party-list { flex-wrap: wrap; overflow: visible; }
+    #spin-room .party-card { max-width: 84px; flex: 0 1 84px; }
+    #spin-room #hero-section-lbl { display: none; }
+    /* The screen takes the accent of whichever game is loaded. */
     #spin-room  { --screen: var(--orange); }
     #spin-room[data-game="easy"]     { --screen: var(--cyan); }
     #spin-room[data-game="blackout"] { --screen: var(--dps); }
     #spin-room[data-game="race"]     { --screen: var(--race); }
     #spin-room[data-game="plinko"]   { --screen: var(--plinko); }
 
-    .screen-head {
-      width: 100%; display: flex; flex-direction: column; gap: .15rem;
-      padding: .55rem 0 .6rem .8rem; position: relative;
-    }
-    .screen-head::before {
-      content: ''; position: absolute; left: 0; top: .3rem; bottom: .3rem; width: 3px;
-      border-radius: 2px; background: var(--screen); box-shadow: 0 0 10px var(--screen);
-    }
-    .screen-line { display: flex; align-items: baseline; gap: .5rem; flex-wrap: wrap; }
-    .screen-kicker {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: .58rem; letter-spacing: 3px; text-transform: uppercase; color: var(--dim);
+    /* One header per screen, carrying both the room controls and the identity, so the
+       page stops opening with two stacked headers that both say ROOM. */
+    .screen-head { width: 100%; display: flex; flex-direction: column; gap: .7rem; }
+    .head-util { width: 100%; }
+    .head-util .top-bar { margin: 0; }
+    #player-tag { display: none; }      /* the roster already says which one is you */
+    .head-id { position: relative; padding-left: .85rem; display: flex; flex-direction: column; gap: .1rem; }
+    .head-id::before {
+      content: ''; position: absolute; left: 0; top: .15rem; bottom: .15rem; width: 3px;
+      border-radius: var(--r-xs); background: var(--screen); box-shadow: 0 0 10px var(--screen);
     }
     .screen-name {
       margin: 0; font-family: 'Bebas Neue', sans-serif; font-weight: 400;
-      font-size: 1.75rem; line-height: 1; letter-spacing: 3px;
+      font-size: 1.75rem; line-height: 1; letter-spacing: var(--tr-wide);
       color: var(--screen); text-transform: uppercase;
     }
     .screen-sub {
       margin: 0; font-family: 'Barlow Condensed', sans-serif;
-      font-size: .72rem; letter-spacing: .5px; color: var(--dim);
+      font-size: .72rem; letter-spacing: var(--tr-tight); color: var(--dim);
     }
-    .screen-sub strong { color: var(--text); }
 
-    /* ── Type scale ───────────────────────────────────────────────────────
-       Three levels where there used to be one, so a panel header, a section label and
-       a hint stop competing at the same volume. */
-    .section-lbl {
-      font-size: .64rem; letter-spacing: 3px; text-transform: uppercase;
-      color: var(--dim); width: 100%; text-align: left; margin: 0; opacity: .85;
+    /* ── One way of grouping things ───────────────────────────────────────
+       The lobby used to mix a bordered panel, bare labelled groups and a naked button
+       in one column, so nothing read as a rule. Everything is now a labelled section
+       under a hairline, and no section is a box. */
+    .section-lbl, .party-header, .history-header {
+      width: 100%; margin: 0; display: flex; align-items: center; justify-content: space-between;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: .62rem; letter-spacing: var(--tr-wide); text-transform: uppercase; color: var(--dim);
+      padding: 0 0 .35rem; border-bottom: var(--bw-hair) solid var(--border); opacity: .9;
     }
-    .party-title, .history-title {
-      font-size: .6rem; letter-spacing: 2.5px; text-transform: uppercase; color: var(--dim);
+    #spin-room .party-panel, #spin-room .history-panel {
+      background: none; border: none; border-radius: 0; overflow: visible; width: 100%;
     }
-    .party-empty, .history-empty { font-size: .7rem; letter-spacing: 1px; opacity: .55; padding: 1rem; }
+    #spin-room .party-list { padding: .55rem 0 0; }
+    #party-count { display: none; }     /* the header line already gives the count */
+    .party-empty, .history-empty { font-size: .7rem; letter-spacing: var(--tr-mid); opacity: .5; padding: .9rem 0; }
+    .history-header { cursor: pointer; list-style: none; }
+    .history-header::-webkit-details-marker { display: none; }
+    .history-header::after { content: '+'; font-size: .9rem; opacity: .7; }
+    details[open] > .history-header::after { content: '2'; }
 
-    /* The roster is the subject of the lobby, so it gets the emphasis and everything
-       else steps back to being a setting. */
-    #room-lobby .party-panel { border-color: var(--border2); }
-    #room-lobby .party-header { padding: .5rem .9rem; }
-    #room-lobby .roles { gap: .4rem; }
-    #room-lobby .role-btn { padding: .5rem 0; font-size: .8rem; }
-    #room-lobby .role-btn .ri { font-size: .95rem; }
-    #room-lobby .mode-btn { padding: .45rem 0; font-size: .88rem; }
-    /* History is reference, not part of the flow: fold it away by default. */
-    #room-lobby .history-panel { opacity: .75; }
-    /* In the lobby this is a caption telling you what happens next, not a panel that
-       deserves as much room as the roster. */
-    #room-lobby .gs-note {
-      padding: 0; background: none; border: none;
-      font-size: .68rem; letter-spacing: .5px; text-align: left; opacity: .8;
-    }
-    #lobby-foot { gap: .6rem; }
-    #ad-toggle-wrap { padding: .4rem 0 0; opacity: .4; transition: opacity .2s; }
+
+    /* ── Rhythm ───────────────────────────────────────────────────────────
+       Everything sat at one gap, so a label was as far from its own control as one
+       group was from the next. Tight inside a group, wide between them. */
+    #lobby-body { gap: .5rem; }
+    #lobby-body > .section-lbl, #lobby-body > .party-panel { margin-top: 1.1rem; }
+    #lobby-body > *:first-child { margin-top: 0; }
+    #lobby-foot { gap: .5rem; margin-top: 1.1rem; }
+    #ad-toggle-wrap { padding: .2rem 0 0; opacity: .35; transition: opacity .2s; }
     #ad-toggle-wrap:hover { opacity: 1; }
+
+    #spin-room .roles { gap: .4rem; }
+    #spin-room .role-btn { padding: .5rem 0; font-size: .8rem; }
+    #spin-room .role-btn .ri { font-size: .95rem; }
+    #spin-room .gs-note {
+      padding: 0; background: none; border: none;
+      font-size: .68rem; letter-spacing: var(--tr-tight); text-align: left; opacity: .8;
+    }
+
+    /* The one thing you came to press should not be below three sections of settings. */
+    /* ── Round focus ──────────────────────────────────────────────────────
+       When a round is live the settings step back and the roster takes over. Other
+       players stay visible and still running — seeing what they pull is the point —
+       just dimmed, so your own card is the thing your eye lands on. */
+    /* Dimmed, never collapsed. Zeroing these out left the board alone on screen with no
+       way back to the pickers — hiding the rest of the page is still a separate page.
+       Applied as a class from JS: the shared selector list this replaced did not apply
+       reliably, and one class on one element has nothing to get wrong. */
+    .round-dimmed { opacity: .4 !important; transition: opacity .3s ease; }
+    #spin-room.round-live .mode-toggle { pointer-events: none; }
+    /* ── The board opens and folds away ───────────────────────────────────
+       The round's board is temporary: it unfurls when the gates open and folds shut once
+       the finish has registered, so you never navigate away from it. The fold is a grid
+       row so it animates to the content's real height — max-height cannot interpolate
+       to `none`, which is why the previous version snapped in both directions. */
+    .stage-fold {
+      width: 100%; display: grid; grid-template-rows: 0fr;
+      transition: grid-template-rows .55s cubic-bezier(.16,.84,.28,1);
+    }
+    .stage-fold > * { overflow: hidden; min-height: 0; }
+    #spin-room.fold-open .stage-fold { grid-template-rows: 1fr; }
+
+    /* The board itself arrives with a bit of weight: drops in, overshoots, settles. */
+    #spin-room.stage-open #group-stage.active > * { animation: stage-drop .5s cubic-bezier(.18,.9,.24,1.08) backwards; }
+    @keyframes stage-drop {
+      0%   { opacity: 0; transform: translateY(-18px) scale(.94); }
+      70%  { opacity: 1; transform: translateY(3px) scale(1.01); }
+      100% { opacity: 1; transform: none; }
+    }
+    /* Lane groups and plinko rows come in one after another rather than all at once. */
+    #spin-room.stage-open .gs-race-group,
+    #spin-room.stage-open .gs-player { animation: lane-in .42s cubic-bezier(.2,.85,.25,1) backwards; }
+    #spin-room.stage-open .gs-race-group:nth-child(n)   { animation-delay: .10s; }
+    #spin-room.stage-open .gs-race-group:nth-child(n+2) { animation-delay: .18s; }
+    #spin-room.stage-open .gs-race-group:nth-child(n+3) { animation-delay: .26s; }
+    @keyframes lane-in {
+      from { opacity: 0; transform: translateX(-14px); }
+      to   { opacity: 1; transform: none; }
+    }
+    /* One pulse of the game's accent as it opens, so the board announces itself. */
+    #spin-room.stage-open #group-stage.active { animation: stage-flash .6s ease-out; }
+    @keyframes stage-flash {
+      0%   { filter: drop-shadow(0 0 0 transparent); }
+      35%  { filter: drop-shadow(0 0 16px var(--screen)); }
+      100% { filter: drop-shadow(0 0 0 transparent); }
+    }
+    /* On the way out the contents dim and lift slightly before the row closes under them. */
+    #spin-room.stage-closing #group-stage { opacity: .5; transform: translateY(-4px); transition: opacity .4s ease, transform .4s ease; }
+    #spin-room:not(.fold-open) #group-stage { opacity: 0; transform: translateY(-10px) scale(.97); transition: opacity .3s ease, transform .4s ease; }
+
+    /* No result yet, so the box must not hold its 52px open. The moment there IS one it
+       gets its height back — collapsing your own result while the round is still live
+       for everyone else squashed the payoff to an unreadable sliver. */
+    #spin-room.stage-open .result-box:not(.has-result) { min-height: 0; }
+    #spin-room.round-live #room-body { gap: var(--sp-3); }
+    .party-card { transition: opacity .35s ease, transform .35s ease, filter .35s ease; }
+    #spin-room.round-live .party-card:not(.is-you) { opacity: .5; filter: saturate(.55); }
+    #spin-room.round-live .party-card.is-you { transform: scale(1.08); }
+    #spin-room.round-live .party-card.is-you .party-portrait {
+      border-color: var(--screen);
+      box-shadow: 0 0 22px var(--screen), 0 0 44px hsl(0 0% 0% / .5);
+    }
+    #spin-room.round-live .party-header { opacity: .35; transition: opacity .35s ease; }
+    /* Once a round is running the roster's job is to show live faces, not roles and
+       labels. It shrinks to a strip so the board gets the screen. */
+    #spin-room.round-live .party-card { max-width: 62px; flex: 0 1 62px; gap: 2px; }
+    #spin-room.round-live .party-role-badge { display: none; }
+    #spin-room.round-live .party-name     { font-size: .58rem; }
+    #spin-room.round-live .party-hero-lbl { font-size: .54rem; }
+    #spin-room.round-live .party-list     { padding-top: var(--sp-2); }
+
+    .screen-action {
+      position: sticky; bottom: var(--install-h, 0px); width: 100%; z-index: 5;
+      padding: var(--sp-3) 0 var(--sp-4);
+      /* Solid, not a part-transparent gradient: whatever scrolls under a pinned button
+         must not read through it. The fade lives above the button instead. */
+      background: var(--bg);
+    }
+    .screen-action::before {
+      content: ''; position: absolute; left: 0; right: 0; bottom: 100%;
+      height: var(--sp-5); pointer-events: none;
+      background: linear-gradient(to top, var(--bg), transparent);
+    }
+
 
     /* The board is the subject of the game page; nothing else may crowd it. */
     #spin-room .slot-outer { gap: .35rem; }
     #spin-room #hero-section-lbl { display: none; }
-    .back-to-lobby {
-      background: none; border: none; color: var(--dim); padding: 0;
-      font-family: 'Barlow Condensed', sans-serif; font-size: .68rem; letter-spacing: 2px;
-      text-transform: uppercase; cursor: pointer; transition: color .2s;
-    }
-    .back-to-lobby:hover { color: var(--screen); }
-
-    .lobby-go-btn {
-      width: 100%; padding: .9rem; background: transparent;
-      border: 2.5px solid var(--plinko); border-radius: 12px;
-      font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; letter-spacing: 4px;
-      color: var(--plinko); cursor: pointer; transition: background .2s, box-shadow .2s, opacity .2s;
-    }
-    .lobby-go-btn:hover:not(:disabled) { background: rgba(179,136,255,.12); box-shadow: 0 0 18px rgba(179,136,255,.35); }
-    .lobby-go-btn:disabled { opacity: .5; cursor: default; }
-    .lobby-go-btn.solo { border-color: var(--orange); color: var(--orange); }
-    .lobby-go-btn.solo:hover:not(:disabled) { background: rgba(255,107,43,.12); box-shadow: 0 0 18px rgba(255,107,43,.35); }
-    .tag { background: var(--surf); border: 1px solid var(--border); border-radius: 8px; padding: .35rem .85rem; font-size: .78rem; letter-spacing: 1px; }
+    .tag { background: var(--surf); border: var(--bw-hair) solid var(--border); border-radius: var(--r-sm); padding: .35rem .85rem; font-size: .78rem; letter-spacing: var(--tr-mid); }
     .tag.room { color: var(--dim); flex-shrink: 0; }
-    .tag.room strong { color: var(--cyan); font-family: 'Bebas Neue', sans-serif; font-size: .95rem; letter-spacing: 5px; margin-left: 4px; }
+    .tag.room strong { color: var(--cyan); font-family: 'Bebas Neue', sans-serif; font-size: .95rem; letter-spacing: var(--tr-caps); margin-left: 4px; }
     .tag.player {
       font-weight: 700; font-size: .9rem; color: var(--orange);
       min-width: 0; flex-shrink: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -273,35 +371,37 @@
     /* An unlabelled emoji was carrying the single biggest behaviour switch in the app. */
     .group-toggle-btn {
       flex-shrink: 0; display: flex; align-items: center; gap: .3rem;
-      background: var(--surf); border: 1.5px solid var(--border); border-radius: 8px;
+      background: var(--surf); border: var(--bw-edge) solid var(--border); border-radius: var(--r-sm);
       padding: .3rem .5rem; line-height: 1; cursor: pointer;
       color: var(--dim); transition: all .15s;
     }
     .group-toggle-btn .gt-icon { font-size: .8rem; }
     .group-toggle-btn .gt-lbl {
       font-family: 'Barlow Condensed', sans-serif;
-      font-size: .62rem; letter-spacing: 1.5px; text-transform: uppercase;
+      font-size: .62rem; letter-spacing: var(--tr-mid); text-transform: uppercase;
     }
     .group-toggle-btn:hover { border-color: var(--plinko); }
     .group-toggle-btn.active {
       border-color: var(--plinko); color: var(--plinko); background: rgba(179,136,255,.12);
       box-shadow: 0 0 10px rgba(179,136,255,.35);
     }
-    .btn-back { flex-shrink: 0; background: none; border: none; color: var(--dim); font-family: 'Barlow Condensed', sans-serif; font-size: .85rem; letter-spacing: 1px; cursor: pointer; transition: color .2s; }
+    .btn-back { flex-shrink: 0; background: none; border: none; color: var(--dim); font-family: 'Barlow Condensed', sans-serif; font-size: .85rem; letter-spacing: var(--tr-mid); cursor: pointer; transition: color .2s; }
     .btn-back:hover { color: var(--orange); }
 
     /* MODE TOGGLE */
+    /* Five across at 67px on a phone left BLACKOUT barely fitting, and that was before
+       the dots went underneath. A 3+2 grid gives the labels and the dots room. */
     .mode-toggle {
-      display: flex; width: 100%;
-      background: var(--surf); border: 1px solid var(--border); border-radius: 10px;
-      overflow: hidden;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: .4rem; width: 100%;
+      background: none; border: none; border-radius: 0; overflow: visible;
     }
     .mode-btn {
-      flex: 1; padding: .55rem 0; border: none; background: transparent;
-      font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 2px;
+      padding: .5rem .2rem; border: var(--bw-edge) solid var(--border); border-radius: var(--r-md);
+      background: var(--surf);
+      font-family: 'Bebas Neue', sans-serif; font-size: .95rem; letter-spacing: var(--tr-mid);
       color: var(--dim); cursor: pointer; transition: all .15s; position: relative;
     }
-    .mode-btn + .mode-btn { border-left: 1px solid var(--border); }
+    .mode-btn:hover { border-color: var(--border2); }
     .mode-btn.active[data-mode="normal"]    { background: rgba(255,107,43,.12); color: var(--orange); }
     .mode-btn.active[data-mode="easy"]      { background: rgba(0,216,255,.1);   color: var(--cyan);   }
     .mode-btn.active[data-mode="blackout"]  { background: rgba(255,74,74,.1);   color: var(--dps);    }
@@ -325,7 +425,7 @@
     .group-toggle-btn.forced { border-color: var(--plinko); color: var(--plinko); cursor: default; opacity: .85; }
     .mode-note {
       display: none; width: 100%; margin: 0;
-      font-size: .58rem; letter-spacing: 1.2px; text-transform: uppercase;
+      font-size: .58rem; letter-spacing: var(--tr-mid); text-transform: uppercase;
       color: var(--dim); text-align: left; opacity: .75;
     }
     .mode-note.show { display: block; }
@@ -340,7 +440,7 @@
     /* Role Buttons */
     .roles { display: grid; grid-template-columns: repeat(4, 1fr); gap: .5rem; width: 100%; }
     .role-btn {
-      background: var(--surf); border: 2px solid var(--border); border-radius: 10px;
+      background: var(--surf); border: var(--bw-edge) solid var(--border); border-radius: var(--r-md);
       color: var(--dim); font-family: 'Barlow Condensed', sans-serif;
       font-size: .88rem; font-weight: 700; text-transform: uppercase;
       padding: .6rem 0; cursor: pointer;
@@ -356,7 +456,7 @@
     /* Slot Machine */
     .slot-outer { width: 100%; display: flex; flex-direction: column; align-items: center; gap: .5rem; }
     .slot-frame {
-      width: 230px; height: 230px; border: 3px solid var(--border2); border-radius: 18px;
+      width: 230px; height: 230px; border: var(--bw-loud) solid var(--border2); border-radius: var(--r-lg);
       overflow: hidden; position: relative; background: var(--surf);
       transition: border-color .3s, box-shadow .3s, width .45s ease; flex-shrink: 0;
       max-width: 100%;
@@ -384,17 +484,19 @@
     .result-box { min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; transition: min-height .3s ease; }
     .result-box.has-result { min-height: 52px; }
     .result-name {
-      font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 3px; color: var(--cyan);
+      font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: var(--tr-wide); color: var(--cyan);
       opacity: 0; transform: translateY(8px); transition: opacity .35s ease, transform .35s ease;
     }
     .result-name.show { opacity: 1; transform: none; }
-    .result-role-lbl { font-size: .72rem; letter-spacing: 3px; text-transform: uppercase; opacity: 0; transition: opacity .35s ease .1s; }
+    .result-role-lbl { font-size: .72rem; letter-spacing: var(--tr-wide); text-transform: uppercase; opacity: 0; transition: opacity .35s ease .1s; }
     .result-role-lbl.show { opacity: 1; }
 
     /* EASY MODE CARDS — dealer flip */
     #easy-cards {
-      display: none; width: 100%; gap: .75rem; justify-content: center;
+      display: none; width: 100%; gap: var(--sp-4); justify-content: center;
       min-height: 150px; align-items: center;
+      background: var(--surf); border: var(--bw-edge) solid var(--border2);
+      border-radius: var(--r-lg); padding: var(--sp-3);
     }
     #easy-cards.visible { display: flex; }
 
@@ -412,27 +514,27 @@
       width: 100%; height: 100%; position: relative;
       transform-style: preserve-3d;
       transition: transform .48s cubic-bezier(.4,0,.2,1);
-      border-radius: 14px;
+      border-radius: var(--r-lg);
     }
     .card-flip-wrapper.flipped .card-inner { transform: rotateY(180deg); }
 
     /* Both faces */
     .card-back, .card-front {
-      position: absolute; inset: 0; border-radius: 14px;
+      position: absolute; inset: 0; border-radius: var(--r-lg);
       backface-visibility: hidden; -webkit-backface-visibility: hidden;
       overflow: hidden;
     }
 
     /* Back: off-white playing card */
     .card-back {
-      background: #ede8dc; border: 2px solid #c0b49a;
+      background: #ede8dc; border: var(--bw-edge) solid #c0b49a;
       display: flex; align-items: center; justify-content: center;
     }
     .card-back img { width: 52%; opacity: .35; }
 
     /* Front: hero portrait */
     .card-front {
-      background: var(--surf2); border: 2.5px solid var(--border2);
+      background: var(--surf2); border: var(--bw-loud) solid var(--border2);
       transform: rotateY(180deg);
       transition: border-color .2s, box-shadow .2s;
     }
@@ -440,7 +542,7 @@
     .card-front .card-name {
       position: absolute; bottom: 0; left: 0; right: 0;
       background: linear-gradient(transparent, rgba(0,0,0,.85));
-      font-family: 'Bebas Neue', sans-serif; font-size: .8rem; letter-spacing: 1px;
+      font-family: 'Bebas Neue', sans-serif; font-size: .8rem; letter-spacing: var(--tr-mid);
       color: #fff; text-align: center; padding: .4rem .3rem .3rem;
     }
     .card-front .card-fallback {
@@ -464,14 +566,14 @@
 
     /* RACE MODE */
     #race-track {
-      display: none; flex-direction: column; gap: .4rem;
-      width: 100%; background: var(--surf); border: 2px solid var(--border2);
-      border-radius: 16px; padding: .8rem;
+      display: none; flex-direction: column; gap: var(--sp-2);
+      width: 100%; background: var(--surf); border: var(--bw-edge) solid var(--border2);
+      border-radius: var(--r-lg); padding: var(--sp-3);
     }
     #race-track.active { display: flex; }
     .race-lane {
       position: relative; height: 38px; background: var(--surf2);
-      border-radius: 8px; overflow: hidden;
+      border-radius: var(--r-sm); overflow: hidden;
     }
     .race-lane::after {
       content: ''; position: absolute; top: 0; right: 6px; bottom: 0; width: 3px;
@@ -481,7 +583,7 @@
     .race-runner {
       position: absolute; top: 2px; left: 2px; width: 34px; height: 34px;
       border-radius: 50%; overflow: hidden; background: var(--surf);
-      border: 2px solid var(--border2);
+      border: var(--bw-edge) solid var(--border2);
       display: flex; align-items: center; justify-content: center;
       will-change: left; z-index: 1;
     }
@@ -544,8 +646,8 @@
     .gs-race.aiming .gs-place-lane  { opacity: 1; }
     .gs-race.aiming .gs-place-ghost { opacity: .65; }
     .gs-place-lane {
-      height: 32px; border-radius: 8px;
-      background: rgba(255,210,74,.16); border: 2px solid rgba(255,210,74,.85);
+      height: 32px; border-radius: var(--r-sm);
+      background: rgba(255,210,74,.16); border: var(--bw-edge) solid rgba(255,210,74,.85);
       box-shadow: inset 0 0 16px rgba(255,210,74,.25), 0 0 12px rgba(255,210,74,.35);
     }
     .gs-place-ghost { width: 20px; height: 20px; font-size: 15px; line-height: 20px; text-align: center; }
@@ -553,7 +655,7 @@
 
     /* Walls players string between two pegs: solid for the whole round, never consumed. */
     .plinko-wall {
-      position: absolute; border-radius: 4px; z-index: 2; pointer-events: none;
+      position: absolute; border-radius: var(--r-xs); z-index: 2; pointer-events: none;
       background: linear-gradient(180deg, #ffd24a, #e8901d);
       box-shadow: 0 0 8px rgba(255,210,74,.55);
     }
@@ -579,11 +681,11 @@
     .gs-race.placing:focus-visible { outline: 2px solid var(--any); outline-offset: 3px; }
     .gs-place-bar {
       display: flex; align-items: center; flex-wrap: wrap; gap: .35rem .6rem; width: 100%;
-      font-size: .62rem; letter-spacing: 1.4px; text-transform: uppercase; color: var(--dim);
+      font-size: .62rem; letter-spacing: var(--tr-mid); text-transform: uppercase; color: var(--dim);
     }
     .gs-place-meter { min-width: 90px; }
     .gs-place-bar .gs-place-count { color: var(--any); }
-    .gs-place-meter { flex: 1; height: 4px; border-radius: 2px; background: var(--surf2); overflow: hidden; }
+    .gs-place-meter { flex: 1; height: 4px; border-radius: var(--r-xs); background: var(--surf2); overflow: hidden; }
     .gs-place-fill { height: 100%; width: 100%; background: var(--any); transform-origin: left center; }
     @keyframes horse-bob {
       0%, 100% { transform: translateY(0) rotate(0deg); }
@@ -596,19 +698,19 @@
     }
     .race-name-tag {
       position: absolute; left: 40px; top: 50%; transform: translateY(-50%);
-      font-size: .68rem; letter-spacing: .5px; color: var(--dim);
+      font-size: .68rem; letter-spacing: var(--tr-tight); color: var(--dim);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: calc(100% - 50px);
     }
 
     /* PLINKO MODE */
     #plinko-board {
-      display: none; flex-direction: column; gap: .6rem;
-      width: 100%; background: var(--surf); border: 2px solid var(--border2);
-      border-radius: 16px; padding: .8rem .5rem;
+      display: none; flex-direction: column; gap: var(--sp-3);
+      width: 100%; background: var(--surf); border: var(--bw-edge) solid var(--border2);
+      border-radius: var(--r-lg); padding: var(--sp-3);
     }
     #plinko-board.active { display: flex; }
     .plinko-rail-hint {
-      font-size: .62rem; letter-spacing: 1.5px; text-transform: uppercase;
+      font-size: .62rem; letter-spacing: var(--tr-mid); text-transform: uppercase;
       text-align: center; color: var(--dim);
     }
     .plinko-rail { position: relative; width: 100%; height: 26px; cursor: pointer; touch-action: none; }
@@ -650,16 +752,16 @@
     .plinko-slots { display: flex; width: 100%; gap: 2px; }
     .plinko-slot {
       flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px;
-      background: var(--surf2); border: 2px solid var(--border2); border-radius: 8px;
+      background: var(--surf2); border: var(--bw-edge) solid var(--border2); border-radius: var(--r-sm);
       padding: .25rem .1rem; transition: border-color .2s, box-shadow .2s;
     }
-    .plinko-slot img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 6px; display: block; }
+    .plinko-slot img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--r-sm); display: block; }
     .plinko-slot .ps-fallback {
       width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
-      font-family: 'Bebas Neue', sans-serif; color: var(--dim); background: var(--surf2); border-radius: 6px;
+      font-family: 'Bebas Neue', sans-serif; color: var(--dim); background: var(--surf2); border-radius: var(--r-sm);
     }
     .plinko-slot .ps-name {
-      font-size: .58rem; letter-spacing: .3px; color: var(--dim); text-align: center;
+      font-size: .58rem; letter-spacing: var(--tr-tight); color: var(--dim); text-align: center;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;
     }
     .plinko-slot.winner { border-color: var(--cyan); box-shadow: 0 0 14px rgba(0,216,255,.6); }
@@ -668,28 +770,28 @@
     #group-stage { display: none; width: 100%; flex-direction: column; gap: .7rem; align-items: center; }
     #group-stage.active { display: flex; }
     .gs-plinko {
-      display: flex; flex-direction: column; gap: .6rem;
-      width: 100%; background: var(--surf); border: 2px solid var(--border2);
-      border-radius: 16px; padding: .8rem .5rem;
+      display: flex; flex-direction: column; gap: var(--sp-3);
+      width: 100%; background: var(--surf); border: var(--bw-edge) solid var(--border2);
+      border-radius: var(--r-lg); padding: var(--sp-3);
     }
     .gs-note {
-      width: 100%; font-size: .8rem; letter-spacing: 1px; color: var(--dim); text-align: center;
-      padding: 1.2rem; background: var(--surf); border: 1px solid var(--border); border-radius: 14px;
+      width: 100%; font-size: .8rem; letter-spacing: var(--tr-mid); color: var(--dim); text-align: center;
+      padding: 1.2rem; background: var(--surf); border: var(--bw-hair) solid var(--border); border-radius: var(--r-lg);
     }
     .gs-players { display: flex; flex-wrap: wrap; gap: .6rem; justify-content: center; width: 100%; }
     .gs-player {
       flex: 1 1 140px; max-width: 220px; min-width: 0;
-      background: var(--surf); border: 2px solid hsl(var(--ph) 70% 55% / .5); border-radius: 14px;
+      background: var(--surf); border: var(--bw-edge) solid hsl(var(--ph) 70% 55% / .5); border-radius: var(--r-lg);
       padding: .6rem; display: flex; flex-direction: column; align-items: center; gap: .4rem;
     }
     .gs-player.me { box-shadow: 0 0 14px hsl(var(--ph) 80% 60% / .35); }
     .gs-player-name {
-      font-size: .75rem; font-weight: 700; letter-spacing: 1px; color: hsl(var(--ph) 80% 70%);
+      font-size: .75rem; font-weight: 700; letter-spacing: var(--tr-mid); color: hsl(var(--ph) 80% 70%);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
     }
-    .gs-player-result { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 2px; color: var(--cyan); min-height: 1.2em; text-align: center; }
+    .gs-player-result { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: var(--tr-wide); color: var(--cyan); min-height: 1.2em; text-align: center; }
     .gs-frame {
-      position: relative; overflow: hidden; border: 3px solid var(--border2); border-radius: 14px;
+      position: relative; overflow: hidden; border: var(--bw-loud) solid var(--border2); border-radius: var(--r-lg);
       background: var(--surf2); transition: border-color .3s, box-shadow .3s; flex-shrink: 0;
     }
     .gs-frame.spinning { border-color: var(--orange); box-shadow: 0 0 18px rgba(255,107,43,.4); }
@@ -700,14 +802,14 @@
     .gs-hand .card-front .card-name { font-size: .6rem; padding: .25rem .2rem .2rem; }
     .gs-race {
       position: relative;
-      width: 100%; background: var(--surf); border: 2px solid var(--border2); border-radius: 16px;
-      padding: .6rem; display: flex; flex-direction: column; gap: .5rem;
+      width: 100%; background: var(--surf); border: var(--bw-edge) solid var(--border2); border-radius: var(--r-lg);
+      padding: var(--sp-3); display: flex; flex-direction: column; gap: var(--sp-3);
     }
     .gs-race-group { position: relative; width: 100%; --gate: 70px; }
-    .gs-lane { position: absolute; left: 0; right: var(--gate); height: 32px; background: var(--surf2); border-radius: 8px; }
+    .gs-lane { position: absolute; left: 0; right: var(--gate); height: 32px; background: var(--surf2); border-radius: var(--r-sm); }
     .gs-gate {
       position: absolute; right: 0; top: 0; bottom: 0; width: calc(var(--gate) - 6px);
-      border: 2px dashed hsl(var(--ph) 70% 60%); border-radius: 10px;
+      border: var(--bw-edge) dashed hsl(var(--ph) 70% 60%); border-radius: var(--r-md);
       display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
       background: hsl(var(--ph) 70% 55% / .08); transition: background .3s, box-shadow .3s;
     }
@@ -727,7 +829,7 @@
       font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; color: var(--dps);
     }
     .gs-cap {
-      position: absolute; bottom: 0; height: 6px; border-radius: 3px; opacity: .75;
+      position: absolute; bottom: 0; height: 6px; border-radius: var(--r-xs); opacity: .75;
       background: repeating-linear-gradient(90deg, var(--dps) 0 6px, #0a0a0a 6px 12px);
     }
     .plinko-chip.waiting { animation: plinko-squash .6s ease-in-out infinite; }
@@ -738,20 +840,20 @@
 
     /* BLACKOUT EXHAUSTED */
     #blackout-exhausted {
-      display: none; width: 100%; padding: 1.4rem;
-      background: rgba(255,74,74,.08); border: 1px solid rgba(255,74,74,.3);
-      border-radius: 14px; text-align: center;
+      display: none; width: 100%; padding: var(--sp-5);
+      background: rgba(255,74,74,.1); border: var(--bw-hair) solid rgba(255,74,74,.35);
+      border-radius: var(--r-lg); text-align: center;
     }
     #blackout-exhausted.visible { display: block; }
-    .exhausted-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 3px; color: var(--dps); }
-    .exhausted-sub { font-size: .82rem; color: var(--dim); letter-spacing: 1px; margin-top: .3rem; }
+    .exhausted-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: var(--tr-wide); color: var(--dps); }
+    .exhausted-sub { font-size: .82rem; color: var(--dim); letter-spacing: var(--tr-mid); margin-top: .3rem; }
     .blackout-remaining {
-      font-size: .72rem; letter-spacing: 2px; color: var(--dim);
+      font-size: .72rem; letter-spacing: var(--tr-wide); color: var(--dim);
       text-align: center; width: 100%;
     }
     .blackout-remaining span { color: var(--dps); font-weight: 700; }
     .group-ready-status {
-      font-size: .72rem; letter-spacing: 2px; color: var(--dim);
+      font-size: .72rem; letter-spacing: var(--tr-wide); color: var(--dim);
       text-align: center; width: 100%; text-transform: uppercase;
     }
     .group-ready-status strong { color: var(--plinko); }
@@ -763,9 +865,9 @@
     }
     .spin-btn {
       flex: 1; padding: .9rem; background: transparent;
-      border: 2.5px solid var(--orange); border-radius: 12px;
+      border: var(--bw-loud) solid var(--orange); border-radius: var(--r-md);
       color: var(--orange); font-family: 'Bebas Neue', sans-serif;
-      font-size: 1.6rem; letter-spacing: 4px; cursor: pointer;
+      font-size: 1.6rem; letter-spacing: var(--tr-caps); cursor: pointer;
       position: relative; overflow: hidden; transition: color .2s, border-color .2s, transform .1s, flex .35s ease;
     }
     .spin-btn::before {
@@ -798,9 +900,9 @@
     /* Lock-in button — shares the row */
     #lock-in-btn {
       flex: 0; width: 0; padding: .9rem 0; overflow: hidden; white-space: nowrap;
-      background: transparent; border: 2.5px solid var(--cyan); border-radius: 12px;
+      background: transparent; border: var(--bw-loud) solid var(--cyan); border-radius: var(--r-md);
       color: var(--cyan); font-family: 'Bebas Neue', sans-serif;
-      font-size: 1.1rem; letter-spacing: 2px; cursor: pointer;
+      font-size: 1.1rem; letter-spacing: var(--tr-wide); cursor: pointer;
       position: relative; overflow: hidden;
       transition: flex .35s ease, width .35s ease, padding .35s ease, color .2s;
       opacity: 0;
@@ -819,18 +921,18 @@
     }
 
     /* PARTY PANEL */
-    .party-panel { width: 100%; background: var(--surf); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
-    .party-header { display: flex; align-items: center; justify-content: space-between; padding: .6rem 1rem; border-bottom: 1px solid var(--border); }
-    .party-title { font-size: .7rem; letter-spacing: 4px; text-transform: uppercase; color: var(--dim); }
-    .party-count { font-family: 'Bebas Neue', sans-serif; font-size: .95rem; letter-spacing: 2px; color: var(--cyan); }
+    .party-panel { width: 100%; background: var(--surf); border: var(--bw-hair) solid var(--border); border-radius: var(--r-lg); overflow: hidden; }
+    .party-header { display: flex; align-items: center; justify-content: space-between; padding: .6rem 1rem; border-bottom: var(--bw-hair) solid var(--border); }
+    .party-title { font-size: .7rem; letter-spacing: var(--tr-caps); text-transform: uppercase; color: var(--dim); }
+    .party-count { font-family: 'Bebas Neue', sans-serif; font-size: .95rem; letter-spacing: var(--tr-wide); color: var(--cyan); }
     .party-list { padding: .6rem; display: flex; flex-wrap: nowrap; gap: .4rem; justify-content: center; overflow: hidden; }
     .party-card { display: flex; flex-direction: column; align-items: center; gap: .3rem; flex: 1; min-width: 0; max-width: 90px; }
     .party-portrait {
-      width: 100%; aspect-ratio: 1; border: 2px solid var(--border2); border-radius: 12px;
+      width: 100%; aspect-ratio: 1; border: var(--bw-edge) solid var(--border2); border-radius: var(--r-md);
       overflow: visible; background: var(--surf2);
       position: relative; transition: border-color .3s, box-shadow .3s;
     }
-    .party-portrait img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 10px; }
+    .party-portrait img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: var(--r-md); }
     .party-card.is-you .party-portrait    { border-color: var(--orange); box-shadow: 0 0 12px rgba(255,107,43,.3); }
     .party-card.duplicate .party-portrait { border-color: var(--dps);   box-shadow: 0 0 14px rgba(255,74,74,.35); }
     @keyframes flicker-pulse {
@@ -840,15 +942,16 @@
     .party-portrait.flickering { border-color: var(--cyan); animation: flicker-pulse .5s ease-in-out infinite; }
     .portrait-placeholder {
       width: 100%; height: 100%; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; gap: 6px; background: var(--surf2); border-radius: 10px;
+      align-items: center; justify-content: center; gap: 6px; background: var(--surf2); border-radius: var(--r-md);
     }
     .portrait-initial { font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; color: var(--border2); line-height: 1; }
-    .party-name { font-size: .82rem; font-weight: 700; letter-spacing: .5px; text-align: center; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
+    .party-name { font-size: .82rem; font-weight: 700; letter-spacing: var(--tr-tight); text-align: center; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
     .party-name.you { color: var(--orange); }
-    .party-hero-lbl { font-size: .65rem; letter-spacing: 1px; text-align: center; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
+    .party-hero-lbl { font-size: .65rem; letter-spacing: var(--tr-mid); text-align: center; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
     .party-hero-lbl.resolved { color: var(--cyan); }
     .party-hero-lbl.dup      { color: var(--dps); }
-    .party-role-badge { font-size: .6rem; letter-spacing: 2px; text-transform: uppercase; padding: .1rem .4rem; border-radius: 4px; border: 1px solid; }
+    .party-hero-lbl.waiting { opacity: .3; font-style: italic; }
+    .party-role-badge { font-size: .6rem; letter-spacing: var(--tr-wide); text-transform: uppercase; padding: .1rem .4rem; border-radius: var(--r-xs); border: var(--bw-hair) solid; }
     .party-role-badge.tank    { color: var(--tank);  border-color: var(--tank);  background: rgba(91,158,255,.08); }
     .party-role-badge.damage  { color: var(--dps);   border-color: var(--dps);   background: rgba(255,74,74,.08); }
     .party-role-badge.support { color: var(--supp);  border-color: var(--supp);  background: rgba(61,255,138,.08); }
@@ -858,10 +961,10 @@
     .spin-dots span:nth-child(2) { animation-delay: .2s; }
     .spin-dots span:nth-child(3) { animation-delay: .4s; }
     @keyframes blink { 0%,80%,100% { opacity: .15; } 40% { opacity: 1; } }
-    .party-empty { padding: 1.4rem; text-align: center; font-size: .8rem; letter-spacing: 2px; color: var(--dim); }
+    .party-empty { padding: 1.4rem; text-align: center; font-size: .8rem; letter-spacing: var(--tr-wide); color: var(--dim); }
     .dup-warning {
-      display: none; width: 100%; background: rgba(255,74,74,.1); border: 1px solid rgba(255,74,74,.35);
-      border-radius: 10px; padding: .6rem 1rem; font-size: .82rem; letter-spacing: 1px; color: var(--dps); text-align: center;
+      display: none; width: 100%; background: rgba(255,74,74,.1); border: var(--bw-hair) solid rgba(255,74,74,.35);
+      border-radius: var(--r-md); padding: var(--sp-3) var(--sp-4); font-size: .82rem; letter-spacing: var(--tr-mid); color: var(--dps); text-align: center;
     }
     .dup-warning.show { display: block; }
 
@@ -873,7 +976,7 @@
     #wimp-toast {
       position: fixed; top: 1.5rem; left: 50%; transform: translateX(-50%);
       background: var(--dps); color: #fff; font-family: 'Bebas Neue', sans-serif;
-      font-size: 1.3rem; letter-spacing: 3px; padding: .6rem 1.4rem; border-radius: 10px;
+      font-size: 1.3rem; letter-spacing: var(--tr-wide); padding: var(--sp-3) var(--sp-5); border-radius: var(--r-md);
       opacity: 0; pointer-events: none; transition: opacity .3s ease; z-index: 600;
       white-space: nowrap; max-width: 90vw; overflow: hidden; text-overflow: ellipsis;
     }
@@ -883,51 +986,52 @@
     /* INSTALL BANNER */
     #install-banner {
       position: fixed; bottom: 0; left: 0; right: 0; z-index: 500;
-      background: var(--surf); border-top: 1px solid var(--border2); padding: .85rem 1.1rem;
+      background: var(--surf); border-top: var(--bw-hair) solid var(--border2); padding: var(--sp-4);
       display: flex; align-items: center; justify-content: space-between; gap: .75rem;
       box-shadow: 0 -4px 24px rgba(0,0,0,.4);
     }
     #install-banner.hidden { display: none; }
-    .install-text { font-size: .88rem; letter-spacing: .3px; color: var(--text); line-height: 1.3; }
+    .install-text { font-size: .88rem; letter-spacing: var(--tr-tight); color: var(--text); line-height: 1.3; }
     .install-text strong { color: var(--orange); }
     .install-actions { display: flex; gap: .5rem; flex-shrink: 0; }
     .btn-install {
-      background: var(--orange); border: none; border-radius: 8px; color: #fff;
-      font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 2px;
+      background: var(--orange); border: none; border-radius: var(--r-sm); color: #fff;
+      font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: var(--tr-wide);
       padding: .5rem 1rem; cursor: pointer; white-space: nowrap; transition: box-shadow .2s;
     }
     .btn-install:hover { box-shadow: 0 0 16px rgba(255,107,43,.5); }
     .btn-dismiss {
-      background: none; border: 1px solid var(--border); border-radius: 8px; color: var(--dim);
-      font-family: 'Barlow Condensed', sans-serif; font-size: .9rem; letter-spacing: 1px;
+      background: none; border: var(--bw-hair) solid var(--border); border-radius: var(--r-sm); color: var(--dim);
+      font-family: 'Barlow Condensed', sans-serif; font-size: .9rem; letter-spacing: var(--tr-mid);
       padding: .5rem .75rem; cursor: pointer; white-space: nowrap;
     }
     .btn-dismiss:hover { border-color: var(--dim); }
 
     /* HISTORY PANEL */
-    .history-panel { width: 100%; background: var(--surf); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
-    .history-header { display: flex; align-items: center; justify-content: space-between; padding: .6rem 1rem; border-bottom: 1px solid var(--border); }
-    .history-title { font-size: .7rem; letter-spacing: 4px; text-transform: uppercase; color: var(--dim); }
-    .history-wrap { overflow-x: hidden; padding: .5rem; }
+    .history-panel { width: 100%; background: var(--surf); border: var(--bw-hair) solid var(--border); border-radius: var(--r-lg); overflow: hidden; }
+    .history-header { display: flex; align-items: center; justify-content: space-between; padding: .6rem 1rem; border-bottom: var(--bw-hair) solid var(--border); }
+    .history-title { font-size: .7rem; letter-spacing: var(--tr-caps); text-transform: uppercase; color: var(--dim); }
+    .history-wrap { overflow-x: hidden; padding: var(--sp-3) 0 0; }
+    #history-body { padding-top: var(--sp-2); }
     .history-table { width: 100%; border-collapse: collapse; font-size: .8rem; table-layout: fixed; }
     .history-table th {
-      font-family: 'Bebas Neue', sans-serif; font-size: .75rem; letter-spacing: 1px;
+      font-family: 'Bebas Neue', sans-serif; font-size: .75rem; letter-spacing: var(--tr-mid);
       color: var(--orange); text-align: center; padding: .3rem .2rem;
-      border-bottom: 1px solid var(--border); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      border-bottom: var(--bw-hair) solid var(--border); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
-    .history-table td { text-align: center; padding: .2rem .2rem; border-bottom: 1px solid var(--border); }
+    .history-table td { text-align: center; padding: .2rem .2rem; border-bottom: var(--bw-hair) solid var(--border); }
     .history-portrait {
       width: 100%; max-width: 36px; height: auto; aspect-ratio: 1; object-fit: cover;
-      border-radius: 6px; display: block; margin: 2px auto;
+      border-radius: var(--r-sm); display: block; margin: 2px auto;
     }
     .history-hero-name { font-size: .7rem; color: var(--cyan); }
     .history-table tr:last-child td { border-bottom: none; }
-    .history-empty { padding: 1.2rem; text-align: center; font-size: .8rem; letter-spacing: 2px; color: var(--dim); }
+    .history-empty { padding: 1.2rem; text-align: center; font-size: .8rem; letter-spacing: var(--tr-wide); color: var(--dim); }
     .btn-reset-history {
       display: block; width: calc(100% - 1.5rem); margin: 0 .75rem .75rem;
-      padding: .55rem; background: transparent; border: 1px solid var(--border); border-radius: 8px;
+      padding: .55rem; background: transparent; border: var(--bw-hair) solid var(--border); border-radius: var(--r-sm);
       color: var(--dim); font-family: 'Barlow Condensed', sans-serif;
-      font-size: .85rem; letter-spacing: 2px; text-transform: uppercase;
+      font-size: .85rem; letter-spacing: var(--tr-wide); text-transform: uppercase;
       cursor: pointer; transition: border-color .2s, color .2s;
     }
     .btn-reset-history:hover { border-color: var(--dps); color: var(--dps); }
@@ -943,17 +1047,17 @@
 }
 #ad-close {
   position: absolute; top: 4px; right: 6px;
-  background: rgba(0,0,0,.7); border: 1px solid #555; border-radius: 4px;
+  background: rgba(0,0,0,.7); border: var(--bw-hair) solid #555; border-radius: var(--r-xs);
   color: #aaa; font-size: .7rem; padding: 1px 5px; cursor: pointer;
   font-family: monospace; line-height: 1.4;
 }
 #ad-close:hover { color: #fff; }
 #ad-toggle-wrap { width: 100%; text-align: center; padding: 1.2rem 0 .5rem; position: relative; z-index: 1; }
 #ad-mode-btn {
-  background: transparent; border: 1.5px solid var(--border);
-  border-radius: 8px; padding: .45rem 1rem;
+  background: transparent; border: var(--bw-edge) solid var(--border);
+  border-radius: var(--r-sm); padding: var(--sp-2) var(--sp-4);
   color: var(--dim); font-family: 'Barlow Condensed', sans-serif;
-  font-size: .85rem; letter-spacing: 2px; text-transform: uppercase;
+  font-size: .85rem; letter-spacing: var(--tr-wide); text-transform: uppercase;
   cursor: pointer; transition: border-color .2s, color .2s, box-shadow .2s;
 }
 #ad-mode-btn:hover { border-color: var(--orange); color: var(--orange); }
@@ -995,11 +1099,11 @@
       <button class="btn-join" id="join-toggle-btn">JOIN ROOM</button>
     </div>
     <div id="join-panel">
-      <div class="field" style="margin-top:1rem; margin-bottom:0;">
+      <div class="field field-code">
         <label>Room Code</label>
         <input type="text" id="code-input" placeholder="0000" maxlength="4" inputmode="numeric" autocomplete="off">
       </div>
-      <button class="btn-create" id="join-btn" style="margin-top:.75rem;">JOIN</button>
+      <button class="btn-create" id="join-btn">JOIN</button>
     </div>
   </div>
   <div class="room-code-display" id="code-display">
@@ -1007,35 +1111,22 @@
     <div class="room-code-val" id="generated-code">----</div>
     <div class="room-code-hint">Send the link, or read out the code</div>
     <button class="btn-copy" id="copy-link-btn">&#128279; Copy invite link</button>
-    <button class="btn-create" id="enter-room-btn" style="width:100%; margin-top:.5rem;">ENTER ROOM</button>
+    <button class="btn-create" id="enter-room-btn">ENTER ROOM</button>
   </div>
   <p class="lobby-hint">Create a room and share the code, or join a friend's room.</p>
 </div>
 
-<div id="room-lobby">
-  <div id="lobby-top"></div>
-  <div class="screen-head">
-    <div class="screen-line">
-      <span class="screen-kicker">Room</span>
-      <h2 class="screen-name">Lobby</h2>
-    </div>
-    <p class="screen-sub" id="lobby-sub">Pick your role and your game</p>
-  </div>
-  <div id="lobby-body"></div>
-  <button class="lobby-go-btn" id="lobby-go-btn"><span>PLAY</span></button>
-  <div id="lobby-foot"></div>
-</div>
-
 <div id="spin-room">
-  <div id="game-top"></div>
   <div class="screen-head">
-    <div class="screen-line">
-      <button class="back-to-lobby" id="back-to-lobby">&#8592; Lobby</button>
+    <div id="room-top" class="head-util"></div>
+    <div class="head-id">
       <h2 class="screen-name" id="game-name">Race</h2>
+      <p class="screen-sub" id="game-sub"></p>
     </div>
-    <p class="screen-sub" id="game-sub"></p>
   </div>
-  <div id="game-body"></div>
+  <div id="room-body"></div>
+  <div id="room-foot"></div>
+  <div class="screen-action" id="room-action"></div>
   <div class="top-bar">
     <button class="btn-back" id="back-btn">&#8592; Leave</button>
     <button class="tag room" id="room-invite-btn" title="Copy invite link">ROOM <strong id="room-tag"></strong></button>
@@ -1082,7 +1173,7 @@
     <div id="plinko-board"></div>
 
     <!-- Group Mode: the shared round everyone plays together -->
-    <div id="group-stage"></div>
+    <div class="stage-fold" id="stage-fold"><div id="group-stage"></div></div>
 
     <!-- Blackout exhausted -->
     <div id="blackout-exhausted">
@@ -1120,14 +1211,12 @@
     </div>
   </div>
 
-  <div class="history-panel" id="history-panel">
-    <div class="history-header">
-      <span class="history-title">Session History</span>
-    </div>
+  <details class="history-panel" id="history-panel">
+    <summary class="history-header"><span class="history-title">Session History</span></summary>
     <div id="history-body">
       <p class="history-empty">Heroes held for 45s+ will appear here.</p>
     </div>
-  </div>
+  </details>
 
   <div id="ad-toggle-wrap">
     <button id="ad-mode-btn" title="Toggle ad mode">&#9632; ad mode</button>
@@ -1342,19 +1431,6 @@ document.querySelectorAll('.mode-btn').forEach(btn => {
   });
 });
 
-document.getElementById('lobby-go-btn').addEventListener('click', () => {
-  // Solo walks straight through to the board. In a group you ready up and stay put, so
-  // you can watch the room fill in; the round itself is what moves everyone across.
-  if (!groupMode) { showGamePage(); return; }
-  readyUpGroup();
-  updateLobbyGo();
-});
-
-document.getElementById('back-to-lobby').addEventListener('click', () => {
-  if (isSpinning) return;
-  showRoomLobby();
-});
-
 const groupModeBtn = document.getElementById('group-mode-btn');
 groupModeBtn.addEventListener('click', () => {
   if (isSpinning) return;
@@ -1426,7 +1502,7 @@ function setGroupMode(on, prevRef) {
 
 function updateSpinBtnLabel() {
   const labels = { normal: 'SPIN', easy: 'DEAL', blackout: 'SPIN', race: 'RACE', plinko: 'DROP' };
-  spinBtn.querySelector('span').textContent = groupMode ? 'READY' : labels[gameMode];
+  spinBtn.querySelector('span').textContent = labels[gameMode] || 'GO';
   spinBtn.className = groupMode
     ? 'spin-btn mode-group'
     : `spin-btn${gameMode !== 'normal' ? ` mode-${gameMode}` : ''}`;
@@ -1452,7 +1528,6 @@ function applyModeUI(mode) {
   }
   renderModeDots(latestPlayers);
   updateStageLabel();
-  updateLobbyGo();
   updateScreenChrome();
 
   // Spin button label + color — Group Mode overrides both regardless of the active mode
@@ -1760,7 +1835,7 @@ function enterRoom(name, code, role, hero, silent = false) {
   document.getElementById('player-tag').textContent = name;
 
   lobbyEl.style.display = 'none';
-  showRoomLobby();
+  mountRoom();
 
   if (hero) {
     const roleColors = { tank: 'var(--tank)', damage: 'var(--dps)', support: 'var(--supp)' };
@@ -1827,8 +1902,6 @@ function leaveRoom() {
   resetResult();
   // Both room screens have to go, or leaving leaves the lobby stranded next to the
   // join panel — which is exactly what it looked like.
-  roomScreen = null;
-  el('room-lobby').style.display = 'none';
   spinRoomEl.style.display = 'none';
   lobbyEl.style.display    = 'flex';
   history.pushState({}, '', location.pathname);
@@ -2051,22 +2124,26 @@ function renderParty(players) {
     card.appendChild(pbox);
     card.appendChild(nameEl);
 
+    // Status and role are two separate facts, so each keeps its own fixed line. Swapping
+    // one for the other made every card change height the moment somebody got a hero.
+    const sub = document.createElement('div');
     if (p.spinning) {
-      const sub = document.createElement('div');
-      sub.className = 'party-hero-lbl'; sub.textContent = 'Spinning...';
-      card.appendChild(sub);
+      sub.className = 'party-hero-lbl';
+      sub.textContent = 'Spinning...';
     } else if (p.hero) {
-      const sub = document.createElement('div');
       sub.className = 'party-hero-lbl resolved' + (isDup ? ' dup' : '');
-      sub.textContent = isDup ? `${p.hero} \u26A0` : p.hero;
-      card.appendChild(sub);
+      sub.textContent = isDup ? p.hero + ' ⚠' : p.hero;
     } else {
-      const roleName = p.role || 'any';
-      const badge = document.createElement('div');
-      badge.className = `party-role-badge ${roleName}`;
-      badge.textContent = roleName === 'damage' ? 'DPS' : roleName.charAt(0).toUpperCase() + roleName.slice(1);
-      card.appendChild(badge);
+      sub.className = 'party-hero-lbl waiting';
+      sub.textContent = 'no pick yet';
     }
+    card.appendChild(sub);
+
+    const roleName = p.role || 'any';
+    const badge = document.createElement('div');
+    badge.className = 'party-role-badge ' + roleName;
+    badge.textContent = roleName === 'damage' ? 'DPS' : roleName.charAt(0).toUpperCase() + roleName.slice(1);
+    card.appendChild(badge);
 
     partyList.appendChild(card);
   });
@@ -2183,6 +2260,7 @@ spinBtn.addEventListener('click', () => {
 
 function doSpin() {
   isSpinning = true;
+  setRoundFocus(true);
   spinBtn.disabled = true;
 
   clearTimeout(heroTimer);
@@ -2262,6 +2340,7 @@ function finishSpin(winner) {
   if (!groupModeActionCompleted()) {
     isSpinning = false;
     spinBtn.disabled = false;
+    setRoundFocus(false);
   }
   slotFrame.classList.remove('spinning');
   slotFrame.classList.add('done');
@@ -2463,6 +2542,7 @@ function buildSwapPlan(rng, lanes, startLane, stepMs) {
 
 function doRace() {
   isSpinning = true;
+  setRoundFocus(true);
   spinBtn.disabled = true;
 
   clearTimeout(heroTimer);
@@ -2538,6 +2618,7 @@ function finishRace(winner, state, winnerState) {
   if (!groupModeActionCompleted()) {
     isSpinning = false;
     spinBtn.disabled = false;
+    setRoundFocus(false);
   }
   state.forEach(s => s.el.classList.remove('racing'));
   winnerState.el.classList.add('winner');
@@ -2960,11 +3041,12 @@ function heroPayload(h)      { return { name: h.name, key: h.key, role: h.role }
 function parseRoles(roleStr) { return Array.isArray(roleStr) ? roleStr : (typeof roleStr === 'string' && roleStr.includes(',') ? roleStr.split(',') : [roleStr || 'any']); }
 function rolesExpanded(roles) { return roles.includes('any') ? ['tank', 'damage', 'support'] : roles.filter(r => HEROES[r]); }
 
-function groupParticipants(present, ready) {
+function groupParticipants(present) {
   return Object.keys(present || {}).filter(pid => latestPlayers[pid]).sort().map((pid, i) => {
     const p = latestPlayers[pid];
-    const aim = (ready || {})[pid];
-    return { pid, name: p.name || '?', roles: parseRoles(p.role), aim: typeof aim === 'number' ? aim : 0.5, hue: PLAYER_HUES[i % PLAYER_HUES.length] };
+    return { pid, name: p.name || '?', roles: parseRoles(p.role),
+             aim: typeof p.aim === 'number' ? p.aim : 0.5,
+             hue: PLAYER_HUES[i % PLAYER_HUES.length] };
   });
 }
 function participantPool(part, mode) {
@@ -3092,59 +3174,115 @@ function leaveGroupRoom(path) {
   db.ref(`${path}/ready/${playerId}`).remove();
 }
 
-// ── Room lobby / game page ──────────────────────────────────────────────────
-// A room has two screens. The lobby is where you land and where the group settles who's
-// playing what; the game page is the board. The widgets they share — the top bar, the
-// roster, the stage — are one set of nodes moved between the two mounts, so every
-// listener and every bit of live state survives the trip and nothing renders twice.
-let roomScreen = null;
+// ── One room, one screen ────────────────────────────────────────────────────
+// Splitting the room into a lobby and a board hid the group at the exact moment the
+// group was the point. There is one screen now: the roster stays put at the top and the
+// board opens underneath it, so you watch everyone play their own game where they stand.
 const el = id => document.getElementById(id);
 function movePieces(mount, nodes) { nodes.forEach(n => { if (n) mount.appendChild(n); }); }
 
-function showRoomLobby() {
-  roomScreen = 'lobby';
-  movePieces(el('lobby-top'), [document.querySelector('.top-bar')]);
-  movePieces(el('lobby-body'), [
+function mountRoom() {
+  movePieces(el('room-top'), [document.querySelector('.top-bar')]);
+  // Roster, then result, then the board — the three things a round is about — and the
+  // pickers after them. The board used to sit below the pickers, which put it off the
+  // bottom of a phone during a six-second placement window.
+  movePieces(el('room-body'), [
     document.querySelector('.party-panel'),
+    document.querySelector('.result-box'),
+    document.querySelector('.slot-outer'),
+    el('group-ready-status'),
+    el('dup-warning'),
     document.querySelector('.lbl-roles'),
     document.querySelector('.roles'),
     document.querySelector('.lbl-game'),
     document.querySelector('.mode-toggle'),
     el('mode-note'),
-    document.querySelector('.slot-outer'),
     el('blackout-remaining'),
-    el('group-ready-status'),
   ]);
-  movePieces(el('lobby-foot'), [el('history-panel'), el('ad-toggle-wrap')]);
-  el('room-lobby').style.display = 'flex';
-  spinRoomEl.style.display = 'none';
-  updateLobbyGo();
+  movePieces(el('room-foot'), [el('history-panel'), el('ad-toggle-wrap')]);
+  movePieces(el('room-action'), [document.querySelector('.action-row')]);
+  spinRoomEl.style.display = 'flex';
   updateScreenChrome();
   rebuildIdleUI();
 }
 
-function showGamePage() {
-  roomScreen = 'game';
-  movePieces(el('game-top'), [document.querySelector('.top-bar')]);
-  // The result goes above the board, not below it. Under a three-player race the stage
-  // is tall enough to push the payoff off a phone screen entirely, which is backwards
-  // for the one line everybody is waiting on. It collapses to nothing until there is one.
-  movePieces(el('game-body'), [
-    document.querySelector('.result-box'),
-    document.querySelector('.slot-outer'),
-    el('blackout-remaining'),
-    el('group-ready-status'),
-    document.querySelector('.action-row'),
-    el('dup-warning'),
-  ]);
-  // The party panel stays behind in the lobby: on the board it repeated the legend
-  // sitting directly above it.
-  movePieces(el('lobby-body'), [document.querySelector('.party-panel')]);
-  movePieces(el('lobby-foot'), [el('history-panel'), el('ad-toggle-wrap')]);
-  el('room-lobby').style.display = 'none';
-  spinRoomEl.style.display = 'flex';
+// While a round is live the settings step back and the roster takes over: your own card
+// is lifted, everyone else's is dimmed but still running so you can see what they pull.
+//
+// Derived from state rather than switched on and off in pairs. Paired set/clear calls
+// have stranded this app's UI twice already — one missed branch and the screen sticks.
+// A round has three states, tracked explicitly rather than inferred. Inferring it from
+// isSpinning left the page dimmed forever (isSpinning stays true until every player
+// reports in), and inferring it from the result box failed too — the next round clears
+// that class, and a group with no heroes left never sets it at all. An explicit machine
+// with a timer always ends.
+let roundStage = 'idle';        // idle -> live -> closing -> idle
+let roundCloseTimer = null;
+
+const DIMMED_WHILE_LIVE = ['.lbl-roles', '.roles', '.lbl-game', '.mode-toggle',
+                           '#mode-note', '#history-panel', '#ad-toggle-wrap'];
+
+// The dim exists to focus attention on a board. If no board is on screen there is
+// nothing to focus on, so the page must be at full strength — whatever the round state
+// thinks. renderGroupRound sets dataset.round and renderGroupIdle deletes it, so this
+// is an exact read of "a board is up" rather than another thing to keep in sync.
+function roundBoardUp() {
+  if (groupMode) return !!groupStage.dataset.round;
+  return isSpinning;
+}
+
+function applyRoundStage() {
+  const live = roundStage === 'live' && roundBoardUp();
+  spinRoomEl.classList.toggle('round-live',    live);
+  spinRoomEl.classList.toggle('stage-open',    (roundStage === 'live' || roundStage === 'closing') && roundBoardUp());
+  spinRoomEl.classList.toggle('stage-closing', roundStage === 'closing');
+  // The fold holds whatever the stage currently shows — a round's board, or the one-line
+  // idle note. It only shuts during the deliberate fold, otherwise the idle content
+  // would be collapsed out of sight too.
+  spinRoomEl.classList.toggle('fold-open', roundStage !== 'folding' && groupStage.children.length > 0);
+  DIMMED_WHILE_LIVE.forEach(sel => {
+    const n = document.querySelector(sel);
+    if (n) n.classList.toggle('round-dimmed', live);
+  });
   updateScreenChrome();
 }
+
+const ROUND_MAX_MS = 30000;   // longest any round can honestly take
+let roundWatchdog = null;
+
+function openRound() {
+  clearTimeout(roundCloseTimer);
+  clearTimeout(roundWatchdog);
+  roundStage = 'live';
+  applyRoundStage();
+  // Nothing may leave the page dimmed indefinitely. A player who drops, or a tab the
+  // browser stopped animating, would otherwise strand everyone else's screen.
+  roundWatchdog = setTimeout(() => {
+    if (roundStage === 'live') closeRound(0);
+  }, ROUND_MAX_MS);
+}
+
+// The board holds for a beat so the finish registers, then folds away and the page comes
+// back — you don't have to go anywhere to be rid of it.
+function closeRound(hold) {
+  if (roundStage === 'idle') return;
+  clearTimeout(roundCloseTimer);
+  clearTimeout(roundWatchdog);
+  roundStage = 'closing';
+  applyRoundStage();                    // page un-dims immediately, board still up
+  roundCloseTimer = setTimeout(() => {
+    roundStage = 'folding';
+    applyRoundStage();                        // the row collapses under the board
+    roundCloseTimer = setTimeout(() => {
+      roundStage = 'idle';
+      if (groupMode) renderGroupIdle(true);   // idle note goes in; the fold reopens to it
+      applyRoundStage();
+    }, 560);
+  }, hold == null ? 2600 : hold);
+}
+
+function syncRoundFocus() { applyRoundStage(); }
+function setRoundFocus(live) { if (live) openRound(); else closeRound(); }
 
 const GAME_LABEL = { normal: 'Normal', easy: 'Easy', blackout: 'Blackout', race: 'Race', plinko: 'Plinko' };
 
@@ -3157,9 +3295,11 @@ function updateScreenChrome() {
 
   const sub = el('game-sub');
   if (sub) {
-    sub.textContent = groupMode
-      ? (groupState && groupState.fireAt ? 'Playing as a group' : 'Ready up to start the round')
-      : 'Playing on your own';
+    sub.textContent = roundStage === 'live'
+      ? (groupMode ? 'Playing as a group' : 'Playing on your own')
+      : roundStage === 'closing'
+        ? 'Round over'
+        : groupMode ? 'Ready up to start the round' : 'Playing on your own';
   }
 
   const lsub = el('lobby-sub');
@@ -3172,16 +3312,6 @@ function updateScreenChrome() {
   }
 }
 
-function updateLobbyGo() {
-  const btn = el('lobby-go-btn');
-  if (!btn) return;
-  const span = btn.querySelector('span');
-  btn.classList.toggle('solo', !groupMode);
-  if (!groupMode) { span.textContent = 'PLAY'; btn.disabled = false; return; }
-  const iAmReady = !!(groupState && groupState.ready && groupState.ready[playerId]);
-  span.textContent = iAmReady ? 'WAITING FOR THE ROOM…' : 'READY';
-  btn.disabled = iAmReady;
-}
 
 // The stage stops being "your hero" the moment it's showing the whole room.
 function updateStageLabel() {
@@ -3212,45 +3342,37 @@ function renderModeDots(players) {
 
 // Once everyone present has readied up, one client wins this transaction and writes the
 // fire signal AND the generated round atomically, so everyone renders the same thing.
-function maybeTriggerGroupFire(data) {
-  const present = data.present || {}, ready = data.ready || {};
-  const pids = Object.keys(present);
-  if (!pidsEvery(ready, pids) || !pids.every(pid => latestPlayers[pid])) return;
-  db.ref(`${groupRoomRef()}`).transaction(current => {
-    if (!current || current.fireAt) return;
-    const cp = current.present || {}, cr = current.ready || {};
-    if (!pidsEvery(cr, Object.keys(cp))) return;
-    const parts = groupParticipants(cp, cr);
-    if (!parts.length) return;
-    const fireAt = Date.now();
-    // The game is the group room we're in, so it needs no separate record.
-    return { ...current, fireAt, round: buildGroupRound(gameMode, parts, current.seed || 1, fireAt) };
-  });
-}
 
 // Once everyone present has finished, reset for the next round: keep presence + mode,
 // roll a new seed (so the next shared plinko board is fresh). Guarded against stale resets.
 function maybeResetGroupRound(data) {
-  const present = data.present || {}, done = data.done || {}, fireAt = data.fireAt;
-  if (!fireAt || !pidsEvery(done, Object.keys(present))) return;
+  const done = data.done || {}, fireAt = data.fireAt;
+  // Keyed on who was in the round, not who is in the room — someone who joined midway
+  // never gets a result, and waiting on them would hang the room forever.
+  const inRound = ((data.round || {}).players || []).map(p => p.pid);
+  if (!fireAt || !inRound.length || !pidsEvery(done, inRound)) return;
   db.ref(`${groupRoomRef()}`).transaction(current => {
     if (!current || current.fireAt !== fireAt) return;
     return { present: current.present || {}, seed: Math.floor(Math.random() * 1e9) };
   });
 }
 
-function updateGroupReadyUI(ready, present, fireAt) {
+function updateGroupReadyUI(present, fireAt, round) {
   if (!groupReadyStatusEl) groupReadyStatusEl = document.getElementById('group-ready-status');
   if (!groupReadyStatusEl) return;
-  const pids = Object.keys(present);
+  const pids = Object.keys(present || {});
   if (!groupMode || pids.length <= 1) { groupReadyStatusEl.style.display = 'none'; return; }
   groupReadyStatusEl.style.display = 'block';
-  if (fireAt) {
-    groupReadyStatusEl.innerHTML = 'Going for the group&hellip;';
-  } else {
-    const readyCount = pids.filter(pid => Object.prototype.hasOwnProperty.call(ready, pid)).length;
-    groupReadyStatusEl.innerHTML = `<strong>${readyCount}</strong> / ${pids.length} ready`;
+  if (!fireAt) {
+    groupReadyStatusEl.textContent = pids.length + ' in the room';
+    return;
   }
+  // A round fires for whoever was in the room at the time, so say so plainly to anyone
+  // who arrived after it started rather than leaving them wondering.
+  const inRound = ((round || {}).players || []).map(p => p.pid);
+  groupReadyStatusEl.textContent = inRound.includes(playerId)
+    ? 'Round in progress'
+    : 'Watching — you’re in the next round';
 }
 
 function handleGroupRoundUpdate(data) {
@@ -3258,7 +3380,6 @@ function handleGroupRoundUpdate(data) {
   const fireAt = data.fireAt || null;
 
   updateStageLabel();
-  updateLobbyGo();
 
   if (fireAt && data.round && data.round.id === fireAt) {
     if (groupRoundRendered !== fireAt) {
@@ -3267,16 +3388,21 @@ function handleGroupRoundUpdate(data) {
       clearTimeout(groupIdleTimer);
       // Cross to the board first: the stage measures pegs and lanes off real geometry,
       // and a hidden screen measures zero.
-      if (groupMode) { showGamePage(); renderGroupRound(data.round); }
+      if (groupMode) { renderGroupRound(data.round); setRoundFocus(true); }
     } else if (groupMode) {
       applyRoundUpdates(data.round); // other players' picks / landings arriving
     }
+  } else if (fireAt && data.round && !((data.round.players || []).some(p => p.pid === playerId))) {
+    // Not in this round: watch it, but stay free to start the next one.
+    isSpinning = false;
+    spinBtn.disabled = false;
   } else if (!fireAt && groupLastFireAt !== null) {
     groupLastFireAt = null;
     groupRoundRendered = null;
     if (groupMode) {
       isSpinning = false;
       spinBtn.disabled = false;
+      setRoundFocus(false);
       clearTimeout(groupIdleTimer);
       if (gameMode === 'plinko') {
         groupHoldUntil = Date.now() + 3500; // let everyone admire the landings first
@@ -3285,8 +3411,8 @@ function handleGroupRoundUpdate(data) {
     }
   }
 
-  updateGroupReadyUI(data.ready || {}, data.present || {}, fireAt);
-  if (!fireAt) { maybeTriggerGroupFire(data); maybeRefreshPlinkoPreview(); }
+  updateGroupReadyUI(data.present || {}, fireAt, data.round);
+  if (!fireAt) maybeRefreshPlinkoPreview();
   else maybeResetGroupRound(data);
 }
 
@@ -3330,6 +3456,9 @@ function runCurrentModeAction() {
 
 // Click handler while Group Mode is on: locks in your aim (plinko) and marks you ready —
 // nothing fires until everyone currently in Group Mode has also readied up.
+// One press starts the round for whoever is in the room right now. There is no ready-up
+// handshake any more — waiting on other people to click was the friction, and a latecomer
+// simply isn't in round.players, so they watch this one and are in the next.
 function readyUpGroup() {
   if (isSpinning || !roomCode) return;
 
@@ -3344,10 +3473,21 @@ function readyUpGroup() {
   document.querySelector('.result-box').classList.remove('has-result');
 
   const roleForDB = selectedRoles.length === 1 ? selectedRoles[0] : selectedRoles.join(',');
-  if (playerRef) playerRef.update({ role: roleForDB, spinning: true, hero: null, lastSeen: Date.now() });
-  // Plinko sends the aim it locked in; every other mode just says "ready".
-  const payload = gameMode === 'plinko' ? plinkoDropX : true;
-  db.ref(`${groupRoomRef()}/ready/${playerId}`).set(payload);
+  if (playerRef) playerRef.update({ role: roleForDB, spinning: true, hero: null, aim: plinkoDropX, lastSeen: Date.now() });
+  fireGroupRound();
+}
+
+// Whoever presses first wins the transaction; everyone else's press is a no-op against a
+// round that already exists.
+function fireGroupRound() {
+  if (!roomCode) return;
+  db.ref(`${groupRoomRef()}`).transaction(current => {
+    if (!current || current.fireAt) return;
+    const parts = groupParticipants(current.present || {});
+    if (!parts.length) return;
+    const fireAt = Date.now();
+    return { ...current, fireAt, round: buildGroupRound(gameMode, parts, current.seed || 1, fireAt) };
+  });
 }
 
 // Called from each mode's own "finish" point. Returns true (and keeps the button locked +
@@ -3393,6 +3533,7 @@ function finishGroupResult(winner, commitNow) {
     };
   }
   launchConfetti();
+  setRoundFocus(false);
   groupModeActionCompleted();
 }
 
@@ -3408,6 +3549,7 @@ function renderGroupIdle(force) {
     delete groupStage.dataset.round;
     groupStage.dataset.view = 'idle';
     groupStage.innerHTML = '';
+    applyRoundStage();          // the board just went away; don't leave the page dimmed
     const note = document.createElement('div');
     note.className = 'gs-note';
     note.textContent = gameMode === 'race'
@@ -3420,7 +3562,7 @@ function renderGroupIdle(force) {
 function maybeRefreshPlinkoPreview() {
   if (!groupMode || gameMode !== 'plinko' || isSpinning || groupState.fireAt) return;
   if (Date.now() < groupHoldUntil) return;
-  const parts = groupParticipants(groupState.present, groupState.ready);
+  const parts = groupParticipants(groupState.present);
   const key = (groupState.seed || 1) + '|' + parts.map(p => p.pid + ':' + p.roles.join('+')).join(',');
   if (key === groupPreviewKey && groupStage.dataset.view === 'plinko-preview') return;
   groupPreviewKey = key;
@@ -4305,6 +4447,7 @@ function renderGroupPlinko(round) {
 function executeLocalPlinkoDrop(dropFrac) {
   const { rows, pegsEl, pegs, slotCount, slotHeroes, rail } = plinkoCurrent;
 
+  setRoundFocus(true);
   isSpinning = true;
   spinBtn.disabled = true;
   rail.classList.add('disabled');
@@ -4340,6 +4483,7 @@ function finishPlinko(winner, winnerSlot) {
   if (!groupModeActionCompleted()) {
     isSpinning = false;
     spinBtn.disabled = false;
+    setRoundFocus(false);
     const rail = document.getElementById('plinko-rail');
     if (rail) rail.classList.remove('disabled');
   }
@@ -4384,6 +4528,7 @@ function finishPlinko(winner, winnerSlot) {
 function dealEasy() {
   const pool = shuffle(getActivePool());
   if (!pool.length) return;
+  setRoundFocus(true);
 
   const picks = pool.slice(0, 3);
   easyCards.innerHTML = '';
@@ -4791,6 +4936,18 @@ window.addEventListener('appinstalled', () => {
   installBanner.classList.add('hidden');
   localStorage.setItem('pwa_installed', '1');
 });
+
+// The install banner is fixed to the bottom of the viewport, so anything sticky has to
+// be told how tall it is or it parks underneath and is never seen again.
+function syncInstallHeight() {
+  const h = installBanner.classList.contains('hidden') ? 0 : installBanner.offsetHeight;
+  document.documentElement.style.setProperty('--install-h', h + 'px');
+  document.body.style.paddingBottom = h + 'px';
+}
+syncInstallHeight();
+window.addEventListener('resize', syncInstallHeight);
+new MutationObserver(syncInstallHeight)
+  .observe(installBanner, { attributes: true, attributeFilter: ['class', 'style'] });
 </script>
 </body>
 </html>
